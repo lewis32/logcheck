@@ -1,0 +1,457 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"abs",
+				"abspath\tstatement"
+			],
+			[
+				"ec",
+				"exec\tfunction"
+			],
+			[
+				"str",
+				"strTag\tstatement"
+			],
+			[
+				"d",
+				"dirname\tfunction"
+			],
+			[
+				"aes",
+				"AES"
+			],
+			[
+				"if",
+				"ifmain\tif __name__ == '__main__'"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"contents": ";liuchangchun@hisense.com\n\n[basic]\nVersion = 2.0\nDeviceId = 861003009000001000000641d336d11f9b8b1857f5f9ea66f5a37795\nOs = Linux\nCapabilityCode = 2018092801\nZone = 0\nCountryCode = DEU\nChipPlatform = mstar6886\nBrand = his\nDeviceMsg = HE55A7000EUWTS\n\n\n[200101]\nEventCode = 200101\nStartTime = 0\nEndTime = 0\nAPPPackage = 0\nAppId = 0\nAPPName = 0\nAPPVersion = 0\nLaunchSource= []",
+			"file": "basic.ini",
+			"file_size": 398,
+			"file_write_time": 131968349539058206,
+			"settings":
+			{
+				"buffer_size": 371,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "import configparser\n\nclass MyConfigParser(configparser.ConfigParser):\n    def __init__(self,defaults=None):\n        # configparser.ConfigParser.__init__(self,defaults=None)\n        super(self,)\n    def optionxform(self, optionstr):\n        return optionstr\n",
+			"file": "myconfigparser.py",
+			"file_size": 241,
+			"file_write_time": 131968453096896432,
+			"settings":
+			{
+				"buffer_size": 257,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "policy.xml",
+			"settings":
+			{
+				"buffer_size": 400,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "log_check.py",
+			"settings":
+			{
+				"buffer_size": 1079,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"pci",
+				"Package Control: Install Package"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"insatll",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: inst",
+				"Package Control: Install Package"
+			],
+			[
+				"intall",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/D/Program Files/Sublime/MyWork/logcheck"
+	],
+	"file_history":
+	[
+		"/D/Program Files/Sublime/MyWork/logcheck/log.xml",
+		"/D/Program Files/Sublime/MyWork/黏包/log_check.py",
+		"/D/Program Files/Sublime/MyWork/黏包/policy.xml",
+		"//Hisense.ad/SysVol/Hisense.ad/Policies/{B6D5E2DA-0F2B-4C39-9613-B8FA7527678B}/User/Scripts/Logon/显示本机信息.vbs",
+		"/D/Program Files/Sublime/MyWork/黏包/timestamp.py",
+		"/C/Users/liuchangchun/Desktop/UpdateService应用升级自动化脚本.vbs",
+		"/D/Program Files/Sublime/Python/coredump.py",
+		"/D/Program Files/Sublime/Python/timestamp.py",
+		"/C/Users/liuchangchun/Desktop/内销/适配梳理/UpdateService/UpdateService应用升级自动化脚本.vbs",
+		"/D/Program Files/Sublime/Python/connectEnv.py",
+		"/D/Program Files/Sublime/Data/Packages/User/Side Bar.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/User/CTags.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/User/SublimeCodeIntel.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/CTags/CTags.sublime-settings",
+		"/D/Program Files/Sublime/Python/encrypt.py",
+		"/C/Users/liuchangchun/Desktop/外销/coredump.vbs",
+		"/D/Program Files/Sublime/Python/conncetEnv.py",
+		"/D/Program Files/Sublime/Data/Packages/SublimeCodeIntel/SublimeCodeIntel.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/User/Anaconda.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/User/JSON.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/User/SublimeREPL.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/User/Pylinter.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/Anaconda/README.md",
+		"/D/Program Files/Sublime/Data/Packages/User/Default (Windows).sublime-keymap",
+		"/F/Download/WIFI_Connect6886 - STR.vbs",
+		"/D/Program Files/Sublime/Data/Packages/SublimeCodeIntel/.codeintel/config.log",
+		"/D/Program Files/Sublime/Data/Packages/User/Package Control.sublime-settings",
+		"/C/Python36/Lib/site-packages/crypto/decryptoapp.py",
+		"/C/Python36/Lib/site-packages/crypto/__init__.py",
+		"/C/Python36/Lib/site.py",
+		"/E/Code/sublime/test1.py",
+		"/D/Program Files/Sublime/Data/Packages/anaconda-master/Anaconda.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/SublimeREPL/SublimeREPL.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/SideBarEnhancements/Side Bar.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/anaconda-master/README.md",
+		"/D/Program Files/Sublime/Data/Packages/User/Python.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/anaconda-master/Default (Windows).sublime-keymap",
+		"/D/Program Files/Sublime/Data/Packages/Pylinter/Pylinter.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/Package Control/Package Control.sublime-settings",
+		"/D/Program Files/Sublime/Data/Packages/User/Python3.sublime-build"
+	],
+	"find":
+	{
+		"height": 36.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"Sub"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"folders":
+	[
+		{
+			"path": "D:\\Program Files\\Sublime\\MyWork"
+		},
+		{
+			"path": "D:\\Program Files\\Sublime\\MyWork\\logcheck"
+		}
+	],
+	"groups":
+	[
+		{
+			"selected": 3,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "basic.ini",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 371,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								370,
+								370
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": false,
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "myconfigparser.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 257,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								257,
+								257
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"git_gutter_is_enabled": false,
+							"open_with_edit": true,
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "policy.xml",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 400,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								181,
+								181
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": false,
+							"syntax": "Packages/XML/XML.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "log_check.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1079,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								43,
+								43
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"git_gutter_is_enabled": false,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 36.0
+	},
+	"input":
+	{
+		"height": 49.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 115.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.unsaved_changes":
+	{
+		"height": 242.0
+	},
+	"pinned_build_system": "Packages/User/Python3.sublime-build",
+	"project": "",
+	"replace":
+	{
+		"height": 68.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 191.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
