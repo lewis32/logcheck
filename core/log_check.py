@@ -2,15 +2,17 @@ import os
 import re
 import json
 import sys
-sys.path.append(os.getcwd()+'\\package')
-
+import time
+sys.path.append(os.path.abspath(os.getcwd()+'\\package'))
 import myconfigparser
 
 class LogCheck():
-    filepath = os.path.abspath(os.path.dirname(os.getcwd()))
+    filepath = os.path.abspath((os.path.dirname(os.getcwd())))
+    ltime = time.localtime()
+    stime = time.strftime('%Y%m%d-%H%M%S', ltime)
 
     def loadLog(self):
-        with open(self.filepath+r'\\conf\\log.xml','r') as f:
+        with open(self.filepath+'\\conf\\log.xml','r') as f:
             loglist = []
             text = f.read()
             pattern = re.compile(r'{.*?}')
@@ -30,7 +32,7 @@ class LogCheck():
     def checkLog(self):
         loglist = self.loadLog()
         conf = self.loadPolicy()
-        with open(self.filepath+r'\\conf\\result.txt','w') as f:
+        with open(self.filepath+r'\\result\\result-'+self.stime+'.txt','w') as f:
             for log in loglist:
                 if log['EventCode'] not in conf.sections():
                     # print('Undefined EventCode:',log['EventCode'])
@@ -41,12 +43,12 @@ class LogCheck():
                         if key not in conf.options(log['EventCode']):
                             f.writelines(['Undefined key:',key,'\n'])
                             continue
-                        elif re.match(eval(conf.get(log['EventCode'],key)),log[key]):
-                            f.writelines(['Passed key-value:',key,log[key],'\n'])
-                        else:
+                        elif not re.match(eval(conf.get(log['EventCode'],key)),log[key]):
+                            # f.writelines(['Passed key-value:',key,log[key],'\n'])
+                        # else:
                             f.writelines(['Wrong key-value:',key,log[key],'\n'])
-                    elif re.match(eval(conf.get('basic',key)),log[key]):
-                        f.writelines(['Passed key-value:',key,log[key],'\n'])
-                    else:
+                    elif not re.match(eval(conf.get('basic',key)),log[key]):
+                        # f.writelines(['Passed key-value:',key,log[key],'\n'])
+                    # else:
                         f.writelines(['Wrong key-value:',key,log[key],'\n'])
                 f.writelines(['*******************************\n'])
