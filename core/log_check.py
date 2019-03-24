@@ -3,8 +3,9 @@ import re
 import json
 import sys
 import time
-sys.path.append(os.path.abspath(os.getcwd()+'\\package'))
-import myconfigparser
+import bisect
+# sys.path.append(os.path.abspath(os.getcwd()+'\\package'))
+import package.myconfigparser
 
 class LogCheck():
     filepath = os.path.abspath((os.path.dirname(os.getcwd())))
@@ -25,6 +26,28 @@ class LogCheck():
         conf = myconfigparser.MyConfigParser()
         conf.read(self.filepath+r'\\conf\\policy.ini',encoding='utf-8')
         return conf
+
+    def compareKey(self):
+        loglist = self.loadLog()
+        conf = self.loadPolicy()
+        with open(self.filepath+r'\\result\\result-'+self.stime+'.txt','w') as f:
+            samedatalist = []
+            for log in loglist:
+                samedata = []
+                exlogdata = []
+                exconfdata = []
+                log = list(log)
+                for i in log:
+                    pos = bisect.bisect_left(conf,i)
+                    if pos < len(conf) and conf[pos] == i:
+                        samedata.append(i)
+                    elif pos >= len(conf):
+                        exlogdata.append(i)
+                samedata = list(set(samedata))
+                print(samedata)
+
+
+
 
     def checkLog(self):
         loglist = self.loadLog()
