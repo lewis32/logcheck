@@ -30,51 +30,61 @@ class LogCheck():
 
     def compareKeys(self,log,conf):
         mutual_key = []
-        ex_key_log = []
-        ex_key_conf = []
+        log_key = []
+        conf_key = []
         log = list(log)
         conf = list(conf)
         conf.sort()
         for i in log:
             pos = bisect.bisect_left(conf,i)
             print(pos,len(conf))
-            if pos < len(conf) and conf[pos] == i:
+            if pos < len(conf) and conf[pos].lower() == i.lower():
                 mutual_key.append(i)
             elif pos >= len(conf):
-                ex_key_log.append(i)
+                log_key.append(i)
         mutual_key = list(set(mutual_key))
-        ex_key_log = list(set(ex_key_log))
-        ex_key_conf = list(set(conf).difference(set(mutual_key)))
-        return mutual_key,ex_key_log,ex_key_conf
+        log_key = list(set(log_key))
+        conf_key = list(set(conf).difference(set(mutual_key)))
+        return mutual_key,log_key,conf_key
 
     def checkLog(self):
         loglist = self.loadLog()
-        conf = self.loadPolicy()
+        conflist = self.loadPolicy()
         with open(self.filepath+r'\\result\\result-'+self.stime+'.txt','w',encoding='utf-8' ) as f:
+            '''
             for log in loglist:
-                if log['EventCode'] not in conf.sections():
-                    f.writelines(['Undefined EventCode:',log['EventCode'],'\n'])
-                else:
-                    mutual_key,ex_key_log,ex_key_conf = self.compareKeys(log,conf.options('basic')+conf.options(log['EventCode']))
-                    if len(ex_key_log) != 0:
-                        f.writelines(['Undefined key-value: '])
-                        for i in ex_key_log:
-                            f.writelines([i])
-                        f.writelines(['\n'])
-                    elif len(ex_key_conf) != 0:
-                        f.writelines(['Lacking key-value: '])
-                        for i in ex_key_conf:
-                            f.writelines([i])
-                        f.writelines(['\n'])
+                for kw in log:
+                    if kw.lower() != 'eventcode':
+                        f.writelines(['Lacking key: EventCode'])
+                    elif log[kw] not in conf.sections():
+                        f.writelines(['Undefined EventCode:',log['EventCode'],'\n'])
                     else:
-                        f.writelines(['log keys is the same as conf keys'])
-                for key in log:
-                    if key not in conf.options('basic'):
-                        if key not in conf.options(log['EventCode']):
-                            # f.writelines(['Undefined key:',key,'\n'])
-                            continue
-                        elif not re.match(eval(conf.get(log['EventCode'],key)),log[key]):
+                        mutual_key,log_key,conf_key = self.compareKeys(log,conf.options('common')+conf.options(log[kw]))
+                        if len(log_key) != 0:
+                            f.writelines(['Undefined key-value: '])
+                            for i in log_key:
+                                f.writelines([i])
+                            f.writelines(['\n'])
+                        elif len(conf_key) != 0:
+                            f.writelines(['Lacking key-value: '])
+                            for i in conf_key:
+                                f.writelines([i])
+                            f.writelines(['\n'])
+                    for key in log:
+                        if key not in conf.options('common'):
+                            if key not in conf.options(kw):
+                                # f.writelines(['Undefined key:',key,'\n'])
+                                continue
+                            elif not re.match(eval(conf.get(kw,key)),log[key]):
+                                f.writelines(['Wrong key-value: ',key,':',log[key],'\n'])
+                        elif not re.match(eval(conf.get('common',key)),log[key]):
                             f.writelines(['Wrong key-value: ',key,':',log[key],'\n'])
-                    elif not re.match(eval(conf.get('basic',key)),log[key]):
-                        f.writelines(['Wrong key-value: ',key,':',log[key],'\n'])
-                f.writelines(['*******************下一条日志*******************\n'])
+                    f.writelines(['\n******************* NEXT LOG *******************\n\n'])
+            '''
+            for log in loglist:
+                for key in log:
+                    lowkey = key.lower()
+                    if lowkey != 'eventcode':
+                        continue
+                    else:
+                        print(conflist.items(key))
