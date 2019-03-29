@@ -28,7 +28,7 @@ class LogCheck():
         conf.read(self.filepath+r'\\conf\\policy.ini',encoding='utf-8')
         return conf
 
-    def compareKeys(self,log,conf):
+    def compareKeys(self,log,conf,f):
         mutual_key = []
         log_key = []
         conf_key = []
@@ -52,7 +52,7 @@ class LogCheck():
         elif len(conf_key) != 0:
             f.writelines(['Lacking key-value: '])
             for i in conf_key:
-                f.writelines([i])
+                f.writelines([i,','])
             f.writelines(['\n'])
         # return mutual_key,log_key,conf_key
 
@@ -107,19 +107,23 @@ class LogCheck():
                         break
                     else:
                         conf = dict(conflist.items(log[key]) + conflist.items('common'))
+                        for i in conf:
+                            conf[self.lowerKeys(i)] = conf.pop(i)
                         print(conf)
-                        self.compareKeys(log,conf)
+                        print(log)
+                        self.compareKeys(log,conf,f)
                         for key in log:
-                            if key not in conf.options('common'):
-                            if conf.
-                                if key not in conf.options(kw):
-                                    # f.writelines(['Undefined key:',key,'\n'])
-                                    continue
-                                elif not re.match(eval(conf.get(kw,key)),log[key]):
+                            if self.lowerKeys(key) not in conf:
+                                f.writelines(['Undefined key:',key,'\n'])
+                                continue
+                            try:
+                                print(eval(conf[self.lowerKeys(key)]),log[key])
+                                if not re.match(eval(conf[self.lowerKeys(key)]),log[key]):
                                     f.writelines(['Wrong key-value: ',key,':',log[key],'\n'])
-                            elif not re.match(eval(conf.get('common',key)),log[key]):
-                                f.writelines(['Wrong key-value: ',key,':',log[key],'\n'])
-                        f.writelines(['\n******************* NEXT LOG *******************\n\n'])
-                        break
+                            except Exception as e:
+                                print(e)
+                            finally:
+                                f.writelines(['\n******************* NEXT LOG *******************\n\n'])
+                                break
 
 
