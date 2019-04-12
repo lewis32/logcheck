@@ -43,22 +43,14 @@ class LogCheck():
         mutual_key_lower = list(set(mutual_key_lower))
         log_key = list(set(log).difference(set(mutual_key)))
         conf_key = list(set(conf).difference(set(mutual_key_lower)))
+        print(log,mutual_key,)
         if len(log_key) != 0:
-            f.writelines(['日志存在多余key: '])
-            for i in log_key:
-                f.writelines([i,','])
-            f.writelines(['\n'])
+            f.writelines(['日志存在多余Key: ',str(log_key),'\n'])
         if len(conf_key) != 0:
-            f.writelines(['日志存在缺少key: '])
-            for i in conf_key:
-                f.writelines([i,','])
-            f.writelines(['\n'])
+            f.writelines(['日志存在缺少Key: ',str(conf_key),'\n'])
         return mutual_key
 
-    def lowerKeys(self,key):
-        return key.lower()
-
-    def compareTimestamp(self,log):
+    def compareTimestamp(self,log,f):
         st = 1
         et = 2
         for key in log:
@@ -66,21 +58,25 @@ class LogCheck():
                 st = log[key]
             if self.lowerKeys(key) == 'endtime':
                 et = log[key]
-        if st == 0:
-            f.writelines(['starttime is equal to zero'])
-        if st != 0 and et != 0 and st >= et:
-            f.writelines(['starttime is NOT greater than endtime'])
+        if st == '0':
+            f.writelines(['Wrong Key-Value: StartTime == 0'])
+        elif et != '0' and st >= et:
+            print(log)
+            f.writelines(['Wrong Key-Value: StartTime >= EndTime',st,et])
+
+    def lowerKeys(self,key):
+        return key.lower()
 
     def checkLog(self):
         try:
             loglist = self.loadLog()
         except Exception as e:
-            print("日志存在格式不规范: ",e)
+            print("日志格式不规范: ",e)
 
         try:
             conflist = self.loadPolicy()
         except Exception as e:
-            print("策略存在格式不规范: ",e)
+            print("策略格式不规范: ",e)
 
         with open(self.filepath+r'\\result\\result-'+self.stime+'.txt','w',encoding='utf-8' ) as f:
             for log in loglist:
@@ -91,25 +87,24 @@ class LogCheck():
                         n += 1
                         continue
                     elif self.lowerKeys(key) != 'eventcode' and n == count:
-                        f.writelines(['\nCouldn\'t find the key eventcode\n'])
+                        f.writelines(['Couldn\'t find Key: eventcode\n'])
                         break
                     else:
                         try:
                             conf = dict(conflist.items(log[key]) + conflist.items('common'))
                         except Exception as e:
-                            print("日志存在eventcode不规范: ",e)
-
-                        for i in conf:
-                            conf[self.lowerKeys(i)] = conf.pop(i)
-                        print(conf)
-                        print(log)
-                        mutual_key = self.compareKeys(log,conf,f)
-                        mutual_dict = {}
-                        for i in mutual_key:
-                            mutual_dict[i] = conf[self.lowerKeys(i)]
-                        for key in mutual_dict:
-                            if not re.match(eval(mutual_dict[key]),str(log[key])):
-                                f.writelines(['Wrong key-value: ',key,':',log[key],'\n'])
+                            print("日志eventcode不规范: ",e)
+                        else:
+                            for i in conf:
+                                conf[self.lowerKeys(i)] = conf.pop(i)
+                            mutual_key = self.compareKeys(log,conf,f)
+                            mutual_dict = {}
+                            for i in mutual_key:
+                                mutual_dict[i] = conf[self.lowerKeys(i)]
+                            for key in mutual_dict:
+                                if not re.match(eval(mutual_dict[key]),str(log[key])):
+                                    f.writelines(['Wrong Key-Value: ',key,':',log[key],'\n'])
+                            self.compareTimestamp(log,f)
                 f.writelines(['\n******************* NEXT LOG *******************\n\n'])
 
 
