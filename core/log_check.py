@@ -76,7 +76,7 @@ class LogCheck():
                             n += 1
                             continue
                         elif self.lowerKeys(key) != 'eventcode' and n == count:
-                            f.writelines(['Can\'t find key: eventcode\n'])
+                            f.writelines(['Missing key: eventcode\n'])
                             break
                         else:
                             try:
@@ -89,20 +89,19 @@ class LogCheck():
                                     conf[self.lowerKeys(i)] = conf.pop(i)
                                 mutual_key,log_key,conf_key = self.compareKeys(log,conf)
                                 if len(log_key) != 0:
-                                    f.writelines(['Extra key in log: ',str(log_key),'\n'])
+                                    f.writelines(['Undefined key: ',str(log_key),'\n'])
                                 if len(conf_key) != 0:
-                                    f.writelines(['Missing key in log: ',str(conf_key),'\n'])
+                                    f.writelines(['Missing key: ',str(conf_key),'\n'])
                                 mutual_dict = {}
                                 invalid_mutual_dict = {}
                                 for i in mutual_key:
                                     mutual_dict[i] = conf[self.lowerKeys(i)]
-                                for mutual_key in mutual_dict:
-                                    if not re.match(eval(mutual_dict[mutual_key]),str(log[key])):
-                                        invalid_mutual_dict[key] = log[key]
-                                        # f.writelines(['Key-Value is invalid: ',key,':',log[key],'\n'])
+                                    if not re.match(eval(mutual_dict[i]),str(log[i])):
+                                        invalid_mutual_dict[i] = log[i]
                                 if self.compareTimestamp(log) == 1:
-                                    f.writelines(['Key-value is invalid: StartTime >= EndTime\n'])
-                    f.writelines(['Key-Value is invalid: ',str(invalid_mutual_dict),'\n'])
+                                    f.writelines(['Invalid key-value: StartTime >= EndTime\n'])
+                    if len(invalid_mutual_dict) > 0:
+                        f.writelines(['Invalid key-value: ',str(invalid_mutual_dict),'\n'])
                     f.writelines(['******************* End *******************\n\n'])
 
 
