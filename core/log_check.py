@@ -71,7 +71,7 @@ class LogCheck():
                 for log in loglist:
                     count = len(log)
                     n = 1
-                    f.writelines(['****************** Begin ******************\n'])
+                    f.writelines(['-****************** Begin ******************-\n'])
                     for key in log:
                         if self.to_lower_key(key) != 'eventcode' and n < count:
                             n += 1
@@ -103,7 +103,7 @@ class LogCheck():
                                     f.writelines(['Invalid key-value: StartTime >= EndTime\n'])
                     if len(invalid_mutual_dict) > 0:
                         f.writelines(['Invalid key-value: ',str(invalid_mutual_dict), '\n'])
-                    f.writelines(['******************* End *******************\n\n'])
+                    f.writelines(['-******************* End *******************-\n\n'])
 
 
 
