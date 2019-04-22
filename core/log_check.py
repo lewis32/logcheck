@@ -13,6 +13,8 @@ class LogCheck():
     ltime = time.localtime()
     stime = time.strftime('%Y%m%d-%H%M%S', ltime)
 
+    def __init__(self):
+
     def loadLog(self):
         with open(self.filepath+'\\conf\\log.xml','r') as f:
             loglist = []
@@ -46,13 +48,10 @@ class LogCheck():
         return mutual_key,log_key,conf_key
 
     def compareTimestamp(self,log):
-        st = 1
-        et = 2
+        st, et = 1, 2
         for key in log:
-            if self.lowerKeys(key) == 'starttime':
-                st = log[key]
-            if self.lowerKeys(key) == 'endtime':
-                et = log[key]
+            if self.lowerKeys(key) == 'starttime':st = log[key]
+            if self.lowerKeys(key) == 'endtime':et = log[key]
         if et != '0' and st >= et:
             return 1
 
