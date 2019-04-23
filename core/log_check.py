@@ -68,16 +68,19 @@ class LogCheck():
             print("Failed to load log or policy: ", e)
         else:
             with open(self.filepath+r'\\result\\result-'+self.stime+'.txt', 'w', encoding='utf-8') as f:
+                result = []
                 for log in loglist:
                     count = len(log)
                     n = 1
                     f.writelines(['-****************** Begin ******************-\n'])
+                    result.append('-****************** Begin ******************-\n')
                     for key in log:
                         if self.to_lower_key(key) != 'eventcode' and n < count:
                             n += 1
                             continue
                         elif self.to_lower_key(key) != 'eventcode' and n == count:
                             f.writelines(['Missing key: eventcode\n'])
+                            result.append('Missing key: eventcode\n')
                             break
                         else:
                             try:
@@ -86,13 +89,16 @@ class LogCheck():
                                 print("Failed to combine common keys with event keys : ", e)
                             else:
                                 f.writelines(['Eventcode: ', log[key], '\n'])
+                                result.append('Eventcode: ' + log[key] + '\n')
                                 for i in conf:
                                     conf[self.to_lower_key(i)] = conf.pop(i)
                                 mutual_key,log_key,conf_key = self.compare_keys(log,conf)
                                 if len(log_key) != 0:
                                     f.writelines(['Undefined key: ', str(log_key), '\n'])
+                                    result.append('Undefined key: ' + str(log_key) + '\n')
                                 if len(conf_key) != 0:
                                     f.writelines(['Missing key: ', str(conf_key), '\n'])
+                                    result.append('Missing key: ' + str(conf_key) + '\n')
                                 mutual_dict = {}
                                 invalid_mutual_dict = {}
                                 for i in mutual_key:
@@ -101,9 +107,13 @@ class LogCheck():
                                         invalid_mutual_dict[i] = log[i]
                                 if self.compare_timestamp(log) == 1:
                                     f.writelines(['Invalid key-value: StartTime >= EndTime\n'])
+                                    result.append('Invalid key-value: StartTime >= EndTime\n')
                     if len(invalid_mutual_dict) > 0:
                         f.writelines(['Invalid key-value: ',str(invalid_mutual_dict), '\n'])
+                        result.append('Invalid key-value: ' + str(invalid_mutual_dict) + '\n')
                     f.writelines(['-******************* End *******************-\n\n'])
+                    result.append('-******************* End *******************-\n\n')
+                return result
 
 
 
