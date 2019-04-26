@@ -7,7 +7,7 @@ upload_path = './tmp'
 def index():
     return template('main')
 
-@route('/', method='POST')
+@route('/index', method='POST')
 def upload():
     upload_file = request.files.get('logfile')
     upload_file.save(upload_path, override='True')
