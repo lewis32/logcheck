@@ -13,6 +13,8 @@ class TVSerial(my_serial.MySerial):
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
     filename = 'serialLog-%s.log' % currentTime
     filepath = os.path.join(sys.path[0], filename)
+    if not os.path.exists(os.path.join(filepath, 'result')):
+        os.mkdir(os.path.join(filepath, 'result'))
     f = open(filepath, "w",encoding='utf-8')
     read_flag=True
     isBreak = False

@@ -1,3 +1,5 @@
 *.code-workspace
 *.py[cod]
 *.sublime-workspace
+result*.txt
+serialLog*.log
