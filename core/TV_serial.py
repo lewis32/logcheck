@@ -12,16 +12,17 @@ class TVSerial(my_serial.MySerial):
     lineNo = 1
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
     filename = 'serialLog-%s.log' % currentTime
-    filepath = os.path.join(sys.path[0], filename)
-    if not os.path.exists(os.path.join(filepath, 'result')):
-        os.mkdir(os.path.join(filepath, 'result'))
+    filepath = os.path.join(sys.path[0], 'serial_log', filename)
+    if not os.path.exists(os.path.dirname(filepath)):
+        os.mkdir(os.path.dirname(filepath))
     f = open(filepath, "w",encoding='utf-8')
     read_flag=True
     isBreak = False
 
-    def __init__(self, port, baud_rate=115200, timeout=5):
-        # self.s = serial.Serial(port, baud_rate, timeout)
-        super(my_serial.MySerial, self).__init__(port, baud_rate, timeout)
+    # def __init__(self, port, baud_rate=115200, timeout=5):
+    #     # self.s = serial.Serial(port, baud_rate, timeout)
+    #     super(my_serial.MySerial, self).__init__(port, baud_rate, timeout)
+
     def setLogPath(self,newPath):
         if (newPath=='') or (newPath==None):
             # self.logger.error('newPath为空')
