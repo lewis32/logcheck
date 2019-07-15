@@ -5,10 +5,9 @@ import threading
 import time
 import sys
 import os
-# import serial
-import my_serial
+import serial
 
-class TVSerial(my_serial.MySerial):
+class TVSerial():
     lineNo = 1
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
     filename = 'serialLog-%s.log' % currentTime
@@ -19,9 +18,33 @@ class TVSerial(my_serial.MySerial):
     read_flag=True
     isBreak = False
 
-    # def __init__(self, port, baud_rate=115200, timeout=5):
-    #     # self.s = serial.Serial(port, baud_rate, timeout)
-    #     super(my_serial.MySerial, self).__init__(port, baud_rate, timeout)
+    # def __new__(cls, *args, **kwargs):
+    #     if not hasattr(cls, '_instance'):
+    #         cls._instance = super().__new__(cls)
+    #     return cls._instance
+
+    def __init__(self, port='COM3', baudrate=115200, timeout=5):
+        self.s = serial.Serial(port, baudrate, timeout=timeout)
+        self.s.flushInput()
+        self.s.flushOutput()
+
+    def close(self):
+        self.s.close()
+
+    def isOpen(self):
+        return self.s.isOpen()
+
+    def open(self):
+        self.s.open()
+
+    def setBaudrate(self,newBaudrate):
+        self.s.baudrate=newBaudrate
+
+    def getBaudrate(self):
+        return self.s.baudrate
+
+    def getPortname(self):
+        return self.s.port
 
     def setLogPath(self,newPath):
         if (newPath=='') or (newPath==None):
@@ -56,8 +79,8 @@ class TVSerial(my_serial.MySerial):
     #开始打印
     def startReadSerial(self):
         currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
-        newFile=sys.path[0]+'/serialLog/' + currentTime + '.log' # Linux
-        # newFile=sys.path[0]+'\\serialLog\\' + currentTime + '.log' # Windows
+        # newFile=sys.path[0]+'/serialLog/' + currentTime + '.log' # Linux
+        newFile=sys.path[0]+'\\serial_log\\' + currentTime + '.log' # Windows
         self.setLogPath(newFile)
         self.read_flag = True
         t = threading.Thread(target=self.alwayseReadSerial)
@@ -67,9 +90,6 @@ class TVSerial(my_serial.MySerial):
     #停止打印
     def stopReadSerial(self):
         self.read_flag = False
-
-    def send(self, cmd):
-        self.s.write(cmd.encode('utf-8'))
 
     def get_last_line(self,inputfile,num) :
         dat_file = open(inputfile, 'r',encoding='utf-8')
@@ -92,7 +112,7 @@ class TVSerial(my_serial.MySerial):
         starttime = datetime.datetime.now()
         while True:
             print(str(timeout))
-            re = self.get_last_line(self.filename,30)
+            re = self.get_last_line(self.filepath,30)
             currenttime = datetime.datetime.now()
             interval = (currenttime - starttime).seconds
             # print("interval=="+str(interval))
@@ -103,23 +123,15 @@ class TVSerial(my_serial.MySerial):
                     print(('pass',n))
                     return n
 
-#####################  电视机串口测试代码 #######################
 if __name__=='__main__':
-    s=TVSerial('com1')
+    s = TVSerial('COM3')
     s.startReadSerial()
-    s.sendComand("1969 \n")
+    s.sendComand("\n\n")
     time.sleep(1)
-    s.sendComand("1969 \n")
-    time.sleep(1)
-
-    # time.sleep(5)
-    # s.sendComand("sh /data/local/tmp/test.sh \n")
 
     s.sendComand("reboot \n")
     s.waitForString( "Starting kernel",5)
 
-    # s.sendComand("ping -c 4 -W 1 10.18.203.235 \n")
-    # s.waitForString(s.filename, "transmitted",10)
     s.stopReadSerial()
     s.close()
     print("end")

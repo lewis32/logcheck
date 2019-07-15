@@ -51,6 +51,58 @@ class LogCheck():
         conf_key = list(set(conf).difference(set(mutual_key_lower)))
         return mutual_key, log_key, conf_key
 
+    def _compare_log(self, log, conflist):
+        result = {
+                    'src_event_code': None,
+                    'event_code': None,
+                    'missing_key': [],
+                    'undefined_key': {},
+                    'invalid_key': {},
+                    'result': 0
+                    }
+        count = len(log)
+        n = 1
+        for key in log:
+            if self._to_lower_key(key) != 'eventcode' and n < count:
+                n += 1
+                continue
+            elif self._to_lower_key(key) != 'eventcode' and n == count:
+                result['missing_key'].append('eventcode')
+                break
+            else:
+                try:
+                    conf = dict(conflist.items(log[key]) + conflist.items('common'))
+                except Exception as e:
+                    print("Failed to combine common keys with event keys : ", e)
+                    invalid_mutual_dict = {}
+                    break
+                else:
+                    result['event_code'] = log[key]
+                    for i in conf:
+                        conf[self._to_lower_key(i)] = conf.pop(i)
+                    mutual_key,log_key,conf_key = self._compare_keys(log,conf)
+                    if len(log_key) != 0:
+                        for k in log_key:
+                            result['undefined_key'][k] = log[k]
+                    if len(conf_key) != 0:
+                        for k in conf_key:
+                            result['missing_key'].append(k)
+                    mutual_dict = {}
+                    invalid_mutual_dict = {}
+                    for i in mutual_key:
+                        mutual_dict[i] = conf[self._to_lower_key(i)]
+                        if not re.match(eval(mutual_dict[i]), str(log[i])):
+                            invalid_mutual_dict[i] = log[i]
+                    if self._compare_timestamp(log) == 1:
+                        result['invalid_key']['StartTime'] = 'EndTime'
+            if len(invalid_mutual_dict) > 0:
+                result['invalid_key'] = dict(result['invalid_key'], **invalid_mutual_dict)
+            if not (len(result['missing_key']) == 0 and len(result['undefined_key']) == 0 and len(result['invalid_key'])) == 0:
+                result['result'] = 1
+        print(result)
+        return result
+
+
     def _compare_timestamp(self, log):
         st, et = 1, 2
         for key in log:
@@ -76,54 +128,8 @@ class LogCheck():
             with open(output_path, 'w', encoding='utf-8') as f:
                 results = []
                 for log in loglist:
-                    result = {
-                        'src_event_code': None,
-                        'event_code': None,
-                        'missing_key': [],
-                        'undefined_key': {},
-                        'invalid_key': {},
-                        'result': 0
-                    }
-                    count = len(log)
-                    n = 1
-                    for key in log:
-                        if self._to_lower_key(key) != 'eventcode' and n < count:
-                            n += 1
-                            continue
-                        elif self._to_lower_key(key) != 'eventcode' and n == count:
-                            result['missing_key'].append('eventcode')
-                            break
-                        else:
-                            try:
-                                conf = dict(conflist.items(log[key]) + conflist.items('common'))
-                            except Exception as e:
-                                print("Failed to combine common keys with event keys : ", e)
-                                invalid_mutual_dict = {}
-                                break
-                            else:
-                                result['eventcode'] = log[key]
-                                for i in conf:
-                                    conf[self._to_lower_key(i)] = conf.pop(i)
-                                mutual_key,log_key,conf_key = self._compare_keys(log,conf)
-                                if len(log_key) != 0:
-                                    for k in log_key:
-                                        result['undefined_key'][k] = log[k]
-                                if len(conf_key) != 0:
-                                    for k in conf_key:
-                                        result['missing_key'].append(k)
-                                mutual_dict = {}
-                                invalid_mutual_dict = {}
-                                for i in mutual_key:
-                                    mutual_dict[i] = conf[self._to_lower_key(i)]
-                                    if not re.match(eval(mutual_dict[i]), str(log[i])):
-                                        invalid_mutual_dict[i] = log[i]
-                                if self._compare_timestamp(log) == 1:
-                                    result['invalid_key']['StartTime'] = 'EndTime'
-                    if len(invalid_mutual_dict) > 0:
-                        result['invalid_key'] = dict(result['invalid_key'], **invalid_mutual_dict)
-                    if not (len(result['missing_key']) == 0 and len(result['undefined_key']) == 0 and len(result['invalid_key'])) == 0:
-                        result['result'] = 1
-                    results.append(result)
+                    ret = self._compare_log(log, conflist)
+                    results.append(ret)
                 json.dump(results, f, indent=4)
                 return results
 

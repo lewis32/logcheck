@@ -1,0 +1,12 @@
+[20190715-151530] rent system time is: Mon Jul 15 08:15:29 2019[0m
+[20190715-151530] [37m[K(none) avsservice: [3095][  706.158087] ALW: avsservice-service: .[0m
+[20190715-151530] [37m[K(none) avsservice: [3095][  706.158124] ALW: avsservice-service: CBLAuthDelegate.cpp:577:handleRequestingToken(): [avs-cbl] code expire time is: Mon Jul 15 08:24:25 2019[0m
+[20190715-151530] [37m[K(none) avsservice: [3095][  706.158138] ALW: avsservice-service: .[0m
+[20190715-151530] [37m[K(none) avsservice: [3095][  706.158157] ALW: avsservice-service: UIManager.cpp:138:onCheckingForAuthorization(): Called.[0m
+[20190715-151530] [37m[K(none) avsservice: [3095][  706.158185] ALW: avsservice-service: CBLAuthDelegate.cpp:751:requestToken(): Called.[0m
+[20190715-151530] [37m[K(none) avsservice: [3095][  706.427776] ALW: avsservice-service: CBLAuthDelegate.cpp:849:receiveTokenResponse(): Called.[0m
+[20190715-151531] 
+[20190715-151531] # 
+[20190715-151531] # [31m[K(none) HiAvsService: [2852][  707.723483] ERR: avsservice-service: hiAvsService.c:5387:checkhiAvsTokenValid(): token file not exist!!![0m
+[20190715-151532] log.on
+[20190715-151533] # 
