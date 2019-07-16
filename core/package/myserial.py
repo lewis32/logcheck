@@ -10,7 +10,7 @@ import serial
 class TVSerial():
     lineNo = 1
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
-    filename = 'serialLog-%s.log' % currentTime
+    filename = 'SerialLog-%s.log' % currentTime
     filepath = os.path.join(sys.path[0], 'serial_log', filename)
     if not os.path.exists(os.path.dirname(filepath)):
         os.mkdir(os.path.dirname(filepath))
@@ -61,27 +61,29 @@ class TVSerial():
         self.s.write(cmd.encode('utf-8'))
 
     #一直读串口打印
-    def alwayseReadSerial(self):
-        # self.logger.info('串口开始打印')
+    # def alwayseReadSerial(self):
+    #     while (self.read_flag):
+    #         value=self.s.readline().decode('utf-8',errors="ignore")
+    #         if(value == '' or value is None):
+    #             continue
+    #         self.f.write(value)
+    #         self.lineNo = self.lineNo + 1
+    #         self.f.flush()
+    #     if(not self.read_flag):
+    #         self.f.close()
 
-        while (self.read_flag):
+    def alwayseReadSerial(self):
+        while self.read_flag:
             value=self.s.readline().decode('utf-8',errors="ignore")
-            if(""==value or None==value):
+            if(value == '' or value is None):
                 continue
-            data ="["+time.strftime('%Y%m%d-%H%M%S', time.localtime())+"]"+" "+value
-            self.f.write(data)
-            self.lineNo=self.lineNo+1
-            # print(data)
-            self.f.flush()
-        if(not self.read_flag):
-            self.f.close()
+            yield value
 
     #开始打印
     def startReadSerial(self):
-        currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
-        # newFile=sys.path[0]+'/serialLog/' + currentTime + '.log' # Linux
-        newFile=sys.path[0]+'\\serial_log\\' + currentTime + '.log' # Windows
-        self.setLogPath(newFile)
+        # currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
+        # newFile = os.path.join(sys.path[0], 'serial_log', '%s.log' % currentTime)
+        self.setLogPath(self.filepath)
         self.read_flag = True
         t = threading.Thread(target=self.alwayseReadSerial)
         t.start()
