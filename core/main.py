@@ -4,11 +4,6 @@ import time
 import os
 
 def main():
-    lc = LogCheck()
-    # result = lc.check_log()
-    # serial = TVSerial('COM3')
-    # serial.sendComand('reboot')
-
     s = TVSerial(port='COM3',baudrate=115200, timeout=5)
     s.sendComand('\n\n')
     time.sleep(1)
@@ -16,24 +11,32 @@ def main():
     time.sleep(1)
     s.sendComand('tail -f /var/local/logservice/logfile/tmp*\n')
     s.startReadSerial()
-    with open(s.filepath) as f:
-        size = 0
-        # while True:
-        for i in range(10):
-            time.sleep(1)
-            new_size = os.path.getsize(s.filepath)
-            if size != new_size:
-                size = new_size
-                print(size)
-                block = s.s.readline().decode('utf-8', errors='ignore')
-                f.flush()
-                # block = f.readline()
-                print(block.__repr__())
-                if block != '' and block is not None:
-                    print(111111)
-                    print(block)
-                    # ret = lc.check_log()
-                    # print(ret)
+    lc = LogCheck(has_data=True)
+    # size = 0
+    # print(size)
+    LOOP = 20
+    count = 0
+    while True:
+        # new_size = os.path.getsize(s.filepath)
+        # if size != new_size:
+        #     size = new_size
+        #     print(size)
+        #     block = s.s.readline().decode('utf-8', errors='ignore')
+        #     print(block.__repr__())
+        #     if block != '' and block is not None:
+        #         print(111111)
+        #         print(block)
+        #         ret = lc.check_log(block)
+        #         print(ret)
+        if count == LOOP:
+            break
+        block = s.s.readline().decode('utf-8', errors='ignore')
+        if block != '' and block != '\n' and block is not None:
+            print(block.__repr__())
+            ret = lc.check_log(block)
+            print(type(ret))
+            time.sleep(0.01)
+            count += 1
     s.stopReadSerial()
     s.close()
 

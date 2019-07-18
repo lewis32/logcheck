@@ -16,23 +16,36 @@ class LogCheck():
     filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
-    def __init__(self):
-        pass
+    def __init__(self, has_data=False):
+        self.has_data = has_data
+        if has_data is False:
+            self._load_log()
+        self._load_policy()
 
-    def _load_log(self):
-        with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
-            loglist = []
-            text = f.read()
+    def _load_log(self, data=None):
+        if data is None:
+            with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
+                self.loglist = []
+                text = f.read()
+                pattern = re.compile(r'{.*?}')
+                for item in pattern.findall(text):
+                    item = json.loads(item)
+                    self.loglist.append(item)
+                return self.loglist
+        else:
+            self.loglist = []
             pattern = re.compile(r'{.*?}')
-            for item in pattern.findall(text):
-                item = json.loads(item)
-                loglist.append(item)
-            return loglist
+            for item in pattern.findall(data):
+                    item = json.loads(item)
+                    self.loglist.append(item)
+            print(self.loglist)
+            return self.loglist
+            
 
     def _load_policy(self):
-        conf = ConfigParser()
-        conf.read(os.path.join(self.filepath, 'conf', 'policy.ini'), encoding='utf-8')
-        return conf
+        self.conf = ConfigParser()
+        self.conf.read(os.path.join(self.filepath, 'conf', 'policy.ini'), encoding='utf-8')
+        return self.conf
 
     def _compare_keys(self, log, conf):
         mutual_key = []
@@ -114,10 +127,13 @@ class LogCheck():
     def _to_lower_key(self, key):
         return key.lower()
 
-    def check_log(self):
+    def check_log(self, data=None):
         try:
-            loglist = self._load_log()
-            conflist = self._load_policy()
+            if data is None:
+                loglist = self.loglist
+            else:
+                loglist = self._load_log(data)
+            conflist = self.conf        
         except Exception as e:
             print("Failed to load log or policy: ", e)
         else:
@@ -134,4 +150,9 @@ class LogCheck():
                 return results
 
 
-
+if __name__ == "__main__":
+    data = '{"Version":"2.0","EventCode":"200120","DeviceId":"86100300900000100000064198f7d3595a790ce4d3a4975aa6f8c601","Os":"Linux","CapabilityCode":"2019052401","Time":"1563332898","KeyName":"SUBTITLE","CountryCode":"DEU","Zone":"1","RemoteControlType":"EN3B39","ChipPlatform":"mstar6886","Brand":"his","DeviceMsg":"HE55A7000EUWTS"}'
+    lc = LogCheck(has_data=True)
+    lc.check_log(data)
+    lc.check_log(data)
+    lc.check_log(data)
