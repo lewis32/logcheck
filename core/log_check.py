@@ -38,7 +38,7 @@ class LogCheck():
             for item in pattern.findall(data):
                     item = json.loads(item)
                     self.loglist.append(item)
-            print(self.loglist)
+            # print(self.loglist)
             return self.loglist
             
 
@@ -112,7 +112,6 @@ class LogCheck():
                 result['invalid_key'] = dict(result['invalid_key'], **invalid_mutual_dict)
             if not (len(result['missing_key']) == 0 and len(result['undefined_key']) == 0 and len(result['invalid_key'])) == 0:
                 result['result'] = 1
-        print(result)
         return result
 
 
