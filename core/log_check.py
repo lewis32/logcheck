@@ -7,8 +7,8 @@ import json
 import sys
 import time
 import bisect
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'package'))
-from myconfigparser import MyConfigParser as ConfigParser
+# sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'package'))
+from package.myconfigparser import MyConfigParser as ConfigParser
 
 
 class LogCheck():
