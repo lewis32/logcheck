@@ -6,6 +6,7 @@ import re
 import json
 import sys
 import time
+import logging
 import bisect
 # sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'package'))
 from package.myconfigparser import MyConfigParser as ConfigParser
@@ -152,6 +153,5 @@ class LogCheck():
 if __name__ == "__main__":
     data = '{"Version":"2.0","EventCode":"200120","DeviceId":"86100300900000100000064198f7d3595a790ce4d3a4975aa6f8c601","Os":"Linux","CapabilityCode":"2019052401","Time":"1563332898","KeyName":"SUBTITLE","CountryCode":"DEU","Zone":"1","RemoteControlType":"EN3B39","ChipPlatform":"mstar6886","Brand":"his","DeviceMsg":"HE55A7000EUWTS"}'
     lc = LogCheck(has_data=True)
-    lc.check_log(data)
-    lc.check_log(data)
-    lc.check_log(data)
+    ret = lc.check_log(data)
+    print(json.dumps(ret, indent=4, ensure_ascii=False))
