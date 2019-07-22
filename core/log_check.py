@@ -9,7 +9,7 @@ import time
 import logging
 import bisect
 # sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'package'))
-from package.myconfigparser import MyConfigParser as ConfigParser
+from .package.myconfigparser import MyConfigParser as ConfigParser
 
 
 class LogCheck():

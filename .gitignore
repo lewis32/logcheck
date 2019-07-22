@@ -4,3 +4,6 @@
 result*.txt
 *.log
 .vscode/
+.idea/
+build/
+dist/
