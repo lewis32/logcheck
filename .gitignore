@@ -4,4 +4,8 @@
 result*.txt
 *.log
 .vscode/
+<<<<<<< HEAD
 .idea/
+build/
+dist/
+>>>>>>> 502000a8ab5c68d854571b42babe092f41c7d298
