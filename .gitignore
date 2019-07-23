@@ -1,9 +1,20 @@
+# workspace for IDE
 *.code-workspace
-*.py[cod]
 *.sublime-workspace
-result*.txt
-*.log
 .vscode/
 .idea/
+
+# compiled files
+*.py[cod]
+
+# pyqt5 files
+
+# pyinstaller dir
 build/
 dist/
+*.spec
+
+# output files
+result/
+result*.txt
+*.log

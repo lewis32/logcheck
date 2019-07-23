@@ -8,13 +8,13 @@ import sys
 import time
 import logging
 import bisect
-# sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'package'))
+# sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),'package'))
 from .package.myconfigparser import MyConfigParser as ConfigParser
 
 
 class LogCheck():
 
-    filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+    filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(sys.path[0])))))
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
     def __init__(self, has_data=False):
@@ -151,7 +151,7 @@ class LogCheck():
 
 
 if __name__ == "__main__":
-    data = '{"Version":"2.0","EventCode":"200120","DeviceId":"86100300900000100000064198f7d3595a790ce4d3a4975aa6f8c601","Os":"Linux","CapabilityCode":"2019052401","Time":"1563332898","KeyName":"SUBTITLE","CountryCode":"DEU","Zone":"1","RemoteControlType":"EN3B39","ChipPlatform":"mstar6886","Brand":"his","DeviceMsg":"HE55A7000EUWTS"}'
+    data = '{"Version":"2.0","EventCode":"200101","DeviceId":"86100300900000100000064198f7d3595a790ce4d3a4975aa6f8c601","Os":"Linux","CapabilityCode":"2019052401","Time":"1563332898","KeyName":"SUBTITLE","CountryCode":"DEU","Zone":"1","RemoteControlType":"EN3B39","ChipPlatform":"mstar6886","Brand":"his","DeviceMsg":"HE55A7000EUWTS"}'
     lc = LogCheck(has_data=True)
     ret = lc.check_log(data)
     print(json.dumps(ret, indent=4, ensure_ascii=False))

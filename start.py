@@ -15,6 +15,7 @@ def main():
     s.s.flushInput()
     s.s.flushOutput()
     lc = LogCheck(has_data=True)
+    print(lc.filepath)
     LOOP = 20
     count = 0
     while True:
