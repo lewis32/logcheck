@@ -16,21 +16,36 @@ class Ui_MainWindow(object):
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.tableView = QtWidgets.QTableView(self.centralwidget)
-        self.tableView.setGeometry(QtCore.QRect(50, 70, 691, 441))
-        self.tableView.setObjectName("tableView")
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(160, 10, 100, 40))
-        self.pushButton.setObjectName("pushButton")
-        self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(310, 10, 100, 40))
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_3.setGeometry(QtCore.QRect(420, 10, 100, 40))
-        self.pushButton_3.setObjectName("pushButton_3")
-        self.comboBox = QtWidgets.QComboBox(self.centralwidget)
-        self.comboBox.setGeometry(QtCore.QRect(50, 10, 100, 40))
+        self.gridFrame = QtWidgets.QFrame(self.centralwidget)
+        self.gridFrame.setGeometry(QtCore.QRect(39, 30, 721, 500))
+        self.gridFrame.setObjectName("gridFrame")
+        self.gridLayout = QtWidgets.QGridLayout(self.gridFrame)
+        self.gridLayout.setObjectName("gridLayout")
+        self.comboBox = QtWidgets.QComboBox(self.gridFrame)
         self.comboBox.setObjectName("comboBox")
+        self.gridLayout.addWidget(self.comboBox, 0, 0, 1, 1)
+        self.btn_refresh = QtWidgets.QPushButton(self.gridFrame)
+        self.btn_refresh.setObjectName("btn_refresh")
+        self.gridLayout.addWidget(self.btn_refresh, 0, 1, 1, 1)
+        self.btn_start = QtWidgets.QPushButton(self.gridFrame)
+        self.btn_start.setObjectName("btn_start")
+        self.gridLayout.addWidget(self.btn_start, 0, 2, 1, 1)
+        self.btn_stop = QtWidgets.QPushButton(self.gridFrame)
+        self.btn_stop.setObjectName("btn_stop")
+        self.gridLayout.addWidget(self.btn_stop, 0, 3, 1, 1)
+
+        # QTableView for result
+        self.model = QtGui.QStandardItemModel(2,2)
+        self.model.setHorizontalHeaderLabels(['原始数据','校验结果'])
+        for row in range(2):
+            for column in range(2):
+                i=QtGui.QStandardItem('row %s,column %s' % (row,column))
+                self.model.setItem(row,column,i)
+        self.tableView = QtWidgets.QTableView(self.gridFrame)
+        self.tableView.setObjectName("tableView")
+        self.tableView.setModel(self.model)
+        self.gridLayout.addWidget(self.tableView, 1, 0, 1, 4)
+        
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 23))
@@ -46,9 +61,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.pushButton.setText(_translate("MainWindow", "刷新"))
-        self.pushButton_2.setText(_translate("MainWindow", "开始对比"))
-        self.pushButton_3.setText(_translate("MainWindow", "结束对比"))
+        self.btn_refresh.setText(_translate("MainWindow", "刷新"))
+        self.btn_start.setText(_translate("MainWindow", "开始对比"))
+        self.btn_stop.setText(_translate("MainWindow", "结束对比"))
 
 
 if __name__ == "__main__":

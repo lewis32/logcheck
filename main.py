@@ -1,5 +1,5 @@
-from log_check import LogCheck
-from package.myserial import TVSerial
+from core.log_check import LogCheck
+from core.package.myserial import TVSerial
 import time
 import os
 import json
