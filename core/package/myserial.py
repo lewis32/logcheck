@@ -10,12 +10,11 @@ import serial
 class TVSerial():
     lineNo = 1
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
-    # filename = 'SerialLog-%s.log' % currentTime
-    # filepath = os.path.join(sys.path[0], 'serial_log', filename)
-    # filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'result', 'seriallog', filename)
-    # if not os.path.exists(os.path.dirname(filepath)):
-    #     os.mkdir(os.path.dirname(filepath))
-    # f = open(filepath, "w",encoding='utf-8')
+    filename = 'SerialLog-%s.log' % currentTime
+    filepath = os.path.join(os.path.dirname(sys.path[0]), 'result', 'serial_log', filename)
+    if not os.path.exists(os.path.dirname(filepath)):
+        os.mkdir(os.path.dirname(filepath))
+    f = open(filepath, "w",encoding='utf-8')
     read_flag=True
     isBreak = False
 
@@ -84,10 +83,12 @@ class TVSerial():
     def startReadSerial(self):
         # currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
         # newFile = os.path.join(sys.path[0], 'serial_log', '%s.log' % currentTime)
-        # self.setLogPath(self.filepath)
+        self.setLogPath(self.filepath)
         self.read_flag = True
         t = threading.Thread(target=self.alwayseReadSerial)
         t.start()
+        next(t)
+
         time.sleep(1)
 
     #停止打印
@@ -114,7 +115,7 @@ class TVSerial():
     def waitForString(self,keyWord,timeout):
         starttime = datetime.datetime.now()
         while True:
-            # print(str(timeout))
+            print(str(timeout))
             re = self.get_last_line(self.filepath,30)
             currenttime = datetime.datetime.now()
             interval = (currenttime - starttime).seconds

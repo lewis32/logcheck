@@ -6,47 +6,33 @@ import re
 import json
 import sys
 import time
-import logging
 import bisect
-# sys.path.append(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])),'package'))
-from .package.myconfigparser import MyConfigParser as ConfigParser
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'package'))
+from myconfigparser import MyConfigParser as ConfigParser
 
 
 class LogCheck():
 
-    filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(sys.path[0])))))
+    filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
-    def __init__(self, has_data=False):
-        self.has_data = has_data
-        if has_data is False:
-            self._load_log()
-        self._load_policy()
+    def __init__(self):
+        self.conflist = self._load_policy()
 
-    def _load_log(self, data=None):
-        if data is None:
-            with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
-                self.loglist = []
-                text = f.read()
-                pattern = re.compile(r'{.*?}')
-                for item in pattern.findall(text):
-                    item = json.loads(item)
-                    self.loglist.append(item)
-                return self.loglist
-        else:
-            self.loglist = []
+    def _load_log(self):
+        with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
+            loglist = []
+            text = f.read()
             pattern = re.compile(r'{.*?}')
-            for item in pattern.findall(data):
-                    item = json.loads(item)
-                    self.loglist.append(item)
-            # print(self.loglist)
-            return self.loglist
-            
+            for item in pattern.findall(text):
+                item = json.loads(item)
+                loglist.append(item)
+            return loglist
 
     def _load_policy(self):
-        self.conf = ConfigParser()
-        self.conf.read(os.path.join(self.filepath, 'conf', 'policy.ini'), encoding='utf-8')
-        return self.conf
+        conf = ConfigParser()
+        conf.read(os.path.join(self.filepath, 'conf', 'policy.ini'), encoding='utf-8')
+        return conf
 
     def _compare_keys(self, log, conf):
         mutual_key = []
@@ -113,6 +99,7 @@ class LogCheck():
                 result['invalid_key'] = dict(result['invalid_key'], **invalid_mutual_dict)
             if not (len(result['missing_key']) == 0 and len(result['undefined_key']) == 0 and len(result['invalid_key'])) == 0:
                 result['result'] = 1
+        print(result)
         return result
 
 
@@ -127,13 +114,9 @@ class LogCheck():
     def _to_lower_key(self, key):
         return key.lower()
 
-    def check_log(self, data=None):
+    def check_log(self):
         try:
-            if data is None:
-                loglist = self.loglist
-            else:
-                loglist = self._load_log(data)
-            conflist = self.conf        
+            loglist = self._load_log()
         except Exception as e:
             print("Failed to load log or policy: ", e)
         else:
@@ -144,7 +127,10 @@ class LogCheck():
             with open(output_path, 'w', encoding='utf-8') as f:
                 results = []
                 for log in loglist:
-                    ret = self._compare_log(log, conflist)
+                    ret = self._compare_log(log, self.conflist)
                     results.append(ret)
                 json.dump(results, f, indent=4)
                 return results
+
+
+
