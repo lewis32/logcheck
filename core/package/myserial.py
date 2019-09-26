@@ -11,7 +11,7 @@ class TVSerial():
     lineNo = 1
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
     filename = 'SerialLog-%s.log' % currentTime
-    filepath = os.path.join(os.path.dirname(sys.path[0]), 'result', 'serial_log', filename)
+    filepath = os.path.join(os.path.dirname(sys.path[0]), 'result', filename)
     if not os.path.exists(os.path.dirname(filepath)):
         os.mkdir(os.path.dirname(filepath))
     f = open(filepath, "w",encoding='utf-8')
