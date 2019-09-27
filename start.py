@@ -34,7 +34,7 @@ class new_mainwindow(QMainWindow, Ui_MainWindow):
                 time.sleep(0.01)
         
     def on_btn_stop_clicked(self):
-        self.flag = False
+        self.flag = False  
         self.s.stopReadSerial()
         self.s.close()
 
