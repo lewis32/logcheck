@@ -16,10 +16,12 @@ class logCheckUI(QWidget):
 
     def initUI(self):
         self.setWindowTitle('LogCheck')
-        self.resize(300,300)
+        self.resize(500,300)
 
-        layout = QVBoxLayout()
-        # self.label = QLabel('显示结果')
+        mainLayout = QVBoxLayout()
+        hboxLayout1 = QHBoxLayout()
+        hboxLayout2 = QHBoxLayout()
+
         self.comboBox = QComboBox()
         self.comboBox.setCurrentIndex(-1)
         self.flushBtn = QPushButton('刷新串口')
@@ -31,13 +33,14 @@ class logCheckUI(QWidget):
         self.startBtn.clicked.connect(lambda: self.startBtnClick(self.startBtn))
         self.stopBtn.clicked.connect(lambda: self.stopBtnClick(self.stopBtn))
 
-        # layout.addWidget(self.label)
-        layout.addWidget(self.comboBox)
-        layout.addWidget(self.flushBtn)
-        layout.addWidget(self.startBtn)
-        layout.addWidget(self.stopBtn)
+        hboxLayout1.addWidget(self.comboBox)
+        hboxLayout1.addWidget(self.flushBtn)
+        mainLayout.addLayout(hboxLayout1)
+        hboxLayout2.addWidget(self.startBtn)
+        hboxLayout2.addWidget(self.stopBtn)
+        mainLayout.addLayout(hboxLayout2)
 
-        self.setLayout(layout)
+        self.setLayout(mainLayout)
 
     def selectionChange(self,i):
         if self.comboBox.currentText():
@@ -47,7 +50,7 @@ class logCheckUI(QWidget):
     def flushBtnClick(self,btn):
         self.comboBox.clear()
         self.port_list = getPortList()
-        self.comboBox.addItem('请选择通信端口')
+        # self.comboBox.addItem('请选择通信端口')
         if self.port_list:
             for i in self.port_list:
                 self.comboBox.addItem(str(i))
