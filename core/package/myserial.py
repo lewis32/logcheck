@@ -6,6 +6,15 @@ import time
 import sys
 import os
 import serial
+from serial.tools import list_ports
+
+
+def getPortList():
+    port_list = list(list_ports.comports())
+    if len(port_list) == 0:
+        return
+    else:
+        return port_list
 
 class TVSerial():
     lineNo = 1
@@ -15,7 +24,7 @@ class TVSerial():
     if not os.path.exists(os.path.dirname(filepath)):
         os.mkdir(os.path.dirname(filepath))
     f = open(filepath, "w",encoding='utf-8')
-    read_flag=True
+    read_flag = True
     isBreak = False
 
     # def __new__(cls, *args, **kwargs):

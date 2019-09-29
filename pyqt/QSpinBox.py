@@ -25,7 +25,6 @@ class QSpinBoxDemo(QWidget):
 
     def valueChange(self):
         self.label.setText('当前值：' + str(self.sb.value()))
-        print()
 
 
 if __name__ == "__main__":

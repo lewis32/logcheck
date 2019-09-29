@@ -2,18 +2,58 @@ import time
 import os
 import json
 import sys
-from core.log_check import LogCheck
-from core.package.myserial import TVSerial
-from core.Ui_demo import Ui_MainWindow
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QDialog
+import re
+from core.log_check import *
+from core.package.myserial import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 
-class new_mainwindow(QMainWindow, Ui_MainWindow):
+class logCheckUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+        self.initUI()
 
-    def on_btn_start_clicked(self):
-        self.s = TVSerial(port='COM3',baudrate=115200, timeout=5)
+    def initUI(self):
+        self.setWindowTitle('LogCheck')
+        self.resize(300,300)
+
+        layout = QVBoxLayout()
+        # self.label = QLabel('显示结果')
+        self.comboBox = QComboBox()
+        self.comboBox.setCurrentIndex(-1)
+        self.flushBtn = QPushButton('刷新串口')
+        self.startBtn = QPushButton('开始')
+        self.stopBtn = QPushButton('结束')
+
+        self.comboBox.currentIndexChanged.connect(self.selectionChange)
+        self.flushBtn.clicked.connect(lambda: self.flushBtnClick(self.flushBtn))
+        self.startBtn.clicked.connect(lambda: self.startBtnClick(self.startBtn))
+        self.stopBtn.clicked.connect(lambda: self.stopBtnClick(self.stopBtn))
+
+        # layout.addWidget(self.label)
+        layout.addWidget(self.comboBox)
+        layout.addWidget(self.flushBtn)
+        layout.addWidget(self.startBtn)
+        layout.addWidget(self.stopBtn)
+
+        self.setLayout(layout)
+
+    def selectionChange(self,i):
+        if self.comboBox.currentText():
+            self.currentPort = re.findall(r'COM[0-9]+', self.comboBox.currentText())[0]
+        print('Current Port: %s' % self.currentPort)
+
+    def flushBtnClick(self,btn):
+        self.comboBox.clear()
+        self.port_list = getPortList()
+        self.comboBox.addItem('请选择通信端口')
+        if self.port_list:
+            for i in self.port_list:
+                self.comboBox.addItem(str(i))
+
+    def startBtnClick(self):
+        self.s = TVSerial(port=self.currentPort, baudrate=115200, timeout=5)
         self.s.sendComand('\n\n')
         time.sleep(1)
         self.s.sendComand('log.off\n')
@@ -33,13 +73,14 @@ class new_mainwindow(QMainWindow, Ui_MainWindow):
                 
                 time.sleep(0.01)
         
-    def on_btn_stop_clicked(self):
+    def stopBtnClick(self):
         self.flag = False  
         self.s.stopReadSerial()
         self.s.close()
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = new_mainwindow()
-    window.show()
+    main = logCheckUI()
+    main.show()
     sys.exit(app.exec_())
