@@ -16,6 +16,7 @@ def getPortList():
     else:
         return port_list
 
+
 class TVSerial():
     lineNo = 1
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
@@ -46,7 +47,7 @@ class TVSerial():
     def open(self):
         self.s.open()
 
-    def setBaudrate(self,newBaudrate):
+    def setBaudrate(self, newBaudrate):
         self.s.baudrate=newBaudrate
 
     def getBaudrate(self):
@@ -55,21 +56,21 @@ class TVSerial():
     def getPortname(self):
         return self.s.port
 
-    def setLogPath(self,newPath):
-        if (newPath=='') or (newPath==None):
+    def setLogPath(self, newPath):
+        if newPath == '' or newPath is None:
             # self.logger.error('newPath为空')
             return
         self.f.close()
         self.filename=newPath
-        self.f = open(self.filename, "w",encoding='utf-8')
+        self.f = open(self.filename, "w", encoding='utf-8')
 
-    def sendComand(self,cmd):
+    def sendComand(self, cmd):
         # self.logger.info('发送串口命令：'+cmd)
-        if(not(self.isOpen())):
+        if not(self.isOpen()):
             self.open()
         self.s.write(cmd.encode('utf-8'))
 
-    #一直读串口打印
+    # 一直读串口打印
     # def alwayseReadSerial(self):
     #     while (self.read_flag):
     #         value=self.s.readline().decode('utf-8',errors="ignore")
@@ -83,12 +84,12 @@ class TVSerial():
 
     def alwayseReadSerial(self):
         while self.read_flag:
-            value=self.s.readline().decode('utf-8',errors="ignore")
-            if(value == '' or value is None):
+            value=self.s.readline().decode('utf-8', errors="ignore")
+            if value == '' or value is None:
                 continue
             yield value
 
-    #开始打印
+    # 开始打印
     def startReadSerial(self):
         # currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
         # newFile = os.path.join(sys.path[0], 'serial_log', '%s.log' % currentTime)
@@ -96,21 +97,19 @@ class TVSerial():
         self.read_flag = True
         t = threading.Thread(target=self.alwayseReadSerial)
         t.start()
-        next(t)
-
         time.sleep(1)
 
-    #停止打印
+    # 停止打印
     def stopReadSerial(self):
         self.read_flag = False
 
-    def get_last_line(self,inputfile,num) :
+    def get_last_line(self, inputfile, num) :
         dat_file = open(inputfile, 'r',encoding='utf-8')
         lines = dat_file.readlines()
         count = len(lines)
-        if count<num:
-            num=count
-            i=1
+        if count < num:
+            num = count
+            i = 1
         lastre = []
         for i in range(1,(num+1)):
             if lines:
@@ -120,30 +119,31 @@ class TVSerial():
                 lastre.append(last_line)
         return lastre
 
-    #过滤文件最后几行是否存在某字符串
-    def waitForString(self,keyWord,timeout):
+    # 过滤文件最后几行是否存在某字符串
+    def waitForString(self, keyWord, timeout):
         starttime = datetime.datetime.now()
         while True:
             print(str(timeout))
-            re = self.get_last_line(self.filepath,30)
+            re = self.get_last_line(self.filepath, 30)
             currenttime = datetime.datetime.now()
             interval = (currenttime - starttime).seconds
             # print("interval=="+str(interval))
             if interval > timeout:
                 return ""
             for n in re:
-                if n.find(keyWord)>=0:
-                    print(('pass',n))
+                if n.find(keyWord) >= 0:
+                    print(('pass', n))
                     return n
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     s = TVSerial('COM3')
     s.startReadSerial()
     s.sendComand("\n\n")
     time.sleep(1)
 
     s.sendComand("reboot \n")
-    s.waitForString( "Starting kernel",5)
+    s.waitForString("Starting kernel", 5)
 
     s.stopReadSerial()
     s.close()
