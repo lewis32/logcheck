@@ -17,7 +17,7 @@ logText = 'This is default string'
 
 class WorkThread(QThread):
     add = pyqtSignal()
-    terminal = pyqtSignal()
+    terminal = pyqtSignal(object)
 
     def run(self):
         print('test begin')
@@ -27,13 +27,14 @@ class WorkThread(QThread):
         try:
             self.serial = TVSerial(port=currentPort, baudrate=115200, timeout=5)
         except Exception as e:
-            self.terminal.emit()
-            print(e)
+            self.terminal.emit(e)
         else:
             self.serial.sendComand('\n\nlog.off\n')
             self.sleep(1)
             self.serial.sendComand('tail -f /var/local/logservice/logfile/tmp*\n')
             self.serial.startReadSerial()
+            global isStarted
+            isStarted = True
             self.serial.s.flushInput()
             self.serial.s.flushOutput()
             while True:
@@ -60,7 +61,7 @@ class LogCheckUI(QWidget):
 
     def initUI(self):
         self.setWindowTitle('LogCheck')
-        self.resize(500,300)
+        self.resize(500, 300)
 
         mainLayout = QVBoxLayout()
         hboxLayout1 = QHBoxLayout()
@@ -114,14 +115,20 @@ class LogCheckUI(QWidget):
         self.comboBox.setCurrentIndex(-1)
 
     def startBtnClick(self, btn):
+        global currentPort
+        if not currentPort:
+            QMessageBox.information(self, '提示', '请选择当前端口', QMessageBox.Ok)
+            return
         self.table.clearContents()
         self.workThread.start()
-        global isStarted
-        isStarted = True
+        # global isStarted
+        # isStarted = True
         print('startBtnClick: row is %s' % self.row)
         
     def stopBtnClick(self, btn):
         global isStarted
+        if not isStarted:
+            return
         isStarted = False
         self.row = -1
         self.workThread.serial.stopReadSerial()
@@ -135,9 +142,8 @@ class LogCheckUI(QWidget):
         self.row += 1
         print('addText: row is %s' % self.row)
 
-    def terminalText(self):
-        print('test terminalText')
-        QMessageBox.information(self, '消息', '结束', QMessageBox.Ok)
+    def terminalText(self, e):
+        QMessageBox.information(self, '提示', '连接结束！\n%s' % str(e), QMessageBox.Ok)
 
 
 if __name__ == "__main__":
