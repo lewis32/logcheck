@@ -1,3 +1,5 @@
+# pylint: disable-msg=invalid-name,global-statement
+
 import time
 import os
 import json
@@ -16,12 +18,13 @@ logText = 'This is default string'
 
 
 class WorkThread(QThread):
-    add = pyqtSignal()
+    ''' child thread '''
+    add = pyqtSignal(dict)
     terminal = pyqtSignal(object)
 
     def run(self):
-        print('test begin')
         global portList, currentPort, isStarted
+
         if not portList or not currentPort:
             return
         try:
@@ -33,33 +36,43 @@ class WorkThread(QThread):
             self.sleep(1)
             self.serial.sendComand('tail -f /var/local/logservice/logfile/tmp*\n')
             self.serial.startReadSerial()
-            global isStarted
             isStarted = True
             self.serial.s.flushInput()
             self.serial.s.flushOutput()
+            
+            self.lc = LogCheck()
             while True:
                 if not isStarted:
-                    self.terminal.emit()
+                    self.terminal.emit('正常结束！')
                     break
                 # self.sleep(1)
                 block = self.serial.s.readline().decode('utf-8', errors='ignore')
                 if block and block != '\n':
-                    ret = lc.check_log(block)
+                    ret = self.lc.check_log(block)
                     ret = json.dumps(ret, ensure_ascii=False, indent=4)
-                    global logText
-                    logText = str(ret)
-                    self.add.emit()
+                    self.add.emit(ret)
                     print('test11111111111111111')
                 # self.add.emit()
+                newDict = {
+                    'src_event_code': 100000,
+                    'event_code': 100001,
+                    'missing_key': ['xxxxxx', 'yyyyyy'],
+                    'undefined_key': {'xxxx': 'testing'},
+                    'invalid_key': {'yyyyy': 'testing'},
+                    'result': 0
+                    }
+                self.add.emit(newDict)
                 print('test000000000000')
 
 
 class LogCheckUI(QWidget):
+    ''' UI main thread '''
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
+        '''initiates application UI'''
         self.setWindowTitle('LogCheck')
         self.resize(500, 300)
 
@@ -71,11 +84,11 @@ class LogCheckUI(QWidget):
         self.comboBox.setCurrentIndex(-1)
         self.flushBtn = QPushButton('刷新串口')
 
-        self.table = QTableWidget(20, 4)
-        self.table.setHorizontalHeaderLabels(['srceventcode', 'eventcode', '是否通过', '详细信息'])
+        self.table = QTableWidget(1, 6)
+        self.table.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '是否通过', '缺少字段', '错误字段', '多余字段'])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.row = 0
+        # self.row = 0
 
         self.startBtn = QPushButton('开始')
         self.stopBtn = QPushButton('结束')
@@ -100,14 +113,16 @@ class LogCheckUI(QWidget):
         self.setLayout(mainLayout)
 
     def selectionChange(self, i):
+        global currentPort
+
         if self.comboBox.currentText():
-            global currentPort
             currentPort = re.findall(r'COM[0-9]+', self.comboBox.currentText())[0]
         print('Current Port: %s' % currentPort)
-
+ 
     def flushBtnClick(self, btn):
-        self.comboBox.clear()
         global portList
+
+        self.comboBox.clear()
         portList = getPortList()
         if portList:
             for i in portList:
@@ -115,35 +130,45 @@ class LogCheckUI(QWidget):
         self.comboBox.setCurrentIndex(-1)
 
     def startBtnClick(self, btn):
-        global currentPort
+        global currentPort, isStarted
+
         if not currentPort:
             QMessageBox.information(self, '提示', '请选择当前端口', QMessageBox.Ok)
             return
         self.table.clearContents()
+        self.row = 0
+        self.table.setRowCount(self.row + 1)
         self.workThread.start()
-        # global isStarted
-        # isStarted = True
+        isStarted = True
         print('startBtnClick: row is %s' % self.row)
         
     def stopBtnClick(self, btn):
         global isStarted
+
         if not isStarted:
             return
         isStarted = False
-        self.row = -1
+        # self.row = -1
         self.workThread.serial.stopReadSerial()
         self.workThread.serial.close()
         print('stopBtnClick: row is %s' % self.row)
 
-    def addText(self):
+    def addText(self, result):
+        '''add check result'''
         print('test addText')
-        global logText
-        self.table.setItem(self.row, 0, QTableWidgetItem(logText))
+        self.table.setItem(self.row, 0, QTableWidgetItem(str(self.row) + str(result['src_event_code'])))
+        self.table.setItem(self.row, 1, QTableWidgetItem(str(result['event_code'])))
+        self.table.setItem(self.row, 2, QTableWidgetItem('不通过' if result['result'] else '通过'))
+        self.table.setItem(self.row, 3, QTableWidgetItem(str(result['missing_key'])))
+        self.table.setItem(self.row, 4, QTableWidgetItem(str(result['invalid_key'])))
+        self.table.setItem(self.row, 5, QTableWidgetItem(str(result['undefined_key'])))
         self.row += 1
+        self.table.setRowCount(self.row + 1)
         print('addText: row is %s' % self.row)
 
-    def terminalText(self, e):
-        QMessageBox.information(self, '提示', '连接结束！\n%s' % str(e), QMessageBox.Ok)
+    def terminalText(self, text):
+        '''pause check'''
+        QMessageBox.information(self, '提示', str(text), QMessageBox.Ok)
 
 
 if __name__ == "__main__":
