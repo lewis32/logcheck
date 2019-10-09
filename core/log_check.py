@@ -7,7 +7,7 @@ import json
 import sys
 import time
 import bisect
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)),'package'))
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'package'))
 from myconfigparser import MyConfigParser as ConfigParser
 
 
@@ -20,6 +20,10 @@ class LogCheck():
         self.conflist = self._load_policy()
 
     def _load_log(self):
+        """
+        load log file
+        """
+
         with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
             loglist = []
             text = f.read()
@@ -30,11 +34,23 @@ class LogCheck():
             return loglist
 
     def _load_policy(self):
+        """
+        load policy file
+        :return:
+        """
+
         conf = ConfigParser()
         conf.read(os.path.join(self.filepath, 'conf', 'policy.ini'), encoding='utf-8')
         return conf
 
     def _compare_keys(self, log, conf):
+        """
+        find mutual keys, extra keys and missing keys in log
+        :param log:
+        :param conf:
+        :return:
+        """
+
         mutual_key = []
         mutual_key_lower = []
         log = [i for i in log]
@@ -52,7 +68,13 @@ class LogCheck():
         return mutual_key, log_key, conf_key
 
     def _compare_log(self, log, conflist):
-        result = {
+        """
+        check log value with the pattern in policy file
+        :param log:
+        :param conflist:
+        :return:
+        """
+        res = {
                     'src_event_code': None,
                     'event_code': None,
                     'missing_key': [],
@@ -60,54 +82,72 @@ class LogCheck():
                     'invalid_key': {},
                     'result': 0
                     }
+
         count = len(log)
         n = 1
-        for key in log:
-            if self._to_lower_key(key) != 'eventcode' and n < count:
-                n += 1
-                continue
-            elif self._to_lower_key(key) != 'eventcode' and n == count:
-                result['missing_key'].append('eventcode')
-                break
-            else:
-                try:
-                    conf = dict(conflist.items(log[key]) + conflist.items('common'))
-                except Exception as e:
-                    print("Failed to combine common keys with event keys : ", e)
-                    invalid_mutual_dict = {}
-                    break
-                else:
-                    result['event_code'] = log[key]
-                    for i in conf:
-                        conf[self._to_lower_key(i)] = conf.pop(i)
-                    mutual_key,log_key,conf_key = self._compare_keys(log,conf)
-                    if len(log_key) != 0:
-                        for k in log_key:
-                            result['undefined_key'][k] = log[k]
-                    if len(conf_key) != 0:
-                        for k in conf_key:
-                            result['missing_key'].append(k)
-                    mutual_dict = {}
-                    invalid_mutual_dict = {}
-                    for i in mutual_key:
-                        mutual_dict[i] = conf[self._to_lower_key(i)]
-                        if not re.match(eval(mutual_dict[i]), str(log[i])):
-                            invalid_mutual_dict[i] = log[i]
-                    if self._compare_timestamp(log) == 1:
-                        result['invalid_key']['StartTime'] = 'EndTime'
-            if len(invalid_mutual_dict) > 0:
-                result['invalid_key'] = dict(result['invalid_key'], **invalid_mutual_dict)
-            if not (len(result['missing_key']) == 0 and len(result['undefined_key']) == 0 and len(result['invalid_key'])) == 0:
-                result['result'] = 1
-        print(result)
-        return result
+        weight = 0
 
+        for key in log:
+            lower_key = self._to_lower_key(key)
+            if lower_key == 'eventcode':
+                event_code = key
+                weight += 1
+
+            if lower_key == 'srceventcode':
+                src_event_code = key
+                weight += 2
+
+        if weight != 1 or weight != 3:
+            res['missing_key'].append('eventcode')
+            res['result'] = 1
+            return res
+
+        try:
+            title = src_event_code + event_code
+
+            conf = dict(conflist.items(log[event_code]) + conflist.items('common'))
+        except Exception as e:
+            print("Failed to combine common keys with event keys : ", e)
+            invalid_mutual_dict = {}
+        else:
+            res['event_code'] = log[event_code]
+            for i in conf:
+                conf[self._to_lower_key(i)] = conf.pop(i)
+            mutual_key,log_key,conf_key = self._compare_keys(log,conf)
+            if len(log_key) != 0:
+                for k in log_key:
+                    res['undefined_key'][k] = log[k]
+            if len(conf_key) != 0:
+                for k in conf_key:
+                    res['missing_key'].append(k)
+
+            mutual_dict = {}
+            invalid_mutual_dict = {}
+            for i in mutual_key:
+                mutual_dict[i] = conf[self._to_lower_key(i)]
+                if not re.match(eval(mutual_dict[i]), str(log[i])):
+                    invalid_mutual_dict[i] = log[i]
+            if self._compare_timestamp(log) == 1:
+                res['invalid_key']['StartTime'] = 'EndTime'
+            if len(invalid_mutual_dict) > 0:
+                res['invalid_key'] = dict(res['invalid_key'], **invalid_mutual_dict)
+            if not (len(res['missing_key']) == 0 and len(res['undefined_key']) == 0 and len(res['invalid_key'])) == 0:
+                res['result'] = 1
+        print(res)
+        return res
 
     def _compare_timestamp(self, log):
+        """
+        only for the key timestamp
+        :param log:
+        :return:
+        """
         st, et = 1, 2
+
         for key in log:
             if self._to_lower_key(key) == 'starttime':st = log[key]
             if self._to_lower_key(key) == 'endtime':et = log[key]
+
         if et != '0' and st >= et:
             return 1
 
@@ -115,21 +155,31 @@ class LogCheck():
         return key.lower()
 
     def check_log(self):
+        """
+        main func
+        :return: log data and check result
+        """
         try:
             loglist = self._load_log()
+
         except Exception as e:
-            print("Failed to load log or policy: ", e)
+            print("Failed to load log: ", e)
+
         else:
             output_name = 'result-%s.txt' % self.stime
+
             if not os.path.exists(os.path.join(self.filepath, 'result')):
                 os.mkdir(os.path.join(self.filepath, 'result'))
             output_path = os.path.join(self.filepath, 'result', output_name)
+
             with open(output_path, 'w', encoding='utf-8') as f:
                 results = []
+
                 for log in loglist:
                     ret = self._compare_log(log, self.conflist)
                     results.append(ret)
                 json.dump(results, f, indent=4)
+
                 return results
 
 
