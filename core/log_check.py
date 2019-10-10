@@ -19,9 +19,9 @@ class LogCheck():
     def __init__(self):
         self.conflist = self._load_policy()
 
-    def _load_log(self):
+    def load_log(self):
         """
-        load log file
+        to be deleted
         """
 
         with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
@@ -53,18 +53,22 @@ class LogCheck():
 
         mutual_key = []
         mutual_key_lower = []
+
         log = [i for i in log]
         conf = [i for i in conf]
         conf.sort()
+
         for i in log:
             pos = bisect.bisect_left(conf, self._to_lower_key(i))
             if pos < len(conf) and conf[pos] == self._to_lower_key(i):
                 mutual_key.append(i)
                 mutual_key_lower.append(self._to_lower_key(i))
+
         mutual_key = list(set(mutual_key))
         mutual_key_lower = list(set(mutual_key_lower))
         log_key = list(set(log).difference(set(mutual_key)))
         conf_key = list(set(conf).difference(set(mutual_key_lower)))
+
         return mutual_key, log_key, conf_key
 
     def _compare_log(self, log, conflist):
@@ -83,43 +87,43 @@ class LogCheck():
                     'result': 0
                     }
 
-        count = len(log)
-        n = 1
-        weight = 0
+        # count = len(log)
+        # n = 1
+        title = ['null', 'null', 'null']
 
         for key in log:
             lower_key = self._to_lower_key(key)
-            if lower_key == 'eventcode':
-                event_code = key
-                weight += 1
-
             if lower_key == 'srceventcode':
-                src_event_code = key
-                weight += 2
+                title[0] = log[key]
+                res['src_event_code'] = log[key]
 
-        if weight != 1 or weight != 3:
-            res['missing_key'].append('eventcode')
-            res['result'] = 1
-            return res
+            if lower_key == 'eventcode':
+                title[1] = log[key]
+                res['event_code'] = log[key]
+
+            if lower_key == 'version':
+                title[2] = log[key]
+                res['version'] = log[key]
 
         try:
-            title = src_event_code + event_code
+            conf = dict(conflist.items('_'.join(title)) + conflist.items('common'))
 
-            conf = dict(conflist.items(log[event_code]) + conflist.items('common'))
         except Exception as e:
+            res['result'] = 1
             print("Failed to combine common keys with event keys : ", e)
-            invalid_mutual_dict = {}
+
         else:
-            res['event_code'] = log[event_code]
-            for i in conf:
-                conf[self._to_lower_key(i)] = conf.pop(i)
-            mutual_key,log_key,conf_key = self._compare_keys(log,conf)
-            if len(log_key) != 0:
-                for k in log_key:
-                    res['undefined_key'][k] = log[k]
-            if len(conf_key) != 0:
-                for k in conf_key:
-                    res['missing_key'].append(k)
+            # for i in conf:
+            #     conf[self._to_lower_key(i)] = conf.pop(i)
+
+            mutual_key, log_key, conf_key = self._compare_keys(log, conf)
+            if len(log_key):
+                for key in log_key:
+                    res['undefined_key'][key] = log[key]
+
+            if len(conf_key):
+                for key in conf_key:
+                    res['missing_key'].append(key)
 
             mutual_dict = {}
             invalid_mutual_dict = {}
@@ -127,60 +131,57 @@ class LogCheck():
                 mutual_dict[i] = conf[self._to_lower_key(i)]
                 if not re.match(eval(mutual_dict[i]), str(log[i])):
                     invalid_mutual_dict[i] = log[i]
-            if self._compare_timestamp(log) == 1:
-                res['invalid_key']['StartTime'] = 'EndTime'
-            if len(invalid_mutual_dict) > 0:
+
+            if len(invalid_mutual_dict):
                 res['invalid_key'] = dict(res['invalid_key'], **invalid_mutual_dict)
-            if not (len(res['missing_key']) == 0 and len(res['undefined_key']) == 0 and len(res['invalid_key'])) == 0:
+
+            if len(res['missing_key']) or len(res['undefined_key']) or len(res['invalid_key']):
                 res['result'] = 1
-        print(res)
-        return res
 
-    def _compare_timestamp(self, log):
-        """
-        only for the key timestamp
-        :param log:
-        :return:
-        """
-        st, et = 1, 2
+        finally:
+            return res
 
-        for key in log:
-            if self._to_lower_key(key) == 'starttime':st = log[key]
-            if self._to_lower_key(key) == 'endtime':et = log[key]
-
-        if et != '0' and st >= et:
-            return 1
+    # def _compare_timestamp(self, log):
+    #     """
+    #     only for the key timestamp
+    #     :param log:
+    #     :return:
+    #     """
+    #     st, et = 1, 2
+    #
+    #     for key in log:
+    #         if self._to_lower_key(key) == 'starttime': st = log[key]
+    #         if self._to_lower_key(key) == 'endtime': et = log[key]
+    #
+    #     if et != '0' and st >= et:
+    #         return 1
 
     def _to_lower_key(self, key):
         return key.lower()
 
-    def check_log(self):
+    def check_log(self, data=None):
         """
         main func
         :return: log data and check result
         """
-        try:
-            loglist = self._load_log()
+        if not data:
+            return
 
-        except Exception as e:
-            print("Failed to load log: ", e)
+        output_name = 'result-%s.txt' % self.stime
 
-        else:
-            output_name = 'result-%s.txt' % self.stime
+        if not os.path.exists(os.path.join(self.filepath, 'result')):
+            os.mkdir(os.path.join(self.filepath, 'result'))
+        output_path = os.path.join(self.filepath, 'result', output_name)
 
-            if not os.path.exists(os.path.join(self.filepath, 'result')):
-                os.mkdir(os.path.join(self.filepath, 'result'))
-            output_path = os.path.join(self.filepath, 'result', output_name)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            results = []
 
-            with open(output_path, 'w', encoding='utf-8') as f:
-                results = []
+            for log in data:
+                ret = self._compare_log(log, self.conflist)
+                results.append(ret)
+            json.dump(results, f, indent=4)
 
-                for log in loglist:
-                    ret = self._compare_log(log, self.conflist)
-                    results.append(ret)
-                json.dump(results, f, indent=4)
-
-                return results
+            return results
 
 
 

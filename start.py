@@ -31,10 +31,13 @@ class WorkThread(QThread):
 
         if not portList or not currentPort:
             return
+
         try:
             self.serial = TVSerial(port=currentPort, baudrate=115200, timeout=5)
+
         except Exception as e:
             self.terminal.emit(e)
+
         else:
             self.serial.sendComand('\n\nlog.off\n')
             self.sleep(1)
@@ -49,34 +52,17 @@ class WorkThread(QThread):
                 if not isStarted:
                     self.terminal.emit('正常结束！')
                     break
-                # self.sleep(1)
                 block = self.serial.s.readline().decode('utf-8', errors='ignore')
-                if block and block != '\n':
-                    ret = self.lc.check_log(block)
-                    ret = json.dumps(ret, ensure_ascii=False, indent=4)
-                    self.add.emit(ret)
+                if block and block.strip():
+                    res = self.lc.check_log(block)
+                    self.add.emit(block, res)
                     print('test11111111111111111')
-                # self.add.emit()
-                newDict = [
-                    {
-                        'src_event_code': 100000,
-                        'event_code': 100001,
-                        'missing_key': ['xxxxxx', 'yyyyyy'],
-                        'invalid_key': {'yyyyy': 'testing'},
-                        'undefined_key': {'xxxx': 'testing'},
-                        'result': 0
-                    },
-                    {
-                        'src_event_code': None,
-                        'event_code': None,
-                        'missing_key': ['xxxxxx', 'yyyyyy'],
-                        'invalid_key': {'yyyyy': 'testing'},
-                        'undefined_key': {'xxxx': 'testing'},
-                        'result': 1
-                    }
-                ]
-                self.add.emit(newDict, newDict)
-                print('test000000000000')
+
+                # 测试代码
+                # data = self.lc.load_log()
+                # res = self.lc.check_log(data)
+                # self.add.emit(data, res)
+                # print('test000000000000')
 
 
 class LogCheckUI(QWidget):

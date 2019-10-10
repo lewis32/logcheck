@@ -5,7 +5,7 @@ import os
 import json
 
 def main():
-    s = TVSerial(port='COM3',baudrate=115200, timeout=5)
+    s = TVSerial(port='COM3', baudrate=115200, timeout=5)
     s.sendComand('\n\n')
     time.sleep(1)
     s.sendComand('log.off\n')
