@@ -5,7 +5,7 @@ import os
 import json
 import sys
 import re
-import collections
+import qdarkstyle
 from core.log_check import *
 from core.package.myserial import *
 from PyQt5.QtWidgets import *
@@ -78,21 +78,30 @@ class LogCheckUI(QWidget):
         """initiates application UI"""
         self.setWindowTitle('LogCheck')
         self.resize(900, 450)
+        self.setContentsMargins(10, 10, 10, 10)
 
         mainLayout = QVBoxLayout()
         hboxLayoutHead = QHBoxLayout()
+        hboxLayoutHead.setObjectName('hboxLayoutHead')
         hboxLayoutFooter = QHBoxLayout()
+        hboxLayoutFooter.setObjectName('hboxLayoutFooter')
         hboxLayoutBody = QHBoxLayout()
+        hboxLayoutBody.setObjectName('hboxLayoutBody')
 
-        self.comboBox = QComboBox()
-        self.comboBox.setCurrentIndex(-1)
-        self.flushBtn = QPushButton('刷新串口')
-
-        self.table = QTableWidget(1, 5)
         font = QFont()
         font.setPointSize(10)
+        font.setFamily("Microsoft YaHei UI")
+        self.comboBox = QComboBox()
+        self.setFont(font)
+        self.comboBox.setCurrentIndex(-1)
+        self.flushBtn = QPushButton('刷新端口')
+        self.flushBtn.setFont(font)
+        self.flushBtn.setContentsMargins(20, 0, 0, 0)
+
+        self.table = QTableWidget(1, 5)
+        self.table.setToolTip('点击查看原始数据和详细结果')
         self.table.setFont(font)
-        self.table.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '是否通过', '原始数据', '结果详情'])
+        self.table.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '验证结果', '日志数据', '结果详情'])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setColumnHidden(3, True)
@@ -101,24 +110,27 @@ class LogCheckUI(QWidget):
 
         self.textEditData = QTextEdit()
         self.textEditData.setReadOnly(True)
-        self.textEditData.setFontPointSize(10)
+        self.textEditData.setToolTip('原始数据')
         self.textEditRes = QTextEdit()
         self.textEditRes.setReadOnly(True)
-        self.textEditRes.setFontPointSize(10)
+        self.textEditRes.setToolTip('详细结果')
+        self.textEditInput = QTextEdit()
+        self.textEditInput.setObjectName('textEditInput')
+        self.textEditInput.setContentsMargins(20, 20, 20, 20)
 
         self.startBtn = QPushButton('开始')
-        self.stopBtn = QPushButton('结束')
+        self.startBtn.setFont(font)
+        self.stopBtn = QPushButton('停止')
+        self.stopBtn.setFont(font)
         self.workThread = WorkThread()
 
         self.comboBox.currentIndexChanged.connect(self.selectionChange)
         self.flushBtn.clicked.connect(lambda: self.flushBtnClick(self.flushBtn))
-        # self.startBtn.clicked.connect(lambda: self.startBtnClick(self.startBtn))
-        self.stopBtn.clicked.connect(lambda: self.stopBtnClick(self.stopBtn))
-        # self.table.itemClicked.connect(self.itemClick)
         self.table.cellClicked.connect(self.itemClick)
         self.workThread.add.connect(self.addText)
         self.workThread.terminal.connect(self.terminalText)
         self.startBtn.clicked.connect(self.startBtnClick)
+        self.stopBtn.clicked.connect(lambda: self.stopBtnClick(self.stopBtn))
 
         hboxLayoutHead.addWidget(self.comboBox)
         hboxLayoutHead.addWidget(self.flushBtn)
@@ -127,6 +139,7 @@ class LogCheckUI(QWidget):
         hboxLayoutBody.addWidget(self.textEditData)
         hboxLayoutBody.addWidget(self.textEditRes)
         mainLayout.addLayout(hboxLayoutBody)
+        mainLayout.addWidget(self.textEditInput)
         hboxLayoutFooter.addWidget(self.startBtn)
         hboxLayoutFooter.addWidget(self.stopBtn)
         mainLayout.addLayout(hboxLayoutFooter)
@@ -200,18 +213,22 @@ class LogCheckUI(QWidget):
 
     def itemClick(self, row):
         """
-        click item and display detail info"""
+        click item and display detail info
+        """
         if self.table.item(row, 3) and self.table.item(row, 4):
             self.textEditRes.setText(self.table.item(row, 4).text())
             self.textEditData.setText(self.table.item(row, 3).text())
 
     def terminalText(self, text):
-        """pause check"""
+        """
+        pause check
+        """
         QMessageBox.information(self, '提示', str(text), QMessageBox.Ok)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = LogCheckUI()
+    # main.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     main.show()
     sys.exit(app.exec_())
