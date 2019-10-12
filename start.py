@@ -1,6 +1,5 @@
 # pylint: disable-msg=invalid-name,global-statement
 
-import time
 import os
 import json
 import sys
@@ -15,7 +14,7 @@ from PyQt5.QtGui import *
 isStarted = False
 portList = []
 currentPort = None
-# logText = 'This is default string'
+cmd = ''
 
 
 class WorkThread(QThread):
@@ -39,9 +38,11 @@ class WorkThread(QThread):
             self.terminal.emit(e)
 
         else:
-            self.serial.sendComand('\n\nlog.off\n')
-            self.sleep(1)
-            self.serial.sendComand('tail -f /var/local/logservice/logfile/tmp*\n')
+            # self.serial.sendComand('\n\nlog.off\n')
+            # self.sleep(1)
+            # self.serial.sendComand('tail -f /var/local/logservice/logfile/tmp*\n')
+            self.serial.sendComand(cmd)
+
             self.serial.startReadSerial()
             isStarted = True
             self.serial.s.flushInput()
@@ -59,10 +60,10 @@ class WorkThread(QThread):
                     print('test11111111111111111')
 
                 # 测试代码
-                # data = self.lc.load_log()
-                # res = self.lc.check_log(data)
-                # self.add.emit(data, res)
-                # print('test000000000000')
+                data = self.lc.load_log()
+                res = self.lc.check_log(data)
+                self.add.emit(data, res)
+                print('test000000000000')
 
 
 class LogCheckUI(QWidget):
@@ -75,13 +76,17 @@ class LogCheckUI(QWidget):
         self.initUI()
 
     def initUI(self):
-        """initiates application UI"""
+        """
+        initiate app UI
+        :return: None
+        """
         self.setWindowTitle('LogCheck')
         self.resize(900, 450)
-        self.setContentsMargins(10, 10, 10, 10)
+        # self.setContentsMargins(10, 10, 10, 10)
 
         mainLayout = QVBoxLayout()
         hboxLayoutHead = QHBoxLayout()
+        hboxLayoutHead.setContentsMargins(0, 0, 590, 0)
         hboxLayoutHead.setObjectName('hboxLayoutHead')
         hboxLayoutFooter = QHBoxLayout()
         hboxLayoutFooter.setObjectName('hboxLayoutFooter')
@@ -95,6 +100,7 @@ class LogCheckUI(QWidget):
         self.setFont(font)
         self.comboBox.setCurrentIndex(-1)
         self.flushBtn = QPushButton('刷新端口')
+        self.flushBtn.setObjectName('flushBtn')
         self.flushBtn.setFont(font)
         self.flushBtn.setContentsMargins(20, 0, 0, 0)
 
@@ -116,9 +122,9 @@ class LogCheckUI(QWidget):
         self.textEditRes.setToolTip('详细结果')
         self.textEditInput = QTextEdit()
         self.textEditInput.setObjectName('textEditInput')
-        self.textEditInput.setContentsMargins(20, 20, 20, 20)
 
         self.startBtn = QPushButton('开始')
+        self.startBtn.setObjectName('startBtn')
         self.startBtn.setFont(font)
         self.stopBtn = QPushButton('停止')
         self.stopBtn.setFont(font)
@@ -126,6 +132,7 @@ class LogCheckUI(QWidget):
 
         self.comboBox.currentIndexChanged.connect(self.selectionChange)
         self.flushBtn.clicked.connect(lambda: self.flushBtnClick(self.flushBtn))
+        self.textEditInput.textChanged.connect(lambda: self.cmdChange(self.textEditInput))
         self.table.cellClicked.connect(self.itemClick)
         self.workThread.add.connect(self.addText)
         self.workThread.terminal.connect(self.terminalText)
@@ -134,6 +141,8 @@ class LogCheckUI(QWidget):
 
         hboxLayoutHead.addWidget(self.comboBox)
         hboxLayoutHead.addWidget(self.flushBtn)
+        hboxLayoutHead.setStretchFactor(self.comboBox, 2)
+        hboxLayoutHead.setStretchFactor(self.flushBtn, 1)
         mainLayout.addLayout(hboxLayoutHead)
         hboxLayoutBody.addWidget(self.table)
         hboxLayoutBody.addWidget(self.textEditData)
@@ -147,13 +156,32 @@ class LogCheckUI(QWidget):
         self.setLayout(mainLayout)
 
     def selectionChange(self, i):
+        """
+        select port and save its value
+        :param i: object
+        :return: None
+        """
         global currentPort
-
+        print(self.comboBox.currentText())
         if self.comboBox.currentText():
             currentPort = re.findall(r'COM[0-9]+', self.comboBox.currentText())[0]
-        print('Current Port: %s' % currentPort)
- 
+
+    def cmdChange(self, i):
+        """
+        receive text in textEdit area
+        :param i: object
+        :return: None
+        """
+        global cmd
+        if self.textEditInput.toPlainText():
+            cmd = self.textEditInput.toPlainText()
+
     def flushBtnClick(self, btn):
+        """
+        click refresh button
+        :param btn: object
+        :return: None
+        """
         global portList
 
         self.comboBox.clear()
@@ -164,28 +192,48 @@ class LogCheckUI(QWidget):
         self.comboBox.setCurrentIndex(-1)
 
     def startBtnClick(self, btn):
+        """
+        click start button
+        :param btn: object
+        :return: None
+        """
         global currentPort, isStarted
 
-        if not currentPort:
-            QMessageBox.information(self, '提示', '请选择当前端口', QMessageBox.Ok)
+        if isStarted:
             return
+        print(currentPort)
+        if not currentPort:
+            QMessageBox.information(self, '提示', '请选择端口！', QMessageBox.Ok)
+            return
+
         self.table.clearContents()
         self.row = 0
         self.table.setRowCount(self.row + 1)
+        self.stopBtn.setEnabled(False)
         self.workThread.start()
+
+        # 开始后马上点击结束会报错，添加延时
+        self.timer = QTimer(self)
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(lambda: self.stopBtn.setEnabled(True))
+        self.timer.start(5000)
         isStarted = True
-        print('startBtnClick: row is %s' % self.row)
-        
+
     def stopBtnClick(self, btn):
+        """
+        click terminal button
+        :param btn: object
+        :return: None
+        """
         global isStarted
 
         if not isStarted:
             return
-        isStarted = False
+
         # self.row = -1
         self.workThread.serial.stopReadSerial()
         self.workThread.serial.close()
-        print('stopBtnClick: row is %s' % self.row)
+        isStarted = False
 
     def addText(self, data, res):
         """
@@ -229,6 +277,26 @@ class LogCheckUI(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = LogCheckUI()
+    qssstyle = '''
+        .QPushButton {
+            border:1px solid #8f8f91;
+            border-radius:4px;
+        }
+        .QComboBox {
+            border:1px solid #8f8f91;
+            border-radius:4px;
+        }
+        QPushButton#flushBtn {
+            position:relative;
+            margin-left:5px;
+        }
+        QPushButton#startBtn {
+            position:relative;
+            margin-right:100px;
+        }
+
+    '''
+    main.setStyleSheet(qssstyle)
     # main.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     main.show()
     sys.exit(app.exec_())

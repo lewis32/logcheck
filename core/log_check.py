@@ -103,7 +103,7 @@ class LogCheck():
 
             if lower_key == 'version':
                 title[2] = log[key]
-                res['version'] = log[key]
+                # res['version'] = log[key]
 
         try:
             conf = dict(conflist.items('_'.join(title)) + conflist.items('common'))
@@ -113,8 +113,8 @@ class LogCheck():
             print("Failed to combine common keys with event keys : ", e)
 
         else:
-            # for i in conf:
-            #     conf[self._to_lower_key(i)] = conf.pop(i)
+            for i in conf:
+                conf[self._to_lower_key(i)] = conf.pop(i)
 
             mutual_key, log_key, conf_key = self._compare_keys(log, conf)
             if len(log_key):
@@ -133,7 +133,7 @@ class LogCheck():
                     invalid_mutual_dict[i] = log[i]
 
             if len(invalid_mutual_dict):
-                res['invalid_key'] = dict(res['invalid_key'], **invalid_mutual_dict)
+                res['invalid_key'] = {**res['invalid_key'], **invalid_mutual_dict}
 
             if len(res['missing_key']) or len(res['undefined_key']) or len(res['invalid_key']):
                 res['result'] = 1
