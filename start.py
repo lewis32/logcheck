@@ -10,11 +10,11 @@ filePath = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 startFlag = False
 portList = []
 currentPort = None
-cmd = '\n\nlog.off\n\ntail -f /var/local/logservice/logfile/tmp*\n'
+startCmd = '\n\nlog.off\n\ntail -f /var/local/logservice/logfile/tmp*\n'
 
 class WorkThread(QThread):
     """
-    循环读取校验结果的子进程
+    子线程，轮询校验结果返回
     """
 
     add = pyqtSignal(list, list)
@@ -28,13 +28,14 @@ class WorkThread(QThread):
 
         try:
             self.serial = TVSerial(port=currentPort, baudrate=115200, timeout=5)
-
         except Exception as e:
-            self.terminal.emit(e)
-
+            self.terminal.emit(str(e))
         else:
             with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'r', encoding='utf-8') as f:
-                self.serial.sendComand(str(f.readline()))
+                try:
+                    self.serial.sendComand(str(f.readline()))
+                except Exception as e:
+                    print(e)
 
             self.serial.startReadSerial()
             self.serial.s.flushInput()
@@ -49,10 +50,8 @@ class WorkThread(QThread):
 
                 try:
                     block = self.serial.s.readline().decode('utf-8', errors='ignore')
-
                 except Exception as e:
                     print(e)
-
                 else:
                     if block and block.strip():
                         res = self.lc.check_log(block)
@@ -68,7 +67,7 @@ class WorkThread(QThread):
 
 class LogCheckUI(QWidget):
     """
-    UI主进程
+    UI主线程
     """
 
     def __init__(self):
@@ -81,33 +80,32 @@ class LogCheckUI(QWidget):
         :return: None
         """
         self.setWindowTitle('LogCheck')
-        self.resize(900, 450)
+        self.resize(1000, 600)
+        font = QFont()
+        font.setPointSize(10)
+        font.setFamily("Microsoft YaHei UI")
 
         mainLayout = QVBoxLayout()
         mainLayout.setContentsMargins(20, 20, 20, 20)
         hboxLayoutHead = QHBoxLayout()
-        hboxLayoutHead.setContentsMargins(0, 0, 590, 0)
+        hboxLayoutHead.setContentsMargins(0, 0, 700, 0)
         hboxLayoutHead.setObjectName('hboxLayoutHead')
         hboxLayoutBody = QHBoxLayout()
         hboxLayoutBody.setObjectName('hboxLayoutBody')
         hboxLayoutFooter = QGridLayout()
         hboxLayoutFooter.setObjectName('hboxLayoutFooter')
-        # hboxLayoutFooter.setContentsMargins(400, 0, 0, 0)
 
-        font = QFont()
-        font.setPointSize(10)
-        font.setFamily("Microsoft YaHei UI")
         self.comboBox = QComboBox()
         self.setFont(font)
         self.comboBox.setCurrentIndex(-1)
-        self.flushBtn = QPushButton('刷新')
-        self.flushBtn.setObjectName('flushBtn')
-        self.flushBtn.setFont(font)
+        self.refreshBtn = QPushButton('刷新')
+        self.refreshBtn.setObjectName('refreshBtn')
+        self.refreshBtn.setFont(font)
 
         self.table1 = QTableWidget(0, 5)
-        self.table1.setToolTip('点击查看原始数据和详细结果')
+        self.table1.setToolTip('点击查看校验结果')
         self.table1.setFont(font)
-        self.table1.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '验证结果', '日志数据', '结果详情'])
+        self.table1.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '验证结果', '日志数据', '其他信息'])
         self.table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table1.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table1.setColumnHidden(3, True)
@@ -115,7 +113,7 @@ class LogCheckUI(QWidget):
         # self.row = 0
 
         self.table2 = QTableWidget(0, 2)
-        self.table2.setToolTip('基本结果')
+        self.table2.setToolTip('校验结果')
         self.table2.setFont(font)
         self.table2.setHorizontalHeaderLabels(['Key', 'Value'])
         self.table2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -123,17 +121,20 @@ class LogCheckUI(QWidget):
         self.table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         self.table3 = QTableWidget(0, 1)
-        self.table3.setToolTip('其他结果')
+        self.table3.setToolTip('其他信息')
         self.table3.setFont(font)
         self.table3.setHorizontalHeaderLabels(['缺少键值'])
         self.table3.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        self.labelCmd = QLabel('开始前执行命令')
-        self.lineEditCmd = QLineEdit()
-        self.lineEditCmd.setObjectName('textEditInput')
+        self.labelCmd1 = QLabel('开始前执行命令')
+        self.lineEditCmd1 = QLineEdit()
+        self.lineEditCmd1.setObjectName('lineEditCmd1')
+        self.labelCmd2 = QLabel('结束后执行命令')
+        self.lineEditCmd2 = QLineEdit()
+        self.lineEditCmd2.setObjectName('lineEditCmd2')
         with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'r', encoding='utf-8') as f:
-            self.lineEditCmd.setText(f.readline())
+            self.lineEditCmd1.setText(f.readline())
 
         self.startBtn = QPushButton('开始')
         self.startBtn.setObjectName('startBtn')
@@ -142,11 +143,13 @@ class LogCheckUI(QWidget):
         self.stopBtn.setObjectName('stopBtn')
         self.stopBtn.setEnabled(False)
         self.stopBtn.setFont(font)
+
         self.workThread = WorkThread()
 
         self.comboBox.currentIndexChanged.connect(self.selectionChange)
-        self.flushBtn.clicked.connect(lambda: self.flushBtnClick(self.flushBtn))
-        self.lineEditCmd.textChanged.connect(lambda: self.cmdChange(self.lineEditCmd))
+        self.refreshBtn.clicked.connect(lambda: self.refreshBtnClick(self.refreshBtn))
+        self.lineEditCmd1.textChanged.connect(lambda: self.cmdChange(self.lineEditCmd1))
+        self.lineEditCmd2.textChanged.connect(lambda: self.cmdChange(self.lineEditCmd2))
         self.table1.cellClicked.connect(self.rowClick)
         self.workThread.add.connect(self.addText)
         self.workThread.terminal.connect(self.terminalText)
@@ -154,27 +157,34 @@ class LogCheckUI(QWidget):
         self.stopBtn.clicked.connect(lambda: self.stopBtnClick(self.stopBtn))
 
         hboxLayoutHead.addWidget(self.comboBox)
-        hboxLayoutHead.addWidget(self.flushBtn)
+        hboxLayoutHead.addWidget(self.refreshBtn)
         hboxLayoutHead.setStretchFactor(self.comboBox, 2)
-        hboxLayoutHead.setStretchFactor(self.flushBtn, 1)
-        mainLayout.addLayout(hboxLayoutHead)
+        hboxLayoutHead.setStretchFactor(self.refreshBtn, 1)
+
         hboxLayoutBody.addWidget(self.table1)
         hboxLayoutBody.addWidget(self.table2)
         hboxLayoutBody.addWidget(self.table3)
         hboxLayoutBody.setStretchFactor(self.table1, 2)
         hboxLayoutBody.setStretchFactor(self.table2, 3)
         hboxLayoutBody.setStretchFactor(self.table3, 1)
+
+        hboxLayoutFooter.addWidget(self.labelCmd1, 0, 0)
+        hboxLayoutFooter.addWidget(self.lineEditCmd1, 0, 1)
+        hboxLayoutFooter.addWidget(self.startBtn, 0, 2)
+        hboxLayoutFooter.addWidget(self.labelCmd2, 1, 0)
+        hboxLayoutFooter.addWidget(self.lineEditCmd2, 1, 1)
+        hboxLayoutFooter.addWidget(self.stopBtn, 1, 2)
+        # hboxLayoutFooter.addWidget(self.labelCmd)
+        # hboxLayoutFooter.addWidget(self.lineEditCmd)
+        # hboxLayoutFooter.addWidget(self.startBtn)
+        # hboxLayoutFooter.addWidget(self.stopBtn)
+        # hboxLayoutFooter.setStretchFactor(self.labelCmd1, 1)
+        # hboxLayoutFooter.setStretchFactor(self.lineEditCmd1, 8)
+        # hboxLayoutFooter.setStretchFactor(self.startBtn, 1)
+        # hboxLayoutFooter.setStretchFactor(self.stopBtn, 1)
+
+        mainLayout.addLayout(hboxLayoutHead)
         mainLayout.addLayout(hboxLayoutBody)
-        self.view.add
-        hboxLayoutFooter.addWidget(self.view)
-        hboxLayoutFooter.addWidget(self.labelCmd)
-        hboxLayoutFooter.addWidget(self.lineEditCmd)
-        hboxLayoutFooter.addWidget(self.startBtn)
-        hboxLayoutFooter.addWidget(self.stopBtn)
-        hboxLayoutFooter.setStretchFactor(self.labelCmd, 1)
-        hboxLayoutFooter.setStretchFactor(self.lineEditCmd, 8)
-        hboxLayoutFooter.setStretchFactor(self.startBtn, 1)
-        hboxLayoutFooter.setStretchFactor(self.stopBtn, 1)
         mainLayout.addLayout(hboxLayoutFooter)
         mainLayout.setStretchFactor(hboxLayoutHead, 1)
         mainLayout.setStretchFactor(hboxLayoutBody, 4)
@@ -184,7 +194,7 @@ class LogCheckUI(QWidget):
 
     def selectionChange(self, i):
         """
-        select port and save its value
+        下拉框选择端口触发
         :param i: object
         :return: None
         """
@@ -195,20 +205,24 @@ class LogCheckUI(QWidget):
 
     def cmdChange(self, i):
         """
-        receive text in textEdit area
+        修改执行命令触发
         :param i: object
         :return: None
         """
-        global cmd
-        if self.lineEditCmd.text():
-            cmd = self.lineEditCmd.text()
+        global startCmd, stopCmd, executeCmd
 
-            with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'w+', encoding='utf-8') as f:
-                f.write(cmd)
+        with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'w+', encoding='utf-8') as f:
+            if self.lineEditCmd1.text():
+                startCmd = self.lineEditCmd1.text()
+                f.write(startCmd)
 
-    def flushBtnClick(self, btn):
+            if self.lineEditCmd2.text():
+                stopCmd = self.lineEditCmd2.text()
+                f.write(stopCmd)
+
+    def refreshBtnClick(self, btn):
         """
-        click refresh button
+        点击刷新按钮触发
         :param btn: object
         :return: None
         """
@@ -225,24 +239,29 @@ class LogCheckUI(QWidget):
 
     def startBtnClick(self, btn):
         """
-        click start button
+        点击开始按钮触发
         :param btn: object
         :return: None
         """
+        global startFlag
+
         print(currentPort)
         if not currentPort:
             QMessageBox.information(self, '提示', '请选择端口！', QMessageBox.Ok)
             return
 
-        self.table1.clearContents()
         self.row = 0
-        self.table1.setRowCount(self.row + 1)
+        self.table1.clearContents()
+        self.table2.clearContents()
+        self.table3.clearContents()
+        self.workThread.start()
+
         self.comboBox.setEnabled(False)
-        self.flushBtn.setEnabled(False)
-        self.lineEditCmd.setEnabled(False)
+        self.refreshBtn.setEnabled(False)
+        self.lineEditCmd1.setEnabled(False)
+        self.lineEditCmd2.setEnabled(False)
         self.startBtn.setEnabled(False)
         self.stopBtn.setEnabled(False)
-        self.workThread.start()
 
         # 开始后马上点击结束会报错，添加延时
         self.timer = QTimer(self)
@@ -253,25 +272,31 @@ class LogCheckUI(QWidget):
 
     def stopBtnClick(self, btn):
         """
-        click terminal button
+        点击结束按钮触发
         :param btn: object
         :return: None
         """
         global startFlag
 
+        if not startFlag:
+            return
+
+        # if self.labelCmd2.text() and self.labelCmd2.text().strip():
+        #     self.workThread.serial.sendComand(self.labelCmd2.text())
         self.workThread.serial.stopReadSerial()
         self.workThread.serial.close()
 
         self.comboBox.setEnabled(True)
-        self.flushBtn.setEnabled(True)
-        self.lineEditCmd.setEnabled(True)
+        self.refreshBtn.setEnabled(True)
+        self.lineEditCmd1.setEnabled(True)
+        self.lineEditCmd2.setEnabled(True)
         self.startBtn.setEnabled(True)
         self.stopBtn.setEnabled(False)
         startFlag = False
 
     def addText(self, data, res):
         """
-        add check result
+        获得检验结果返回触发
         :param data: dict
         :param res: dict
         :return: None
@@ -289,11 +314,10 @@ class LogCheckUI(QWidget):
 
             cnt += 1
             self.row += 1
-            print('addText: row is %s' % self.row)
 
     def rowClick(self, row):
         """
-        click item and display detail info
+        点击基本结果每行数据触发
         :param row: int
         :return: None
         """
@@ -314,6 +338,7 @@ class LogCheckUI(QWidget):
                 if k in dictRes['invalid_key']:
                     self.table2.item(n, 0).setBackground(QBrush(QColor(255, 0, 0)))
                     self.table2.item(n, 1).setBackground(QBrush(QColor(255, 0, 0)))
+
                 if k in dictRes['undefined_key']:
                     self.table2.item(n, 0).setBackground(QBrush(QColor(255, 255, 0)))
                     self.table2.item(n, 1).setBackground(QBrush(QColor(255, 255, 0)))
@@ -327,10 +352,19 @@ class LogCheckUI(QWidget):
 
     def terminalText(self, text):
         """
-        pause check
+        子线程结束触发提示
         :param text: str
         :return:
         """
+        global startFlag
+
+        self.comboBox.setEnabled(True)
+        self.refreshBtn.setEnabled(True)
+        self.lineEditCmd1.setEnabled(True)
+        self.lineEditCmd2.setEnabled(True)
+        self.startBtn.setEnabled(True)
+        self.stopBtn.setEnabled(False)
+        startFlag = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
 
@@ -342,7 +376,7 @@ if __name__ == "__main__":
             border:1px solid #8f8f91;
             border-radius:4px;
         }
-        .QPushButton#flushBtn {
+        .QPushButton#refreshBtn {
             border:1px solid #8f8f91;
             border-radius:4px;
             position:relative;
