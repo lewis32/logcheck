@@ -88,7 +88,7 @@ class LogCheckUI(QWidget):
         mainLayout = QVBoxLayout()
         mainLayout.setContentsMargins(20, 20, 20, 20)
         hboxLayoutHead = QHBoxLayout()
-        hboxLayoutHead.setContentsMargins(0, 0, 700, 0)
+        hboxLayoutHead.setContentsMargins(0, 0, 650, 0)
         hboxLayoutHead.setObjectName('hboxLayoutHead')
         hboxLayoutBody = QHBoxLayout()
         hboxLayoutBody.setObjectName('hboxLayoutBody')
