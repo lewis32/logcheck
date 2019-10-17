@@ -86,7 +86,7 @@ class LogCheckUI(QWidget):
         initiate app UI
         :return: None
         """
-        self.setWindowTitle('LogCheck')
+        self.setWindowTitle('日志校验工具')
         self.resize(1000, 600)
         font = QFont()
         font.setPointSize(10)
@@ -113,30 +113,41 @@ class LogCheckUI(QWidget):
         self.refreshBtn.setFixedSize(80, 25)
 
         self.table1 = QTableWidget(0, 5)
-        self.table1.setToolTip('点击查看校验结果')
+        self.table1.setToolTip('点击查看单条日志的详细数据')
         self.table1.setFont(font)
-        self.table1.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '验证结果', '日志数据', '其他信息'])
+        self.table1.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '校验结果', '日志数据', '其他信息'])
         self.table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table1.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table1.setColumnHidden(3, True)
         self.table1.setColumnHidden(4, True)
-        # self.row = 0
+        self.labelHint1 = QLabel('<红色>  Key-Value值错误\n<黄色>  Key-Value未定义')
+        self.labelHint1.setObjectName('labelHint')
+        self.hboxLayoutTable1 = QVBoxLayout()
+        self.hboxLayoutTable1.addWidget(self.table1)
+        self.hboxLayoutTable1.addWidget(self.labelHint1)
 
         self.table2 = QTableWidget(0, 2)
-        self.table2.setToolTip('校验结果')
-        # self.table2.set
         self.table2.setFont(font)
         self.table2.setHorizontalHeaderLabels(['Key', 'Value'])
         self.table2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table2.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.labelHint2 = QLabel('<红色>  Key-Value值错误\n<黄色>  Key-Value未定义')
+        self.labelHint2.setObjectName('labelHint')
+        self.hboxLayoutTable2 = QVBoxLayout()
+        self.hboxLayoutTable2.addWidget(self.table2)
+        self.hboxLayoutTable2.addWidget(self.labelHint2)
 
         self.table3 = QTableWidget(0, 1)
-        self.table3.setToolTip('其他信息')
         self.table3.setFont(font)
         self.table3.setHorizontalHeaderLabels(['缺少键值'])
         self.table3.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.labelHint3 = QLabel('<红色>  Key-Value值错误\n<黄色>  Key-Value未定义')
+        self.labelHint3.setObjectName('labelHint')
+        self.hboxLayoutTable3 = QVBoxLayout()
+        self.hboxLayoutTable3.addWidget(self.table3)
+        self.hboxLayoutTable3.addWidget(self.labelHint3)
 
         self.labelCmd1 = QLabel('开始前执行命令')
         self.lineEditCmd1 = QLineEdit()
@@ -174,9 +185,15 @@ class LogCheckUI(QWidget):
         hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
         hboxLayoutHeader.setStretchFactor(self.refreshBtn, 1)
 
-        hboxLayoutBody.addWidget(self.table1)
-        hboxLayoutBody.addWidget(self.table2)
-        hboxLayoutBody.addWidget(self.table3)
+        groupBoxTable1 = QGroupBox('实时数据')
+        groupBoxTable1.setLayout(self.hboxLayoutTable1)
+        groupBoxTable2 = QGroupBox('实时数据2')
+        groupBoxTable2.setLayout(self.hboxLayoutTable2)
+        groupBoxTable3 = QGroupBox('实时数据3')
+        groupBoxTable3.setLayout(self.hboxLayoutTable3)
+        hboxLayoutBody.addWidget(groupBoxTable1)
+        hboxLayoutBody.addWidget(groupBoxTable2)
+        hboxLayoutBody.addWidget(groupBoxTable3)
         hboxLayoutBody.setStretchFactor(self.table1, 2)
         hboxLayoutBody.setStretchFactor(self.table2, 3)
         hboxLayoutBody.setStretchFactor(self.table3, 1)
@@ -190,13 +207,12 @@ class LogCheckUI(QWidget):
 
         groupBoxHeader = QGroupBox('请选择正确的端口')
         groupBoxHeader.setLayout(hboxLayoutHeader)
-        groupBoxBody = QGroupBox('红色: 值错误的键值对 | 黄色: 未定义的键值对')
-        groupBoxBody.setLayout(hboxLayoutBody)
         groupBoxFooter = QGroupBox(r'多条命令使用\n分隔')
         groupBoxFooter.setLayout(hboxLayoutFooter)
 
         mainLayout.addWidget(groupBoxHeader)
-        mainLayout.addWidget(groupBoxBody)
+        # mainLayout.addWidget(groupBoxBody)
+        mainLayout.addLayout(hboxLayoutBody)
         mainLayout.addWidget(groupBoxFooter)
         mainLayout.setStretchFactor(hboxLayoutHeader, 1)
         mainLayout.setStretchFactor(hboxLayoutBody, 4)
@@ -384,6 +400,15 @@ if __name__ == "__main__":
         .QComboBox {
             border:1px solid #8f8f91;
             border-radius:4px;
+        }
+        .QTableWidget {
+            border:1px solid #8f8f91;
+            margin-left:5px;
+            margin-right:5px;
+        }
+        .QLabel#labelHint {
+            margin-left:5px;
+            margin-right:5px;
         }
         .QPushButton#refreshBtn {
             border:1px solid #8f8f91;
