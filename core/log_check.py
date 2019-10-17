@@ -174,14 +174,20 @@ class LogCheck():
         output_path = os.path.join(self.filepath, 'result', output_name)
 
         with open(output_path, 'w', encoding='utf-8') as f:
+            listed_data = []
             results = []
 
-            for log in data:
+            pattern = re.compile(r'{.*?}')
+            for item in pattern.findall(data):
+                item = json.loads(item)
+                listed_data.append(item)
+
+            for log in listed_data:
                 ret = self._compare_log(log, self.conflist)
                 results.append(ret)
             json.dump(results, f, indent=4)
 
-            return results
+            return listed_data, results
 
 
 

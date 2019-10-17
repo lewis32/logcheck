@@ -33,13 +33,19 @@ class WorkThread(QThread):
         else:
             with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'r', encoding='utf-8') as f:
                 try:
-                    self.serial.sendComand(str(f.readline()))
+                    cmd_str = f.readline()
+                    cmd_list = r'\n'.strip(cmd_str)
+
+                    for cmd in cmd_list:
+                        self.serial.sendComand('\n\n')
+                        QThread.sleep(self, 2)
+                        self.serial.sendComand(str(cmd))
+
+                    self.serial.s.flushOutput()
+                    self.serial.s.flushInput()
                 except Exception as e:
                     print(e)
 
-            self.serial.startReadSerial()
-            self.serial.s.flushInput()
-            self.serial.s.flushOutput()
             startFlag = True
             
             self.lc = LogCheck()
@@ -49,20 +55,21 @@ class WorkThread(QThread):
                     break
 
                 try:
-                    block = self.serial.s.readline().decode('utf-8', errors='ignore')
+                    block = self.serial.s.read(size=1000).decode('utf-8', errors='ignore')
                 except Exception as e:
-                    print(e)
+                    pass
                 else:
                     if block and block.strip():
-                        res = self.lc.check_log(block)
-                        self.add.emit(block, res)
+                        data, res = self.lc.check_log(block)
+                        if data and res:
+                            self.add.emit(data, res)
                         print('This is log result from serial!')
 
                     # 测试代码
-                    data = self.lc.load_log()
-                    res = self.lc.check_log(data)
-                    self.add.emit(data, res)
-                    print('This is log result from local file')
+                    # data = self.lc.load_log()
+                    # res = self.lc.check_log(data)
+                    # self.add.emit(data, res)
+                    # print('This is log result from local file')
 
 
 class LogCheckUI(QWidget):
@@ -87,12 +94,14 @@ class LogCheckUI(QWidget):
 
         mainLayout = QVBoxLayout()
         mainLayout.setContentsMargins(20, 20, 20, 20)
-        hboxLayoutHead = QHBoxLayout()
-        hboxLayoutHead.setContentsMargins(0, 0, 650, 0)
-        hboxLayoutHead.setObjectName('hboxLayoutHead')
+        hboxLayoutHeader = QHBoxLayout()
+        hboxLayoutHeader.setContentsMargins(15, 15, 650, 15)
+        hboxLayoutHeader.setObjectName('hboxLayoutHeader')
         hboxLayoutBody = QHBoxLayout()
         hboxLayoutBody.setObjectName('hboxLayoutBody')
+        hboxLayoutBody.setContentsMargins(15, 15, 15, 15)
         hboxLayoutFooter = QGridLayout()
+        hboxLayoutFooter.setContentsMargins(15, 15, 15, 15)
         hboxLayoutFooter.setObjectName('hboxLayoutFooter')
 
         self.comboBox = QComboBox()
@@ -101,6 +110,7 @@ class LogCheckUI(QWidget):
         self.refreshBtn = QPushButton('刷新')
         self.refreshBtn.setObjectName('refreshBtn')
         self.refreshBtn.setFont(font)
+        self.refreshBtn.setFixedSize(80, 25)
 
         self.table1 = QTableWidget(0, 5)
         self.table1.setToolTip('点击查看校验结果')
@@ -114,6 +124,7 @@ class LogCheckUI(QWidget):
 
         self.table2 = QTableWidget(0, 2)
         self.table2.setToolTip('校验结果')
+        # self.table2.set
         self.table2.setFont(font)
         self.table2.setHorizontalHeaderLabels(['Key', 'Value'])
         self.table2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -139,10 +150,12 @@ class LogCheckUI(QWidget):
         self.startBtn = QPushButton('开始')
         self.startBtn.setObjectName('startBtn')
         self.startBtn.setFont(font)
+        self.startBtn.setFixedSize(80, 25)
         self.stopBtn = QPushButton('停止')
         self.stopBtn.setObjectName('stopBtn')
-        self.stopBtn.setEnabled(False)
         self.stopBtn.setFont(font)
+        self.stopBtn.setFixedSize(80, 25)
+        self.stopBtn.setEnabled(False)
 
         self.workThread = WorkThread()
 
@@ -156,10 +169,10 @@ class LogCheckUI(QWidget):
         self.startBtn.clicked.connect(self.startBtnClick)
         self.stopBtn.clicked.connect(lambda: self.stopBtnClick(self.stopBtn))
 
-        hboxLayoutHead.addWidget(self.comboBox)
-        hboxLayoutHead.addWidget(self.refreshBtn)
-        hboxLayoutHead.setStretchFactor(self.comboBox, 2)
-        hboxLayoutHead.setStretchFactor(self.refreshBtn, 1)
+        hboxLayoutHeader.addWidget(self.comboBox)
+        hboxLayoutHeader.addWidget(self.refreshBtn)
+        hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
+        hboxLayoutHeader.setStretchFactor(self.refreshBtn, 1)
 
         hboxLayoutBody.addWidget(self.table1)
         hboxLayoutBody.addWidget(self.table2)
@@ -174,19 +187,18 @@ class LogCheckUI(QWidget):
         hboxLayoutFooter.addWidget(self.labelCmd2, 1, 0)
         hboxLayoutFooter.addWidget(self.lineEditCmd2, 1, 1)
         hboxLayoutFooter.addWidget(self.stopBtn, 1, 2)
-        # hboxLayoutFooter.addWidget(self.labelCmd)
-        # hboxLayoutFooter.addWidget(self.lineEditCmd)
-        # hboxLayoutFooter.addWidget(self.startBtn)
-        # hboxLayoutFooter.addWidget(self.stopBtn)
-        # hboxLayoutFooter.setStretchFactor(self.labelCmd1, 1)
-        # hboxLayoutFooter.setStretchFactor(self.lineEditCmd1, 8)
-        # hboxLayoutFooter.setStretchFactor(self.startBtn, 1)
-        # hboxLayoutFooter.setStretchFactor(self.stopBtn, 1)
 
-        mainLayout.addLayout(hboxLayoutHead)
-        mainLayout.addLayout(hboxLayoutBody)
-        mainLayout.addLayout(hboxLayoutFooter)
-        mainLayout.setStretchFactor(hboxLayoutHead, 1)
+        groupBoxHeader = QGroupBox('请选择正确的端口')
+        groupBoxHeader.setLayout(hboxLayoutHeader)
+        groupBoxBody = QGroupBox('红色: 值错误的键值对 | 黄色: 未定义的键值对')
+        groupBoxBody.setLayout(hboxLayoutBody)
+        groupBoxFooter = QGroupBox(r'多条命令使用\n分隔')
+        groupBoxFooter.setLayout(hboxLayoutFooter)
+
+        mainLayout.addWidget(groupBoxHeader)
+        mainLayout.addWidget(groupBoxBody)
+        mainLayout.addWidget(groupBoxFooter)
+        mainLayout.setStretchFactor(hboxLayoutHeader, 1)
         mainLayout.setStretchFactor(hboxLayoutBody, 4)
         mainLayout.setStretchFactor(hboxLayoutFooter, 1)
 
@@ -245,7 +257,6 @@ class LogCheckUI(QWidget):
         """
         global startFlag
 
-        print(currentPort)
         if not currentPort:
             QMessageBox.information(self, '提示', '请选择端口！', QMessageBox.Ok)
             return
@@ -301,14 +312,13 @@ class LogCheckUI(QWidget):
         :param res: dict
         :return: None
         """
-        print('test addText')
         cnt = 0
         for i in res:
             self.table1.setRowCount(self.row + 1)
 
             self.table1.setItem(self.row, 0, QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
             self.table1.setItem(self.row, 1, QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
-            self.table1.setItem(self.row, 2, QTableWidgetItem('不通过' if i['result'] else '通过'))
+            self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
             self.table1.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
             self.table1.setItem(self.row, 4, QTableWidgetItem(json.dumps(i)))
 
@@ -327,7 +337,6 @@ class LogCheckUI(QWidget):
         if self.table1.item(row, 3) and self.table1.item(row, 4):
             dictData = json.loads(self.table1.item(row, 3).text())
             dictRes = json.loads(self.table1.item(row, 4).text())
-            print(dictRes)
 
             n = 0
             for k in dictData:
@@ -381,6 +390,7 @@ if __name__ == "__main__":
             border-radius:4px;
             position:relative;
             margin-left:5px;
+            max-width:80px;
         }
         .QPushButton#startBtn {
             border:1px solid #8f8f91;
@@ -400,6 +410,20 @@ if __name__ == "__main__":
             border-radius:4px;
             margin-right:5px;
             margin-left:5px;
+        }
+        .QLineEdit#lineEditCmd1 {
+            border:1px solid #8f8f91;
+            border-radius:4px;
+            margin-left:5px;
+            margin-right:5px;
+            width:200px;
+        }
+        .QLineEdit#lineEditCmd2 {
+            border:1px solid #8f8f91;
+            border-radius:4px;
+            margin-left:5px;
+            margin-right:5px;
+            width:200px;
         }
     '''
     main.setStyleSheet(qssstyle)
