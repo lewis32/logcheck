@@ -4,18 +4,17 @@
 import os
 import re
 import json
-import sys
 import time
 import bisect
+# import sys
 # sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'package'))
 # from myconfigparser import MyConfigParser as ConfigParser
 from .package.myconfigparser import MyConfigParser as ConfigParser
 
 
 class LogCheck():
-
     filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-    stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
+    stime = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime())
 
     def __init__(self):
         self.conflist = self._load_policy()
@@ -80,13 +79,13 @@ class LogCheck():
         :return:
         """
         res = {
-                    'src_event_code': None,
-                    'event_code': None,
-                    'missing_key': [],
-                    'undefined_key': {},
-                    'invalid_key': {},
-                    'result': 0
-                    }
+            'src_event_code': None,
+            'event_code': None,
+            'missing_key': [],
+            'undefined_key': {},
+            'invalid_key': {},
+            'result': 0
+        }
 
         # count = len(log)
         # n = 1
@@ -189,6 +188,3 @@ class LogCheck():
             json.dump(results, f, indent=4)
 
             return listed_data, results
-
-
-

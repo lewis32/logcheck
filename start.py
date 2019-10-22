@@ -10,7 +10,9 @@ filePath = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 startFlag = False
 portList = []
 currentPort = None
-startCmd = '\n\nlog.off\n\ntail -f /var/local/logservice/logfile/tmp*\n'
+startCmd = ''
+stopCmd = ''
+
 
 class WorkThread(QThread):
     """
@@ -21,7 +23,7 @@ class WorkThread(QThread):
     terminal = pyqtSignal(object)
 
     def run(self):
-        global portList, currentPort, startFlag
+        global portList, currentPort, startFlag, startCmd
 
         if not portList or not currentPort:
             return
@@ -31,23 +33,18 @@ class WorkThread(QThread):
         except Exception as e:
             self.terminal.emit(str(e))
         else:
-            with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'r', encoding='utf-8') as f:
-                try:
-                    cmd_str = f.readline()
-                    cmd_list = r'\n'.strip(cmd_str)
+            cmd_list = r'\n'.strip(startCmd)
 
-                    for cmd in cmd_list:
-                        self.serial.sendComand('\n\n')
-                        QThread.sleep(self, 2)
-                        self.serial.sendComand(str(cmd))
+            for cmd in cmd_list:
+                self.serial.sendComand('\n\n')
+                QThread.sleep(self, 2)
+                self.serial.sendComand(str(cmd))
 
-                    self.serial.s.flushOutput()
-                    self.serial.s.flushInput()
-                except Exception as e:
-                    print(e)
+            self.serial.s.flushOutput()
+            self.serial.s.flushInput()
 
             startFlag = True
-            
+
             self.lc = LogCheck()
             while True:
                 if not startFlag:
@@ -87,7 +84,9 @@ class LogCheckUI(QWidget):
         :return: None
         """
         self.setWindowTitle('日志校验工具')
-        self.resize(1000, 600)
+        self.resize(1000, 700)
+        self.setFixedSize(self.width(), self.height())
+
         font = QFont()
         font.setPointSize(10)
         font.setFamily("Microsoft YaHei UI")
@@ -95,11 +94,11 @@ class LogCheckUI(QWidget):
         mainLayout = QVBoxLayout()
         mainLayout.setContentsMargins(20, 20, 20, 20)
         hboxLayoutHeader = QHBoxLayout()
-        hboxLayoutHeader.setContentsMargins(15, 15, 650, 15)
+        hboxLayoutHeader.setContentsMargins(15, 15, 600, 15)
         hboxLayoutHeader.setObjectName('hboxLayoutHeader')
         hboxLayoutBody = QHBoxLayout()
         hboxLayoutBody.setObjectName('hboxLayoutBody')
-        hboxLayoutBody.setContentsMargins(15, 15, 15, 15)
+        # hboxLayoutBody.setContentsMargins(15, 15, 15, 15)
         hboxLayoutFooter = QGridLayout()
         hboxLayoutFooter.setContentsMargins(15, 15, 15, 15)
         hboxLayoutFooter.setObjectName('hboxLayoutFooter')
@@ -115,22 +114,13 @@ class LogCheckUI(QWidget):
         self.table1 = QTableWidget(0, 5)
         self.table1.setToolTip('点击查看单条日志的详细数据')
         self.table1.setFont(font)
-        self.table1.setHorizontalHeaderLabels(['上级事件码', '本级事件码', '校验结果', '日志数据', '其他信息'])
+        self.table1.setHorizontalHeaderLabels(['srcEventCode', 'eventCode', 'result', 'detail', 'moreDetail'])
         self.table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table1.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table1.setColumnHidden(3, True)
         self.table1.setColumnHidden(4, True)
 
-        qp = QPainter()
-        qp.begin(self)
-        col = QColor(0, 0, 0)
-        col.setNamedColor('#d4d4d4')
-        qp.setPen(col)
-        qp.setBrush(QColor(200, 0, 0))
-        qp.drawRect(10, 15, 90, 60)
-        qp.end()
-
-        self.labelHint1 = QLabel('红色 | 日志与配置文件不符\n绿色 | 日志与配置文件相符')
+        self.labelHint1 = QLabel('* 红色 - 日志数据与配置规则不符\n* 绿色 - 日志数据与配置规则相符')
         self.labelHint1.setObjectName('labelHint')
         self.hboxLayoutTable1 = QVBoxLayout()
         self.hboxLayoutTable1.addWidget(self.table1)
@@ -138,11 +128,11 @@ class LogCheckUI(QWidget):
 
         self.table2 = QTableWidget(0, 2)
         self.table2.setFont(font)
-        self.table2.setHorizontalHeaderLabels(['Key', 'Value'])
+        self.table2.setHorizontalHeaderLabels(['key', 'value'])
         self.table2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table2.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.labelHint2 = QLabel('红色 | 键值对的值错误\n黄色 | 键值对的键不在配置定义内')
+        self.labelHint2 = QLabel('* 红色 - value错误\n* 黄色 - key不在配置规则内')
         self.labelHint2.setObjectName('labelHint')
         self.hboxLayoutTable2 = QVBoxLayout()
         self.hboxLayoutTable2.addWidget(self.table2)
@@ -150,10 +140,10 @@ class LogCheckUI(QWidget):
 
         self.table3 = QTableWidget(0, 1)
         self.table3.setFont(font)
-        self.table3.setHorizontalHeaderLabels(['Key'])
+        self.table3.setHorizontalHeaderLabels(['key'])
         self.table3.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.labelHint3 = QLabel('提示 | 目前显示的是配置有定义，但日志缺失的键\n')
+        self.labelHint3 = QLabel('* 配置规则有定义，但日志数据中缺失\n')
         self.labelHint3.setObjectName('labelHint')
         self.hboxLayoutTable3 = QVBoxLayout()
         self.hboxLayoutTable3.addWidget(self.table3)
@@ -165,8 +155,15 @@ class LogCheckUI(QWidget):
         self.labelCmd2 = QLabel('结束后执行命令')
         self.lineEditCmd2 = QLineEdit()
         self.lineEditCmd2.setObjectName('lineEditCmd2')
-        with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'r', encoding='utf-8') as f:
-            self.lineEditCmd1.setText(f.readline())
+        try:
+            f = open(os.path.join(filePath, 'conf', 'cmd.json'), 'r', encoding='utf-8')
+        except FileNotFoundError as e:
+            pass
+        else:
+            cmdDict = json.load(f)
+            self.lineEditCmd1.setText(cmdDict['startCmd'])
+            self.lineEditCmd2.setText(cmdDict['stopCmd'])
+            f.close()
 
         self.startBtn = QPushButton('开始')
         self.startBtn.setObjectName('startBtn')
@@ -195,18 +192,18 @@ class LogCheckUI(QWidget):
         hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
         hboxLayoutHeader.setStretchFactor(self.refreshBtn, 1)
 
-        groupBoxTable1 = QGroupBox('基本结果')
+        groupBoxTable1 = QGroupBox('校验结果')
         groupBoxTable1.setLayout(self.hboxLayoutTable1)
-        groupBoxTable2 = QGroupBox('键值数据')
+        groupBoxTable2 = QGroupBox('详细数据')
         groupBoxTable2.setLayout(self.hboxLayoutTable2)
         groupBoxTable3 = QGroupBox('其他数据')
         groupBoxTable3.setLayout(self.hboxLayoutTable3)
         hboxLayoutBody.addWidget(groupBoxTable1)
         hboxLayoutBody.addWidget(groupBoxTable2)
         hboxLayoutBody.addWidget(groupBoxTable3)
-        hboxLayoutBody.setStretchFactor(self.table1, 2)
-        hboxLayoutBody.setStretchFactor(self.table2, 3)
-        hboxLayoutBody.setStretchFactor(self.table3, 1)
+        hboxLayoutBody.setStretchFactor(groupBoxTable1, 3)
+        hboxLayoutBody.setStretchFactor(groupBoxTable2, 3)
+        hboxLayoutBody.setStretchFactor(groupBoxTable3, 1)
 
         hboxLayoutFooter.addWidget(self.labelCmd1, 0, 0)
         hboxLayoutFooter.addWidget(self.lineEditCmd1, 0, 1)
@@ -216,18 +213,14 @@ class LogCheckUI(QWidget):
         hboxLayoutFooter.addWidget(self.stopBtn, 1, 2)
 
         groupBoxHeader = QGroupBox('请选择正确的端口')
+        groupBoxHeader.setObjectName('groupBoxHeader')
         groupBoxHeader.setLayout(hboxLayoutHeader)
-        groupBoxFooter = QGroupBox(r'多条命令请使用\n分隔')
+        groupBoxFooter = QGroupBox(r'请输入需执行的命令（用\n分隔）')
         groupBoxFooter.setLayout(hboxLayoutFooter)
 
         mainLayout.addWidget(groupBoxHeader)
-        # mainLayout.addWidget(groupBoxBody)
         mainLayout.addLayout(hboxLayoutBody)
         mainLayout.addWidget(groupBoxFooter)
-        mainLayout.setStretchFactor(hboxLayoutHeader, 1)
-        mainLayout.setStretchFactor(hboxLayoutBody, 4)
-        mainLayout.setStretchFactor(hboxLayoutFooter, 1)
-
         self.setLayout(mainLayout)
 
     def selectionChange(self, i):
@@ -247,16 +240,20 @@ class LogCheckUI(QWidget):
         :param i: object
         :return: None
         """
-        global startCmd, stopCmd, executeCmd
+        global startCmd, stopCmd
 
-        with open(os.path.join(filePath, 'conf', 'cmd.txt'), 'w+', encoding='utf-8') as f:
+        with open(os.path.join(filePath, 'conf', 'cmd.json'), 'w+', encoding='utf-8') as f:
             if self.lineEditCmd1.text():
                 startCmd = self.lineEditCmd1.text()
-                f.write(startCmd)
 
             if self.lineEditCmd2.text():
                 stopCmd = self.lineEditCmd2.text()
-                f.write(stopCmd)
+
+            cmdDict = {
+                'startCmd': startCmd,
+                'stopCmd': stopCmd
+            }
+            json.dump(cmdDict, f)
 
     def refreshBtnClick(self, btn):
         """
@@ -273,7 +270,6 @@ class LogCheckUI(QWidget):
                 self.comboBox.addItem(str(i))
         self.comboBox.setCurrentIndex(-1)
         currentPort = None
-
 
     def startBtnClick(self, btn):
         """
@@ -313,14 +309,20 @@ class LogCheckUI(QWidget):
         :param btn: object
         :return: None
         """
-        global startFlag
+        global startFlag, stopCmd
 
         if not startFlag:
             return
 
-        # if self.labelCmd2.text() and self.labelCmd2.text().strip():
-        #     self.workThread.serial.sendComand(self.labelCmd2.text())
         self.workThread.serial.stopReadSerial()
+        if self.labelCmd2.text() and self.labelCmd2.text().strip():
+            self.workThread.serial.sendComand(self.labelCmd2.text())
+            cmd_list = r'\n'.strip(stopCmd)
+
+            for cmd in cmd_list:
+                self.workThread.serial.sendComand('\n\n')
+                QThread.sleep(self.workThread, 2)
+                self.workThread.serial.sendComand(str(cmd))
         self.workThread.serial.close()
 
         self.comboBox.setEnabled(True)
@@ -342,7 +344,8 @@ class LogCheckUI(QWidget):
         for i in res:
             self.table1.setRowCount(self.row + 1)
 
-            self.table1.setItem(self.row, 0, QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
+            self.table1.setItem(self.row, 0,
+                                QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
             self.table1.setItem(self.row, 1, QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
             self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
             self.table1.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))

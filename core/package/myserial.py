@@ -21,10 +21,10 @@ class TVSerial():
     lineNo = 1
     currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
     filename = 'SerialLog-%s.log' % currentTime
-    filepath = os.path.join(os.path.dirname(sys.path[0]), 'result', filename)
+    filepath = os.path.join(os.path.dirname(sys.path[0]), 'log', filename)
     if not os.path.exists(os.path.dirname(filepath)):
         os.mkdir(os.path.dirname(filepath))
-    f = open(filepath, "w",encoding='utf-8')
+    f = open(filepath, "w", encoding='utf-8')
     read_flag = True
     isBreak = False
 
@@ -48,7 +48,7 @@ class TVSerial():
         self.s.open()
 
     def setBaudrate(self, newBaudrate):
-        self.s.baudrate=newBaudrate
+        self.s.baudrate = newBaudrate
 
     def getBaudrate(self):
         return self.s.baudrate
@@ -61,12 +61,12 @@ class TVSerial():
             # self.logger.error('newPath为空')
             return
         self.f.close()
-        self.filename=newPath
+        self.filename = newPath
         self.f = open(self.filename, "w", encoding='utf-8')
 
     def sendComand(self, cmd):
         # self.logger.info('发送串口命令：'+cmd)
-        if not(self.isOpen()):
+        if not (self.isOpen()):
             self.open()
         self.s.write(cmd.encode('utf-8'))
 
@@ -84,7 +84,7 @@ class TVSerial():
 
     def alwayseReadSerial(self):
         while self.read_flag:
-            value=self.s.readline().decode('utf-8', errors="ignore")
+            value = self.s.readline().decode('utf-8', errors="ignore")
             if value == '' or value is None:
                 continue
             yield value
@@ -103,15 +103,15 @@ class TVSerial():
     def stopReadSerial(self):
         self.read_flag = False
 
-    def get_last_line(self, inputfile, num) :
-        dat_file = open(inputfile, 'r',encoding='utf-8')
+    def get_last_line(self, inputfile, num):
+        dat_file = open(inputfile, 'r', encoding='utf-8')
         lines = dat_file.readlines()
         count = len(lines)
         if count < num:
             num = count
             i = 1
         lastre = []
-        for i in range(1,(num+1)):
+        for i in range(1, (num + 1)):
             if lines:
                 n = -i
                 last_line = lines[n].strip()
