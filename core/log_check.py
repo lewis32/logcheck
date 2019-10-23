@@ -14,7 +14,7 @@ from .package.myconfigparser import MyConfigParser as ConfigParser
 
 class LogCheck():
     filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-    stime = time.strftime('%Y/%m/%d-%H:%M:%S', time.localtime())
+    stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
     def __init__(self):
         self.conflist = self._load_policy()

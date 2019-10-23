@@ -19,12 +19,12 @@ def getPortList():
 
 class TVSerial():
     lineNo = 1
-    currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
-    filename = 'SerialLog-%s.log' % currentTime
-    filepath = os.path.join(os.path.dirname(sys.path[0]), 'log', filename)
-    if not os.path.exists(os.path.dirname(filepath)):
-        os.mkdir(os.path.dirname(filepath))
-    f = open(filepath, "w", encoding='utf-8')
+    # currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
+    # filename = 'SerialLog-%s.log' % currentTime
+    # filepath = os.path.join(os.path.dirname(sys.path[0]), 'log', filename)
+    # if not os.path.exists(os.path.dirname(filepath)):
+    #     os.mkdir(os.path.dirname(filepath))
+    # f = open(filepath, "w", encoding='utf-8')
     read_flag = True
     isBreak = False
 
@@ -93,7 +93,7 @@ class TVSerial():
     def startReadSerial(self):
         # currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
         # newFile = os.path.join(sys.path[0], 'serial_log', '%s.log' % currentTime)
-        self.setLogPath(self.filepath)
+        # self.setLogPath(self.filepath)
         self.read_flag = True
         t = threading.Thread(target=self.alwayseReadSerial)
         t.start()

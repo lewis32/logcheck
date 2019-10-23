@@ -33,12 +33,16 @@ class WorkThread(QThread):
         except Exception as e:
             self.terminal.emit(str(e))
         else:
-            cmd_list = r'\n'.strip(startCmd)
+            print(startCmd)
+            cmd_list = re.split(r'\\n', startCmd)
+            print(cmd_list)
 
             for cmd in cmd_list:
                 self.serial.sendComand('\n\n')
-                QThread.sleep(self, 2)
+                self.sleep(1)
                 self.serial.sendComand(str(cmd))
+                self.serial.sendComand('\n')
+                self.sleep(1)
 
             self.serial.s.flushOutput()
             self.serial.s.flushInput()
@@ -52,7 +56,8 @@ class WorkThread(QThread):
                     break
 
                 try:
-                    block = self.serial.s.read(size=1000).decode('utf-8', errors='ignore')
+                    block = self.serial.s.read(size=10000).decode('utf-8', errors='ignore')
+                    print(block)
                 except Exception as e:
                     pass
                 else:
@@ -129,6 +134,7 @@ class LogCheckUI(QWidget):
         self.table2 = QTableWidget(0, 2)
         self.table2.setFont(font)
         self.table2.setHorizontalHeaderLabels(['key', 'value'])
+        self.table2.verticalHeader().setVisible(False)
         self.table2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table2.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -141,6 +147,7 @@ class LogCheckUI(QWidget):
         self.table3 = QTableWidget(0, 1)
         self.table3.setFont(font)
         self.table3.setHorizontalHeaderLabels(['key'])
+        self.table3.verticalHeader().setVisible(False)
         self.table3.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.labelHint3 = QLabel('* 配置规则有定义，但日志数据中缺失\n')
@@ -164,6 +171,10 @@ class LogCheckUI(QWidget):
             self.lineEditCmd1.setText(cmdDict['startCmd'])
             self.lineEditCmd2.setText(cmdDict['stopCmd'])
             f.close()
+
+            global startCmd, stopCmd
+            startCmd = cmdDict['startCmd']
+            stopCmd = cmdDict['stopCmd']
 
         self.startBtn = QPushButton('开始')
         self.startBtn.setObjectName('startBtn')
@@ -315,14 +326,16 @@ class LogCheckUI(QWidget):
             return
 
         self.workThread.serial.stopReadSerial()
-        if self.labelCmd2.text() and self.labelCmd2.text().strip():
-            self.workThread.serial.sendComand(self.labelCmd2.text())
-            cmd_list = r'\n'.strip(stopCmd)
+        if self.lineEditCmd2.text() and self.lineEditCmd2.text().strip():
+            self.workThread.serial.sendComand(self.lineEditCmd2.text())
+            cmd_list = re.split(r'\\n', stopCmd)
+            print(cmd_list)
 
             for cmd in cmd_list:
                 self.workThread.serial.sendComand('\n\n')
-                QThread.sleep(self.workThread, 2)
+                self.workThread.sleep(1)
                 self.workThread.serial.sendComand(str(cmd))
+                print(str(cmd))
         self.workThread.serial.close()
 
         self.comboBox.setEnabled(True)
@@ -341,13 +354,24 @@ class LogCheckUI(QWidget):
         :return: None
         """
         cnt = 0
+
+        if not res:
+            return
+
         for i in res:
             self.table1.setRowCount(self.row + 1)
-
             self.table1.setItem(self.row, 0,
                                 QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
             self.table1.setItem(self.row, 1, QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
-            self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
+
+            if i['result']:
+                self.table1.setItem(self.row, 2, QTableWidgetItem('Fail'))
+                self.table1.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
+            else:
+                self.table1.setItem(self.row, 2, QTableWidgetItem('Pass'))
+                self.table1.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
+
+            # self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
             self.table1.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
             self.table1.setItem(self.row, 4, QTableWidgetItem(json.dumps(i)))
 
