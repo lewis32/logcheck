@@ -117,19 +117,19 @@ class LogCheckUI(QWidget):
         self.refreshBtn.setFixedSize(80, 25)
 
         self.table1 = QTableWidget(0, 5)
-        self.table1.setToolTip('点击查看单条日志的详细数据')
+        self.table1.setToolTip('点击查看详细结果，右键复制原始数据')
         self.table1.setFont(font)
-        self.table1.setHorizontalHeaderLabels(['srcEventCode', 'eventCode', 'result', 'detail', 'moreDetail'])
+        self.table1.setHorizontalHeaderLabels(['srceventCode', 'eventCode', 'result', 'detail', 'moreDetail'])
         self.table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table1.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table1.setColumnHidden(3, True)
         self.table1.setColumnHidden(4, True)
 
-        self.labelHint1 = QLabel('* 红色 - 日志数据与配置规则不符\n* 绿色 - 日志数据与配置规则相符')
-        self.labelHint1.setObjectName('labelHint')
+        # self.labelHint1 = QLabel('* 红色 - 日志数据与配置规则不符\n* 绿色 - 日志数据与配置规则相符')
+        # self.labelHint1.setObjectName('labelHint')
         self.hboxLayoutTable1 = QVBoxLayout()
         self.hboxLayoutTable1.addWidget(self.table1)
-        self.hboxLayoutTable1.addWidget(self.labelHint1)
+        # self.hboxLayoutTable1.addWidget(self.labelHint1)
 
         self.table2 = QTableWidget(0, 2)
         self.table2.setFont(font)
@@ -138,11 +138,11 @@ class LogCheckUI(QWidget):
         self.table2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table2.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.labelHint2 = QLabel('* 红色 - value错误\n* 黄色 - key不在配置规则内')
-        self.labelHint2.setObjectName('labelHint')
+        # self.labelHint2 = QLabel('* 红色 - value错误\n* 黄色 - key不在配置规则内')
+        #         # self.labelHint2.setObjectName('labelHint')
         self.hboxLayoutTable2 = QVBoxLayout()
         self.hboxLayoutTable2.addWidget(self.table2)
-        self.hboxLayoutTable2.addWidget(self.labelHint2)
+        # self.hboxLayoutTable2.addWidget(self.labelHint2)
 
         self.table3 = QTableWidget(0, 1)
         self.table3.setFont(font)
@@ -150,11 +150,11 @@ class LogCheckUI(QWidget):
         self.table3.verticalHeader().setVisible(False)
         self.table3.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.labelHint3 = QLabel('* 配置规则有定义，但日志数据中缺失\n')
-        self.labelHint3.setObjectName('labelHint')
+        # self.labelHint3 = QLabel('* 配置规则有定义，但日志数据中缺失\n')
+        # self.labelHint3.setObjectName('labelHint')
         self.hboxLayoutTable3 = QVBoxLayout()
         self.hboxLayoutTable3.addWidget(self.table3)
-        self.hboxLayoutTable3.addWidget(self.labelHint3)
+        # self.hboxLayoutTable3.addWidget(self.labelHint3)
 
         self.labelCmd1 = QLabel('开始前执行命令')
         self.lineEditCmd1 = QLineEdit()
@@ -223,10 +223,10 @@ class LogCheckUI(QWidget):
         hboxLayoutFooter.addWidget(self.lineEditCmd2, 1, 1)
         hboxLayoutFooter.addWidget(self.stopBtn, 1, 2)
 
-        groupBoxHeader = QGroupBox('请选择正确的端口')
+        groupBoxHeader = QGroupBox('选择端口')
         groupBoxHeader.setObjectName('groupBoxHeader')
         groupBoxHeader.setLayout(hboxLayoutHeader)
-        groupBoxFooter = QGroupBox(r'请输入需执行的命令（用\n分隔）')
+        groupBoxFooter = QGroupBox(r'输入命令（多条用\n分隔）')
         groupBoxFooter.setLayout(hboxLayoutFooter)
 
         mainLayout.addWidget(groupBoxHeader)
@@ -243,7 +243,8 @@ class LogCheckUI(QWidget):
         global currentPort
         print(self.comboBox.currentText())
         if self.comboBox.currentText():
-            currentPort = re.findall(r'COM[0-9]+', self.comboBox.currentText())[0]
+            currentPort = re.findall(r'COM[0-9]+',
+                self.comboBox.currentText())[0]
 
     def cmdChange(self, i):
         """
@@ -291,7 +292,8 @@ class LogCheckUI(QWidget):
         global startFlag
 
         if not currentPort:
-            QMessageBox.information(self, '提示', '请选择端口！', QMessageBox.Ok)
+            QMessageBox.information(self, '提示', '请选择端口！',
+                QMessageBox.Ok)
             return
 
         self.row = 0
@@ -362,18 +364,24 @@ class LogCheckUI(QWidget):
             self.table1.setRowCount(self.row + 1)
             self.table1.setItem(self.row, 0,
                                 QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
-            self.table1.setItem(self.row, 1, QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
+            self.table1.setItem(self.row, 1,
+                                QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
 
             if i['result']:
                 self.table1.setItem(self.row, 2, QTableWidgetItem('Fail'))
                 self.table1.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
+                self.setToolTip('数据中存在不符合正则的键值')
             else:
                 self.table1.setItem(self.row, 2, QTableWidgetItem('Pass'))
                 self.table1.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
+                self.setToolTip('数据完全符合正则')
 
             # self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
             self.table1.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
             self.table1.setItem(self.row, 4, QTableWidgetItem(json.dumps(i)))
+
+            textEdit.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            textEdit.customContextMenuRequested[QtCore.QPoint].connect(self.myListWidgetContext)
 
             cnt += 1
             self.row += 1

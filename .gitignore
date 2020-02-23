@@ -13,6 +13,7 @@ pyqt/
 # pyinstaller dir
 build/
 dist/
+venv/
 *.spec
 
 # output files
