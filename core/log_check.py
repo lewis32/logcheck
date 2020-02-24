@@ -24,14 +24,15 @@ class LogCheck():
         to be deleted
         """
 
-        with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
+        with open(os.path.join(self.filepath, 'conf', 'log_demo.json'), 'r') as f:
             loglist = []
             text = f.read()
-            pattern = re.compile(r'{.*?}')
-            for item in pattern.findall(text):
-                item = json.loads(item)
-                loglist.append(item)
-            return loglist
+            # pattern = re.compile(r'{.*?}')
+            # for item in pattern.findall(text):
+            #     item = json.loads(item)
+            #     loglist.append(item)
+            # return loglist
+            return text
 
     def _load_policy(self):
         """
@@ -177,7 +178,10 @@ class LogCheck():
             listed_data = []
             results = []
 
-            pattern = re.compile(r'{.*?}')
+            json_rule = '''\"([a-zA-z0-9]{0,})\":\"{1}([a-zA-z0-9\\-\\s\\:\\u4e00-\\u9fa5\"]{0,})\"{1}[\\,\\}]{1}|" +
+        "\"([a-zA-z0-9]{0,})\":([a-zA-z0-9\\-\\s\\:\\u4e00-\\u9fa5\"]{0,})[\\,\\}]{1}'''
+            pattern = re.compile(json_rule)
+            print(data)
             for item in pattern.findall(data):
                 item = json.loads(item)
                 listed_data.append(item)
