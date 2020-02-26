@@ -4,7 +4,7 @@ from core.log_check import LogCheck
 def main():
     lc = LogCheck()
     data = lc.load_log()
-    print(data)
+    print("this is data:", data)
     res = lc.check_log(data)
     print(res)
 
