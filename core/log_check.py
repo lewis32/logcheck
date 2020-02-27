@@ -8,8 +8,8 @@ import time
 import bisect
 # import sys
 # sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'package'))
-# from myconfigparser import MyConfigParser as ConfigParser
 from .package.myconfigparser import MyConfigParser as ConfigParser
+from .package.mylogging import MyLogging as Logging
 
 
 class LogCheck():
@@ -17,6 +17,7 @@ class LogCheck():
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
     def __init__(self):
+        self.logger = Logging()
         self.conflist = self._load_policy()
 
     def _split_log(self, raw_str):
@@ -39,6 +40,7 @@ class LogCheck():
                 array_json.append(raw_str[stack_left_bracket[0]: stack_right_bracket.pop() + 1])
                 stack_left_bracket = []
                 stack_right_bracket = []
+        self.logger.info(str(array_json))
         return array_json
 
     def _load_policy(self):
@@ -118,7 +120,7 @@ class LogCheck():
 
         except Exception as e:
             res['result'] = 1
-            print("Failed to combine common keys with event keys : ", e)
+            self.logger.error('Failed to combine common keys with event keys: ' + str(e))
 
         else:
             for i in conf:
@@ -149,21 +151,6 @@ class LogCheck():
         finally:
             return res
 
-    # def _compare_timestamp(self, log):
-    #     """
-    #     only for the key timestamp
-    #     :param log:
-    #     :return:
-    #     """
-    #     st, et = 1, 2
-    #
-    #     for key in log:
-    #         if self._to_lower_key(key) == 'starttime': st = log[key]
-    #         if self._to_lower_key(key) == 'endtime': et = log[key]
-    #
-    #     if et != '0' and st >= et:
-    #         return 1
-
     def _to_lower_key(self, key):
         return key.lower()
 
@@ -186,7 +173,8 @@ class LogCheck():
             results = []
 
             for log in listed_data:
-                ret = self._compare_log(log, self.conflist)
+                ret = self._compare_log(json.loads(log), self.conflist)
+                self.logger.info(str(ret))
                 results.append(ret)
             json.dump(results, f, indent=4)
 

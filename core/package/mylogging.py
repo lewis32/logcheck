@@ -8,11 +8,14 @@ class MyLogging():
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
-    def info(self, msg):
-        self.logger.info(msg)
+    def info(self, msg, *args, **kwargs):
+        self.logger.info(msg, *args, **kwargs)
 
-    def debug(self, msg):
-        self.logger.debug(msg)
+    def debug(self, msg, *args, **kwargs):
+        self.logger.debug(msg, *args, **kwargs)
 
-    def warning(self, msg):
-        self.logger.warning(msg)
+    def warning(self, msg, *args, **kwargs):
+        self.logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        self.logger.error(msg, *args, **kwargs)

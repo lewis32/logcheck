@@ -1,1 +1,1 @@
-{"startCmd": "44444444444444", "stopCmd": "66666666666666666666"}
+{"stopCmd": "", "startCmd": "tail -f /var/local/logservice/logfile/tmp_file_se*"}

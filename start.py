@@ -123,6 +123,7 @@ class LogCheckUI(QWidget, Logging):
 
         self.table1 = QTableWidget(0, 5)
         self.table1.setToolTip('点击查看详细结果，右键复制原始数据')
+        self.table1.setMouseTracking(True)
         self.table1.setFont(font)
         self.table1.setHorizontalHeaderLabels(['srceventCode', 'eventCode', 'result', 'detail', 'moreDetail'])
         self.table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -198,6 +199,7 @@ class LogCheckUI(QWidget, Logging):
         self.lineEditCmd1.textChanged.connect(lambda: self.cmdChange(self.lineEditCmd1))
         self.lineEditCmd2.textChanged.connect(lambda: self.cmdChange(self.lineEditCmd2))
         self.table1.cellClicked.connect(self.rowClick)
+        self.table1.popCellTip.connect(lambda: self.popCelltTip(self.table1))
         self.workThread.add.connect(self.addText)
         self.workThread.terminal.connect(self.terminalText)
         self.startBtn.clicked.connect(self.startBtnClick)
@@ -376,11 +378,11 @@ class LogCheckUI(QWidget, Logging):
             if i['result']:
                 self.table1.setItem(self.row, 2, QTableWidgetItem('Fail'))
                 self.table1.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
-                self.setToolTip('数据中存在不符合正则的键值')
+                self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
             else:
                 self.table1.setItem(self.row, 2, QTableWidgetItem('Pass'))
                 self.table1.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
-                self.setToolTip('数据完全符合正则')
+                self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
 
             # self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
             self.table1.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
@@ -402,7 +404,7 @@ class LogCheckUI(QWidget, Logging):
         self.table3.clearContents()
 
         if self.table1.item(row, 3) and self.table1.item(row, 4):
-            dictData = json.loads(self.table1.item(row, 3).text())
+            dictData = json.loads(json.loads(self.table1.item(row, 3).text()))
             dictRes = json.loads(self.table1.item(row, 4).text())
 
             n = 0
@@ -442,6 +444,8 @@ class LogCheckUI(QWidget, Logging):
         self.stopBtn.setEnabled(False)
         startFlag = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
+
+    def popCelltTip(self, row, column):
 
 
 if __name__ == "__main__":
