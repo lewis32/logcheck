@@ -116,106 +116,104 @@ class LogCheckUI(QWidget, Logging):
         self.comboBox = QComboBox()
         self.setFont(font)
         self.comboBox.setCurrentIndex(-1)
-        self.refreshBtn = QPushButton('刷新')
-        self.refreshBtn.setObjectName('refreshBtn')
-        self.refreshBtn.setFont(font)
-        self.refreshBtn.setFixedSize(80, 25)
+        self.btnRefresh = QPushButton('刷新')
+        self.btnRefresh.setObjectName('btnRefresh')
+        self.btnRefresh.setFont(font)
+        self.btnRefresh.setFixedSize(80, 25)
+        self.btnClearCells = QPushButton('清空数据')
+        self.btnClearCells.setObjectName('btnClearCells')
+        self.btnClearCells.setFont(font)
+        self.btnClearCells.setFixedSize(100, 25)
 
-        self.table1 = QTableWidget(0, 5)
-        self.table1.setToolTip('点击查看详细结果，右键复制原始数据')
-        self.table1.setMouseTracking(True)
-        self.table1.setFont(font)
-        self.table1.setHorizontalHeaderLabels(['srceventCode', 'eventCode', 'result', 'detail', 'moreDetail'])
-        self.table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table1.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table1.setColumnHidden(3, True)
-        self.table1.setColumnHidden(4, True)
+        self.tableLeft = QTableWidget(0, 5)
+        self.tableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
+        self.tableLeft.setMouseTracking(True)
+        self.tableLeft.setFont(font)
+        self.tableLeft.setHorizontalHeaderLabels(['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
+        self.tableLeft.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableLeft.setColumnHidden(3, True)
+        self.tableLeft.setColumnHidden(4, True)
 
-        # self.labelHint1 = QLabel('* 红色 - 日志数据与配置规则不符\n* 绿色 - 日志数据与配置规则相符')
-        # self.labelHint1.setObjectName('labelHint')
-        self.hboxLayoutTable1 = QVBoxLayout()
-        self.hboxLayoutTable1.addWidget(self.table1)
-        # self.hboxLayoutTable1.addWidget(self.labelHint1)
+        self.hboxLayoutTableLeft = QVBoxLayout()
+        self.hboxLayoutTableLeft.addWidget(self.tableLeft)
 
-        self.table2 = QTableWidget(0, 2)
-        self.table2.setFont(font)
-        self.table2.setHorizontalHeaderLabels(['key', 'value'])
-        self.table2.verticalHeader().setVisible(False)
-        self.table2.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table2.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self.table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # self.labelHint2 = QLabel('* 红色 - value错误\n* 黄色 - key不在配置规则内')
-        #         # self.labelHint2.setObjectName('labelHint')
-        self.hboxLayoutTable2 = QVBoxLayout()
-        self.hboxLayoutTable2.addWidget(self.table2)
-        # self.hboxLayoutTable2.addWidget(self.labelHint2)
+        self.tableMid = QTableWidget(0, 2)
+        self.tableMid.setFont(font)
+        self.tableMid.setHorizontalHeaderLabels(['Key', 'Value'])
+        self.tableMid.verticalHeader().setVisible(False)
+        self.tableMid.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableMid.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.hboxLayoutTableMid = QVBoxLayout()
+        self.hboxLayoutTableMid.addWidget(self.tableMid)
 
-        self.table3 = QTableWidget(0, 1)
-        self.table3.setFont(font)
-        self.table3.setHorizontalHeaderLabels(['key'])
-        self.table3.verticalHeader().setVisible(False)
-        self.table3.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # self.labelHint3 = QLabel('* 配置规则有定义，但日志数据中缺失\n')
-        # self.labelHint3.setObjectName('labelHint')
-        self.hboxLayoutTable3 = QVBoxLayout()
-        self.hboxLayoutTable3.addWidget(self.table3)
-        # self.hboxLayoutTable3.addWidget(self.labelHint3)
+        self.tableRight = QTableWidget(0, 1)
+        self.tableRight.setFont(font)
+        self.tableRight.setHorizontalHeaderLabels(['Key'])
+        self.tableRight.verticalHeader().setVisible(False)
+        self.tableRight.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.hboxLayoutTableRight = QVBoxLayout()
+        self.hboxLayoutTableRight.addWidget(self.tableRight)
 
-        self.labelCmd1 = QLabel('开始前执行命令')
-        self.lineEditCmd1 = QLineEdit()
-        self.lineEditCmd1.setObjectName('lineEditCmd1')
-        self.labelCmd2 = QLabel('结束后执行命令')
-        self.lineEditCmd2 = QLineEdit()
-        self.lineEditCmd2.setObjectName('lineEditCmd2')
+        self.labelCmdBeforeStart = QLabel('开始前执行命令')
+        self.lineEditCmdBeforeStart = QLineEdit()
+        self.lineEditCmdBeforeStart.setObjectName('lineEditCmdBeforeStart')
+        self.labelCmdAfterStop = QLabel('结束后执行命令')
+        self.lineEditCmdAfterStop = QLineEdit()
+        self.lineEditCmdAfterStop.setReadOnly(True)
+        self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
         try:
             f = open(os.path.join(filePath, 'conf', 'cmd.json'), 'r', encoding='utf-8')
         except FileNotFoundError as e:
-            pass
+            self.logger.error(str(e))
         else:
             cmdDict = json.load(f)
-            self.lineEditCmd1.setText(cmdDict['startCmd'])
-            self.lineEditCmd2.setText(cmdDict['stopCmd'])
+            self.lineEditCmdBeforeStart.setText(cmdDict['startCmd'])
+            self.lineEditCmdAfterStop.setText(cmdDict['stopCmd'])
             f.close()
 
             global startCmd, stopCmd
             startCmd = cmdDict['startCmd']
             stopCmd = cmdDict['stopCmd']
 
-        self.startBtn = QPushButton('开始')
-        self.startBtn.setObjectName('startBtn')
-        self.startBtn.setFont(font)
-        self.startBtn.setFixedSize(80, 25)
-        self.stopBtn = QPushButton('停止')
-        self.stopBtn.setObjectName('stopBtn')
-        self.stopBtn.setFont(font)
-        self.stopBtn.setFixedSize(80, 25)
-        self.stopBtn.setEnabled(False)
+        self.btnStart = QPushButton('开始')
+        self.btnStart.setObjectName('btnStart')
+        self.btnStart.setFont(font)
+        self.btnStart.setFixedSize(80, 25)
+        self.btnStop = QPushButton('停止')
+        self.btnStop.setObjectName('btnStop')
+        self.btnStop.setFont(font)
+        self.btnStop.setFixedSize(80, 25)
+        self.btnStop.setEnabled(False)
 
         self.workThread = WorkThread()
 
         self.comboBox.currentIndexChanged.connect(self.selectionChange)
-        self.refreshBtn.clicked.connect(lambda: self.refreshBtnClick(self.refreshBtn))
-        self.lineEditCmd1.textChanged.connect(lambda: self.cmdChange(self.lineEditCmd1))
-        self.lineEditCmd2.textChanged.connect(lambda: self.cmdChange(self.lineEditCmd2))
-        self.table1.cellClicked.connect(self.rowClick)
-        self.table1.popCellTip.connect(lambda: self.popCelltTip(self.table1))
+        self.btnRefresh.clicked.connect(lambda: self.clickBtnRefresh(self.btnRefresh))
+        self.btnClearCells.clicked.connect(lambda: self.clickBtnClearCells(self.btnClearCells))
+        self.btnStart.clicked.connect(self.clickBtnStart)
+        self.btnStop.clicked.connect(lambda: self.clickBtnStop(self.btnStop))
+        self.lineEditCmdBeforeStart.textChanged.connect(lambda: self.cmdChange(self.lineEditCmdBeforeStart))
+        self.lineEditCmdAfterStop.textChanged.connect(lambda: self.cmdChange(self.lineEditCmdAfterStop))
+        self.tableLeft.cellClicked.connect(self.rowClick)
+        # self.tableLeft.popCellTip.connect(lambda: self.popCelltTip(self.tableLeft))
         self.workThread.add.connect(self.addText)
         self.workThread.terminal.connect(self.terminalText)
-        self.startBtn.clicked.connect(self.startBtnClick)
-        self.stopBtn.clicked.connect(lambda: self.stopBtnClick(self.stopBtn))
 
         hboxLayoutHeader.addWidget(self.comboBox)
-        hboxLayoutHeader.addWidget(self.refreshBtn)
+        hboxLayoutHeader.addWidget(self.btnRefresh)
+        hboxLayoutHeader.addWidget(self.btnClearCells)
         hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
-        hboxLayoutHeader.setStretchFactor(self.refreshBtn, 1)
+        hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
 
         groupBoxTable1 = QGroupBox('校验结果')
-        groupBoxTable1.setLayout(self.hboxLayoutTable1)
+        groupBoxTable1.setLayout(self.hboxLayoutTableLeft)
         groupBoxTable2 = QGroupBox('详细数据')
-        groupBoxTable2.setLayout(self.hboxLayoutTable2)
+        groupBoxTable2.setLayout(self.hboxLayoutTableMid)
         groupBoxTable3 = QGroupBox('其他数据')
-        groupBoxTable3.setLayout(self.hboxLayoutTable3)
+        groupBoxTable3.setLayout(self.hboxLayoutTableRight)
         hboxLayoutBody.addWidget(groupBoxTable1)
         hboxLayoutBody.addWidget(groupBoxTable2)
         hboxLayoutBody.addWidget(groupBoxTable3)
@@ -223,17 +221,17 @@ class LogCheckUI(QWidget, Logging):
         hboxLayoutBody.setStretchFactor(groupBoxTable2, 3)
         hboxLayoutBody.setStretchFactor(groupBoxTable3, 1)
 
-        hboxLayoutFooter.addWidget(self.labelCmd1, 0, 0)
-        hboxLayoutFooter.addWidget(self.lineEditCmd1, 0, 1)
-        hboxLayoutFooter.addWidget(self.startBtn, 0, 2)
-        hboxLayoutFooter.addWidget(self.labelCmd2, 1, 0)
-        hboxLayoutFooter.addWidget(self.lineEditCmd2, 1, 1)
-        hboxLayoutFooter.addWidget(self.stopBtn, 1, 2)
+        hboxLayoutFooter.addWidget(self.labelCmdBeforeStart, 0, 0)
+        hboxLayoutFooter.addWidget(self.lineEditCmdBeforeStart, 0, 1)
+        hboxLayoutFooter.addWidget(self.btnStart, 0, 2)
+        hboxLayoutFooter.addWidget(self.labelCmdAfterStop, 1, 0)
+        hboxLayoutFooter.addWidget(self.lineEditCmdAfterStop, 1, 1)
+        hboxLayoutFooter.addWidget(self.btnStop, 1, 2)
 
         groupBoxHeader = QGroupBox('选择端口')
         groupBoxHeader.setObjectName('groupBoxHeader')
         groupBoxHeader.setLayout(hboxLayoutHeader)
-        groupBoxFooter = QGroupBox(r'输入命令（多条用\n分隔）')
+        groupBoxFooter = QGroupBox(r'输入命令，多条用\n分隔')
         groupBoxFooter.setLayout(hboxLayoutFooter)
 
         mainLayout.addWidget(groupBoxHeader)
@@ -263,11 +261,11 @@ class LogCheckUI(QWidget, Logging):
         global startCmd, stopCmd
 
         with open(os.path.join(filePath, 'conf', 'cmd.json'), 'w+', encoding='utf-8') as f:
-            if self.lineEditCmd1.text():
-                startCmd = self.lineEditCmd1.text()
+            if self.lineEditCmdBeforeStart.text():
+                startCmd = self.lineEditCmdBeforeStart.text()
 
-            if self.lineEditCmd2.text():
-                stopCmd = self.lineEditCmd2.text()
+            if self.lineEditCmdAfterStop.text():
+                stopCmd = self.lineEditCmdAfterStop.text()
 
             cmdDict = {
                 'startCmd': startCmd,
@@ -275,7 +273,7 @@ class LogCheckUI(QWidget, Logging):
             }
             json.dump(cmdDict, f)
 
-    def refreshBtnClick(self, btn):
+    def clickBtnRefresh(self, btn):
         """
         点击刷新按钮触发
         :param btn: object
@@ -291,7 +289,10 @@ class LogCheckUI(QWidget, Logging):
         self.comboBox.setCurrentIndex(-1)
         currentPort = None
 
-    def startBtnClick(self, btn):
+    def clickBtnClearCells(self, btn):
+        self.tableLeft.clearContents()
+
+    def clickBtnStart(self, btn):
         """
         点击开始按钮触发
         :param btn: object
@@ -300,31 +301,31 @@ class LogCheckUI(QWidget, Logging):
         global startFlag
 
         if not currentPort:
-            QMessageBox.information(self, '提示', '请选择端口！',
+            QMessageBox.information(self, '提示', '请先选择端口！',
                 QMessageBox.Ok)
             return
 
         self.row = 0
-        self.table1.clearContents()
-        self.table2.clearContents()
-        self.table3.clearContents()
+        self.tableLeft.clearContents()
+        self.tableMid.clearContents()
+        self.tableRight.clearContents()
         self.workThread.start()
 
         self.comboBox.setEnabled(False)
-        self.refreshBtn.setEnabled(False)
-        self.lineEditCmd1.setEnabled(False)
-        self.lineEditCmd2.setEnabled(False)
-        self.startBtn.setEnabled(False)
-        self.stopBtn.setEnabled(False)
+        self.btnRefresh.setEnabled(False)
+        self.lineEditCmdBeforeStart.setEnabled(False)
+        self.lineEditCmdAfterStop.setEnabled(False)
+        self.btnStart.setEnabled(False)
+        self.btnStop.setEnabled(False)
 
         # 开始后马上点击结束会报错，添加延时
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
-        self.timer.timeout.connect(lambda: self.stopBtn.setEnabled(True))
+        self.timer.timeout.connect(lambda: self.btnStop.setEnabled(True))
         self.timer.start(5000)
         self.timer.start(5000)
 
-    def stopBtnClick(self, btn):
+    def clickBtnStop(self, btn):
         """
         点击结束按钮触发
         :param btn: object
@@ -336,8 +337,8 @@ class LogCheckUI(QWidget, Logging):
             return
 
         self.workThread.serial.stopReadSerial()
-        if self.lineEditCmd2.text() and self.lineEditCmd2.text().strip():
-            self.workThread.serial.sendComand(self.lineEditCmd2.text())
+        if self.lineEditCmdAfterStop.text() and self.lineEditCmdAfterStop.text().strip():
+            self.workThread.serial.sendComand(self.lineEditCmdAfterStop.text())
             cmd_list = re.split(r'\\n', stopCmd)
             self.logger.info(str(cmd_list))
 
@@ -349,11 +350,11 @@ class LogCheckUI(QWidget, Logging):
         self.workThread.serial.close()
 
         self.comboBox.setEnabled(True)
-        self.refreshBtn.setEnabled(True)
-        self.lineEditCmd1.setEnabled(True)
-        self.lineEditCmd2.setEnabled(True)
-        self.startBtn.setEnabled(True)
-        self.stopBtn.setEnabled(False)
+        self.btnRefresh.setEnabled(True)
+        self.lineEditCmdBeforeStart.setEnabled(True)
+        self.lineEditCmdAfterStop.setEnabled(True)
+        self.btnStart.setEnabled(True)
+        self.btnStop.setEnabled(False)
         startFlag = False
 
     def addText(self, data, res):
@@ -369,24 +370,24 @@ class LogCheckUI(QWidget, Logging):
             return
 
         for i in res:
-            self.table1.setRowCount(self.row + 1)
-            self.table1.setItem(self.row, 0,
-                                QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
-            self.table1.setItem(self.row, 1,
-                                QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
+            self.tableLeft.setRowCount(self.row + 1)
+            self.tableLeft.setItem(self.row, 0,
+                                   QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
+            self.tableLeft.setItem(self.row, 1,
+                                   QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
 
             if i['result']:
-                self.table1.setItem(self.row, 2, QTableWidgetItem('Fail'))
-                self.table1.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
+                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
+                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
                 self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
             else:
-                self.table1.setItem(self.row, 2, QTableWidgetItem('Pass'))
-                self.table1.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
+                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
+                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
                 self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
 
             # self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
-            self.table1.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
-            self.table1.setItem(self.row, 4, QTableWidgetItem(json.dumps(i)))
+            self.tableLeft.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
+            self.tableLeft.setItem(self.row, 4, QTableWidgetItem(json.dumps(i)))
 
             # textEdit.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             # textEdit.customContextMenuRequested[QtCore.QPoint].connect(self.myListWidgetContext)
@@ -400,32 +401,32 @@ class LogCheckUI(QWidget, Logging):
         :param row: int
         :return: None
         """
-        self.table2.clearContents()
-        self.table3.clearContents()
+        self.tableMid.clearContents()
+        self.tableRight.clearContents()
 
-        if self.table1.item(row, 3) and self.table1.item(row, 4):
-            dictData = json.loads(json.loads(self.table1.item(row, 3).text()))
-            dictRes = json.loads(self.table1.item(row, 4).text())
+        if self.tableLeft.item(row, 3) and self.tableLeft.item(row, 4):
+            dictData = json.loads(json.loads(self.tableLeft.item(row, 3).text()))
+            dictRes = json.loads(self.tableLeft.item(row, 4).text())
 
             n = 0
             for k in dictData:
-                self.table2.setRowCount(n + 1)
-                self.table2.setItem(n, 0, QTableWidgetItem(str(k)))
-                self.table2.setItem(n, 1, QTableWidgetItem(str(dictData[k])))
+                self.tableMid.setRowCount(n + 1)
+                self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
+                self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictData[k])))
 
                 if k in dictRes['invalid_key']:
-                    self.table2.item(n, 0).setBackground(QBrush(QColor(255, 0, 0)))
-                    self.table2.item(n, 1).setBackground(QBrush(QColor(255, 0, 0)))
+                    self.tableMid.item(n, 0).setBackground(QBrush(QColor(255, 0, 0)))
+                    self.tableMid.item(n, 1).setBackground(QBrush(QColor(255, 0, 0)))
 
                 if k in dictRes['undefined_key']:
-                    self.table2.item(n, 0).setBackground(QBrush(QColor(255, 255, 0)))
-                    self.table2.item(n, 1).setBackground(QBrush(QColor(255, 255, 0)))
+                    self.tableMid.item(n, 0).setBackground(QBrush(QColor(255, 255, 0)))
+                    self.tableMid.item(n, 1).setBackground(QBrush(QColor(255, 255, 0)))
                 n += 1
 
             m = 0
             for i in dictRes['missing_key']:
-                self.table3.setRowCount(m + 1)
-                self.table3.setItem(m, 0, QTableWidgetItem(str(i)))
+                self.tableRight.setRowCount(m + 1)
+                self.tableRight.setItem(m, 0, QTableWidgetItem(str(i)))
                 m += 1
 
     def terminalText(self, text):
@@ -437,15 +438,15 @@ class LogCheckUI(QWidget, Logging):
         global startFlag
 
         self.comboBox.setEnabled(True)
-        self.refreshBtn.setEnabled(True)
-        self.lineEditCmd1.setEnabled(True)
-        self.lineEditCmd2.setEnabled(True)
-        self.startBtn.setEnabled(True)
-        self.stopBtn.setEnabled(False)
+        self.btnRefresh.setEnabled(True)
+        self.lineEditCmdBeforeStart.setEnabled(True)
+        self.lineEditCmdAfterStop.setEnabled(True)
+        self.btnStart.setEnabled(True)
+        self.btnStop.setEnabled(False)
         startFlag = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
-    def popCelltTip(self, row, column):
+    # def popCellTip(self, row, column):
 
 
 if __name__ == "__main__":
@@ -465,40 +466,40 @@ if __name__ == "__main__":
             margin-left:5px;
             margin-right:5px;
         }
-        .QPushButton#refreshBtn {
+        .QPushButton#btnRefresh {
             border:1px solid #8f8f91;
             border-radius:4px;
             position:relative;
             margin-left:5px;
             max-width:80px;
         }
-        .QPushButton#startBtn {
+        .QPushButton#btnClearCells {
             border:1px solid #8f8f91;
             border-radius:4px;
             position:relative;
-            margin-right:10px;
             margin-left:5px;
+            max-width:80px;
         }
-        .QPushButton#startBtn {
+        .QPushButton#btnStart {
             border:1px solid #8f8f91;
             border-radius:4px;
             margin-right:5px;
             margin-left:5px;
         }
-        .QPushButton#stopBtn {
+        .QPushButton#btnStop {
             border:1px solid #8f8f91;
             border-radius:4px;
             margin-right:5px;
             margin-left:5px;
         }
-        .QLineEdit#lineEditCmd1 {
+        .QLineEdit#lineEditCmdBeforeStart {
             border:1px solid #8f8f91;
             border-radius:4px;
             margin-left:5px;
             margin-right:5px;
             width:200px;
         }
-        .QLineEdit#lineEditCmd2 {
+        .QLineEdit#lineEditCmdAfterStop {
             border:1px solid #8f8f91;
             border-radius:4px;
             margin-left:5px;

@@ -1,1 +1,1 @@
-{"stopCmd": "", "startCmd": "tail -f /var/local/logservice/logfile/tmp_file_se*"}
+{"stopCmd": "TODO", "startCmd": "tail -f /var/local/logservice/logfile/tmp_file_se*"}
