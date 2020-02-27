@@ -6,6 +6,7 @@ import re
 import json
 import time
 import bisect
+from .package.mylogging import MyLogging as Logging
 # import sys
 # sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'package'))
 # from myconfigparser import MyConfigParser as ConfigParser
@@ -17,6 +18,7 @@ class LogCheck():
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
     def __init__(self):
+        self.logger = Logging()
         self.conflist = self._load_policy()
 
     def load_log(self):
@@ -31,7 +33,8 @@ class LogCheck():
             for item in pattern.findall(text):
                 item = json.loads(item)
                 loglist.append(item)
-            return loglist
+            # return loglist
+            return text
 
     def _load_policy(self):
         """
@@ -110,7 +113,7 @@ class LogCheck():
 
         except Exception as e:
             res['result'] = 1
-            print("Failed to combine common keys with event keys : ", e)
+            self.logger.info("Failed to combine common keys with event keys: " + str(e))
 
         else:
             for i in conf:
@@ -179,8 +182,13 @@ class LogCheck():
 
             pattern = re.compile(r'{.*?}')
             for item in pattern.findall(data):
-                item = json.loads(item)
-                listed_data.append(item)
+                try:
+                    item = json.loads(item)
+                except Exception as e:
+                    self.logger.info("Error occurs while loading JSON data: " + str(e))
+                    continue
+                else:
+                    listed_data.append(item)
 
             for log in listed_data:
                 ret = self._compare_log(log, self.conflist)

@@ -2,9 +2,11 @@
 
 from core.log_check import *
 from core.package.myserial import *
+from core.package.mylogging import MyLogging as Logging
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+
 
 filePath = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 startFlag = False
@@ -14,13 +16,14 @@ startCmd = ''
 stopCmd = ''
 
 
-class WorkThread(QThread):
+class WorkThread(QThread, Logging):
     """
     子线程，轮询校验结果返回
     """
 
     add = pyqtSignal(list, list)
     terminal = pyqtSignal(object)
+    logger = Logging()
 
     def run(self):
         global portList, currentPort, startFlag, startCmd
@@ -33,9 +36,10 @@ class WorkThread(QThread):
         except Exception as e:
             self.terminal.emit(str(e))
         else:
-            print(startCmd)
+            self.logger.info("Command to execute when started: " + startCmd)
+
             cmd_list = re.split(r'\\n', startCmd)
-            print(cmd_list)
+            self.logger.info("Multi commands: " + str(cmd_list))
 
             for cmd in cmd_list:
                 self.serial.sendComand('\n\n')
@@ -57,7 +61,7 @@ class WorkThread(QThread):
 
                 try:
                     block = self.serial.s.read(size=10000).decode('utf-8', errors='ignore')
-                    print(block)
+                    self.logger.info(block)
                 except Exception as e:
                     pass
                 else:
@@ -65,7 +69,7 @@ class WorkThread(QThread):
                         data, res = self.lc.check_log(block)
                         if data and res:
                             self.add.emit(data, res)
-                        print('This is log result from serial!')
+                        self.logger.info('This is log result from serial!')
 
                     # 测试代码
                     # data = self.lc.load_log()
@@ -74,7 +78,7 @@ class WorkThread(QThread):
                     # print('This is log result from local file')
 
 
-class LogCheckUI(QWidget):
+class LogCheckUI(QWidget, Logging):
     """
     UI主线程
     """
@@ -82,6 +86,7 @@ class LogCheckUI(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.logger = Logging()
 
     def initUI(self):
         """
@@ -241,7 +246,8 @@ class LogCheckUI(QWidget):
         :return: None
         """
         global currentPort
-        print(self.comboBox.currentText())
+        self.logger.info(self.comboBox.currentText())
+
         if self.comboBox.currentText():
             currentPort = re.findall(r'COM[0-9]+',
                 self.comboBox.currentText())[0]
@@ -331,13 +337,13 @@ class LogCheckUI(QWidget):
         if self.lineEditCmd2.text() and self.lineEditCmd2.text().strip():
             self.workThread.serial.sendComand(self.lineEditCmd2.text())
             cmd_list = re.split(r'\\n', stopCmd)
-            print(cmd_list)
+            self.logger.info(str(cmd_list))
 
             for cmd in cmd_list:
                 self.workThread.serial.sendComand('\n\n')
                 self.workThread.sleep(1)
                 self.workThread.serial.sendComand(str(cmd))
-                print(str(cmd))
+                self.logger.info(str(cmd))
         self.workThread.serial.close()
 
         self.comboBox.setEnabled(True)
@@ -380,8 +386,8 @@ class LogCheckUI(QWidget):
             self.table1.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
             self.table1.setItem(self.row, 4, QTableWidgetItem(json.dumps(i)))
 
-            textEdit.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-            textEdit.customContextMenuRequested[QtCore.QPoint].connect(self.myListWidgetContext)
+            # textEdit.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            # textEdit.customContextMenuRequested[QtCore.QPoint].connect(self.myListWidgetContext)
 
             cnt += 1
             self.row += 1

@@ -7,6 +7,7 @@ import sys
 import os
 import serial
 from serial.tools import list_ports
+from .mylogging import MyLogging as Logging
 
 
 def getPortList():
@@ -34,6 +35,7 @@ class TVSerial():
     #     return cls._instance
 
     def __init__(self, port='COM3', baudrate=115200, timeout=5):
+        self.logger = Logging()
         self.s = serial.Serial(port, baudrate, timeout=timeout)
         self.s.flushInput()
         self.s.flushOutput()
@@ -123,7 +125,7 @@ class TVSerial():
     def waitForString(self, keyWord, timeout):
         starttime = datetime.datetime.now()
         while True:
-            print(str(timeout))
+            self.logger.info("Timeout: " + str(timeout))
             re = self.get_last_line(self.filepath, 30)
             currenttime = datetime.datetime.now()
             interval = (currenttime - starttime).seconds
@@ -132,7 +134,7 @@ class TVSerial():
                 return ""
             for n in re:
                 if n.find(keyWord) >= 0:
-                    print(('pass', n))
+                    self.logger.info("Get the keyword successfully! " + n)
                     return n
 
 
@@ -147,4 +149,4 @@ if __name__ == '__main__':
 
     s.stopReadSerial()
     s.close()
-    print("end")
+    s.logger.info("Now your serial is disconnected!")
