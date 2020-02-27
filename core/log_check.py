@@ -6,7 +6,6 @@ import re
 import json
 import time
 import bisect
-from .package.mylogging import MyLogging as Logging
 # import sys
 # sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'package'))
 # from myconfigparser import MyConfigParser as ConfigParser
@@ -18,23 +17,29 @@ class LogCheck():
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
     def __init__(self):
-        self.logger = Logging()
         self.conflist = self._load_policy()
 
-    def load_log(self):
+    def _split_log(self, raw_str):
         """
-        to be deleted
+        split log stream to json array
+        :param raw_str:
+        :return:
         """
 
-        with open(os.path.join(self.filepath, 'conf', 'log.txt'), 'r') as f:
-            loglist = []
-            text = f.read()
-            pattern = re.compile(r'{.*?}')
-            for item in pattern.findall(text):
-                item = json.loads(item)
-                loglist.append(item)
-            # return loglist
-            return text
+        stack_left_bracket = []
+        stack_right_bracket = []
+        array_json = []
+        for i in range(len(raw_str)):
+            if raw_str[i] == '{':
+                stack_left_bracket.append(i)
+            if raw_str[i] == '}':
+                stack_right_bracket.append(i)
+            if stack_left_bracket and len(stack_left_bracket) == len(
+                    stack_right_bracket):
+                array_json.append(raw_str[stack_left_bracket[0]: stack_right_bracket.pop() + 1])
+                stack_left_bracket = []
+                stack_right_bracket = []
+        return array_json
 
     def _load_policy(self):
         """
@@ -113,7 +118,7 @@ class LogCheck():
 
         except Exception as e:
             res['result'] = 1
-            self.logger.info("Failed to combine common keys with event keys: " + str(e))
+            print("Failed to combine common keys with event keys : ", e)
 
         else:
             for i in conf:
@@ -177,18 +182,8 @@ class LogCheck():
         output_path = os.path.join(self.filepath, 'result', output_name)
 
         with open(output_path, 'w', encoding='utf-8') as f:
-            listed_data = []
+            listed_data = self._split_log(data)
             results = []
-
-            pattern = re.compile(r'{.*?}')
-            for item in pattern.findall(data):
-                try:
-                    item = json.loads(item)
-                except Exception as e:
-                    self.logger.info("Error occurs while loading JSON data: " + str(e))
-                    continue
-                else:
-                    listed_data.append(item)
 
             for log in listed_data:
                 ret = self._compare_log(log, self.conflist)
