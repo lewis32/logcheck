@@ -61,7 +61,7 @@ class WorkThread(QThread, Logging):
 
                 try:
                     block = self.serial.s.read(size=10000).decode('utf-8', errors='ignore')
-                    self.logger.info(block)
+                    self.logger.info(block) if block and block.strip() else None
                 except Exception as e:
                     pass
                 else:
@@ -246,7 +246,7 @@ class LogCheckUI(QWidget, Logging):
         :return: None
         """
         global currentPort
-        self.logger.info(self.comboBox.currentText())
+        self.logger.info("Text in combobox: " + self.comboBox.currentText())
 
         if self.comboBox.currentText():
             currentPort = re.findall(r'COM[0-9]+',
@@ -285,12 +285,20 @@ class LogCheckUI(QWidget, Logging):
         portList = getPortList()
         if portList:
             for i in portList:
-                self.comboBox.addItem(str(i))
+                self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
         self.comboBox.setCurrentIndex(-1)
         currentPort = None
 
     def clickBtnClearCells(self, btn):
+        """
+        点击清空按钮触发
+        :param btn: object
+        :return: None
+        """
         self.tableLeft.clearContents()
+        self.tableMid.clearContents()
+        self.tableRight.clearContents()
+        self.row = 0
 
     def clickBtnStart(self, btn):
         """
@@ -337,16 +345,17 @@ class LogCheckUI(QWidget, Logging):
             return
 
         self.workThread.serial.stopReadSerial()
-        if self.lineEditCmdAfterStop.text() and self.lineEditCmdAfterStop.text().strip():
-            self.workThread.serial.sendComand(self.lineEditCmdAfterStop.text())
-            cmd_list = re.split(r'\\n', stopCmd)
-            self.logger.info(str(cmd_list))
-
-            for cmd in cmd_list:
-                self.workThread.serial.sendComand('\n\n')
-                self.workThread.sleep(1)
-                self.workThread.serial.sendComand(str(cmd))
-                self.logger.info(str(cmd))
+        # TODO
+        # if self.lineEditCmdAfterStop.text() and self.lineEditCmdAfterStop.text().strip():
+        #     self.workThread.serial.sendComand(self.lineEditCmdAfterStop.text())
+        #     cmd_list = re.split(r'\\n', stopCmd)
+        #     self.logger.info("Command List: " + str(cmd_list))
+        #
+        #     for cmd in cmd_list:
+        #         self.workThread.serial.sendComand('\n\n')
+        #         self.workThread.sleep(1)
+        #         self.workThread.serial.sendComand(str(cmd))
+        #         self.logger.info("Execute command: " + str(cmd))
         self.workThread.serial.close()
 
         self.comboBox.setEnabled(True)

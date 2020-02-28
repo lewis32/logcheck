@@ -173,9 +173,14 @@ class LogCheck():
             results = []
 
             for log in listed_data:
-                ret = self._compare_log(json.loads(log), self.conflist)
-                self.logger.info(str(ret))
-                results.append(ret)
+                try:
+                    log = json.loads(log)
+                except json.decoder.JSONDecodeError as e:
+                    self.logger.error("Error occurs while decoding JSON: " + str(e))
+                else:
+                    ret = self._compare_log(log, self.conflist)
+                    self.logger.info(str(ret))
+                    results.append(ret)
             json.dump(results, f, indent=4)
 
             return listed_data, results
