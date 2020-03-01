@@ -12,8 +12,8 @@ filePath = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 startFlag = False
 portList = []
 currentPort = None
-startCmd = ''
-stopCmd = ''
+cmdStart = ''
+cmdStop = ''
 
 
 class WorkThread(QThread, Logging):
@@ -23,12 +23,12 @@ class WorkThread(QThread, Logging):
 
     add = pyqtSignal(list, list)
     terminal = pyqtSignal(object)
-    logger = Logging()
+    logger = Logging(__name__)
 
     def run(self):
-        global portList, currentPort, startFlag, startCmd
+        global currentPort, startFlag, cmdStart
 
-        if not portList or not currentPort:
+        if not currentPort:
             return
 
         try:
@@ -36,9 +36,9 @@ class WorkThread(QThread, Logging):
         except Exception as e:
             self.terminal.emit(str(e))
         else:
-            self.logger.info("Command to execute when started: " + startCmd)
+            self.logger.info("Command to execute when started: " + cmdStart)
 
-            cmd_list = re.split(r'\\n', startCmd)
+            cmd_list = re.split(r'\\n', cmdStart)
             self.logger.info("Multi commands: " + str(cmd_list))
 
             for cmd in cmd_list:
@@ -61,15 +61,16 @@ class WorkThread(QThread, Logging):
 
                 try:
                     block = self.serial.s.read(size=10000).decode('utf-8', errors='ignore')
-                    self.logger.info(block) if block and block.strip() else None
                 except Exception as e:
-                    pass
+                    self.logger.error(str(e))
                 else:
                     if block and block.strip():
+                        self.logger.info('Original log data: ' + block)
                         data, res = self.lc.check_log(block)
                         if data and res:
                             self.add.emit(data, res)
-                        self.logger.info('This is log result from serial!')
+                        self.logger.info('Check result: ' + str(res))
+
 
                     # 测试代码
                     # data = self.lc.load_log()
@@ -84,15 +85,13 @@ class LogCheckUI(QWidget, Logging):
     """
 
     def __init__(self):
-        super().__init__()
-        self.initUI()
-        self.logger = Logging()
-
-    def initUI(self):
         """
         initiate app UI
         :return: None
         """
+        super().__init__()
+        self.logger = Logging(__name__)
+
         self.setWindowTitle('日志校验工具')
         self.resize(1000, 700)
         self.setFixedSize(self.width(), self.height())
@@ -120,10 +119,10 @@ class LogCheckUI(QWidget, Logging):
         self.btnRefresh.setObjectName('btnRefresh')
         self.btnRefresh.setFont(font)
         self.btnRefresh.setFixedSize(80, 25)
-        self.btnClearCells = QPushButton('清空数据')
-        self.btnClearCells.setObjectName('btnClearCells')
-        self.btnClearCells.setFont(font)
-        self.btnClearCells.setFixedSize(100, 25)
+        self.btnClear = QPushButton('清空数据')
+        self.btnClear.setObjectName('btnClearCells')
+        self.btnClear.setFont(font)
+        self.btnClear.setFixedSize(100, 25)
 
         self.tableLeft = QTableWidget(0, 5)
         self.tableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
@@ -145,6 +144,7 @@ class LogCheckUI(QWidget, Logging):
         self.tableMid.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableMid.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableMid.setSortingEnabled(True)
         self.hboxLayoutTableMid = QVBoxLayout()
         self.hboxLayoutTableMid.addWidget(self.tableMid)
 
@@ -154,6 +154,7 @@ class LogCheckUI(QWidget, Logging):
         self.tableRight.verticalHeader().setVisible(False)
         self.tableRight.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableRight.setSortingEnabled(True)
         self.hboxLayoutTableRight = QVBoxLayout()
         self.hboxLayoutTableRight.addWidget(self.tableRight)
 
@@ -174,9 +175,9 @@ class LogCheckUI(QWidget, Logging):
             self.lineEditCmdAfterStop.setText(cmdDict['stopCmd'])
             f.close()
 
-            global startCmd, stopCmd
-            startCmd = cmdDict['startCmd']
-            stopCmd = cmdDict['stopCmd']
+            global cmdStart, cmdStop
+            cmdStart = cmdDict['startCmd']
+            cmdStop = cmdDict['stopCmd']
 
         self.btnStart = QPushButton('开始')
         self.btnStart.setObjectName('btnStart')
@@ -190,21 +191,21 @@ class LogCheckUI(QWidget, Logging):
 
         self.workThread = WorkThread()
 
-        self.comboBox.currentIndexChanged.connect(self.selectionChange)
-        self.btnRefresh.clicked.connect(lambda: self.clickBtnRefresh(self.btnRefresh))
-        self.btnClearCells.clicked.connect(lambda: self.clickBtnClearCells(self.btnClearCells))
-        self.btnStart.clicked.connect(self.clickBtnStart)
-        self.btnStop.clicked.connect(lambda: self.clickBtnStop(self.btnStop))
-        self.lineEditCmdBeforeStart.textChanged.connect(lambda: self.cmdChange(self.lineEditCmdBeforeStart))
-        self.lineEditCmdAfterStop.textChanged.connect(lambda: self.cmdChange(self.lineEditCmdAfterStop))
-        self.tableLeft.cellClicked.connect(self.rowClick)
+        self.comboBox.currentIndexChanged.connect(self.comboBoxSelected)
+        self.btnRefresh.clicked.connect(lambda: self.btnRefreshClicked(self.btnRefresh))
+        self.btnClear.clicked.connect(lambda: self.btnClearClicked(self.btnClear))
+        self.btnStart.clicked.connect(self.btnStartClicked)
+        self.btnStop.clicked.connect(lambda: self.btnStopClicked(self.btnStop))
+        self.lineEditCmdBeforeStart.textChanged.connect(lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
+        self.lineEditCmdAfterStop.textChanged.connect(lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
+        self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
         # self.tableLeft.popCellTip.connect(lambda: self.popCelltTip(self.tableLeft))
-        self.workThread.add.connect(self.addText)
-        self.workThread.terminal.connect(self.terminalText)
+        self.workThread.add.connect(self.checkResultReceived)
+        self.workThread.terminal.connect(self.terminalSignalReveived)
 
         hboxLayoutHeader.addWidget(self.comboBox)
         hboxLayoutHeader.addWidget(self.btnRefresh)
-        hboxLayoutHeader.addWidget(self.btnClearCells)
+        hboxLayoutHeader.addWidget(self.btnClear)
         hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
         hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
 
@@ -239,7 +240,7 @@ class LogCheckUI(QWidget, Logging):
         mainLayout.addWidget(groupBoxFooter)
         self.setLayout(mainLayout)
 
-    def selectionChange(self, i):
+    def comboBoxSelected(self, i):
         """
         下拉框选择端口触发
         :param i: object
@@ -249,47 +250,47 @@ class LogCheckUI(QWidget, Logging):
         self.logger.info("Text in combobox: " + self.comboBox.currentText())
 
         if self.comboBox.currentText():
-            currentPort = re.findall(r'COM[0-9]+',
-                self.comboBox.currentText())[0]
+            currentPort = re.findall(r'COM[0-9]+', self.comboBox.currentText())[0]
 
-    def cmdChange(self, i):
+    def lineEditCmdChanged(self, i):
         """
         修改执行命令触发
         :param i: object
         :return: None
         """
-        global startCmd, stopCmd
+        global cmdStart, cmdStop
 
         with open(os.path.join(filePath, 'conf', 'cmd.json'), 'w+', encoding='utf-8') as f:
             if self.lineEditCmdBeforeStart.text():
-                startCmd = self.lineEditCmdBeforeStart.text()
+                cmdStart = self.lineEditCmdBeforeStart.text()
 
             if self.lineEditCmdAfterStop.text():
-                stopCmd = self.lineEditCmdAfterStop.text()
+                cmdStop = self.lineEditCmdAfterStop.text()
 
             cmdDict = {
-                'startCmd': startCmd,
-                'stopCmd': stopCmd
+                'startCmd': cmdStart,
+                'stopCmd': cmdStop
             }
             json.dump(cmdDict, f)
 
-    def clickBtnRefresh(self, btn):
+    def btnRefreshClicked(self, btn):
         """
         点击刷新按钮触发
         :param btn: object
         :return: None
         """
-        global portList, currentPort
-
         self.comboBox.clear()
-        portList = getPortList()
+        try:
+            portList = getPortList()
+        except Exception as e:
+            self.logger.error(str(e))
+            QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
         if portList:
             for i in portList:
                 self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
-        self.comboBox.setCurrentIndex(-1)
-        currentPort = None
 
-    def clickBtnClearCells(self, btn):
+
+    def btnClearClicked(self, btn):
         """
         点击清空按钮触发
         :param btn: object
@@ -300,7 +301,7 @@ class LogCheckUI(QWidget, Logging):
         self.tableRight.clearContents()
         self.row = 0
 
-    def clickBtnStart(self, btn):
+    def btnStartClicked(self, btn):
         """
         点击开始按钮触发
         :param btn: object
@@ -333,17 +334,17 @@ class LogCheckUI(QWidget, Logging):
         self.timer.start(5000)
         self.timer.start(5000)
 
-    def clickBtnStop(self, btn):
+    def btnStopClicked(self, btn):
         """
         点击结束按钮触发
         :param btn: object
         :return: None
         """
-        global startFlag, stopCmd
+        global startFlag, cmdStop
 
         if not startFlag:
+            QMessageBox.information(self, '提示', '串口异常，重启后尝试！', QMessageBox.Ok)
             return
-
         self.workThread.serial.stopReadSerial()
         # TODO
         # if self.lineEditCmdAfterStop.text() and self.lineEditCmdAfterStop.text().strip():
@@ -366,7 +367,7 @@ class LogCheckUI(QWidget, Logging):
         self.btnStop.setEnabled(False)
         startFlag = False
 
-    def addText(self, data, res):
+    def checkResultReceived(self, data, res):
         """
         获得检验结果返回触发
         :param data: dict
@@ -404,7 +405,7 @@ class LogCheckUI(QWidget, Logging):
             cnt += 1
             self.row += 1
 
-    def rowClick(self, row):
+    def tableLeftCellClicked(self, row):
         """
         点击基本结果每行数据触发
         :param row: int
@@ -438,7 +439,7 @@ class LogCheckUI(QWidget, Logging):
                 self.tableRight.setItem(m, 0, QTableWidgetItem(str(i)))
                 m += 1
 
-    def terminalText(self, text):
+    def terminalSignalReveived(self, text):
         """
         子线程结束触发提示
         :param text: str
@@ -462,18 +463,17 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = LogCheckUI()
     qssstyle = '''
-        .QComboBox {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-        }
         .QTableWidget {
             border:1px solid #8f8f91;
             margin-left:5px;
             margin-right:5px;
+            margin-bottom:5px;
         }
-        .QLabel#labelHint {
-            margin-left:5px;
-            margin-right:5px;
+        .QComboBox {
+            border:1px solid #8f8f91;
+            border-radius:4px;
+            position:relative;
+            max-width:100px;
         }
         .QPushButton#btnRefresh {
             border:1px solid #8f8f91;
@@ -492,12 +492,14 @@ if __name__ == "__main__":
         .QPushButton#btnStart {
             border:1px solid #8f8f91;
             border-radius:4px;
+            position:relative;
             margin-right:5px;
             margin-left:5px;
         }
         .QPushButton#btnStop {
             border:1px solid #8f8f91;
             border-radius:4px;
+            position:relative;
             margin-right:5px;
             margin-left:5px;
         }

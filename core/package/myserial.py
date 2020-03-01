@@ -35,7 +35,7 @@ class TVSerial():
     #     return cls._instance
 
     def __init__(self, port='COM3', baudrate=115200, timeout=5):
-        self.logger = Logging()
+        self.logger = Logging(__name__)
         self.s = serial.Serial(port, baudrate, timeout=timeout)
         self.s.flushInput()
         self.s.flushOutput()

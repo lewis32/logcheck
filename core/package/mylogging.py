@@ -4,9 +4,9 @@ import logging
 
 
 class MyLogging():
-    def __init__(self):
+    def __init__(self, name=__name__):
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(name)
 
     def info(self, msg, *args, **kwargs):
         self.logger.info(msg, *args, **kwargs)
