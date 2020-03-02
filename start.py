@@ -62,7 +62,7 @@ class WorkThread(QThread, Logging):
                 try:
                     block = self.serial.s.read(size=10000).decode('utf-8', errors='ignore')
                 except Exception as e:
-                    self.logger.error(str(e))
+                    self.logger.error("Error occurs while reading serial: " + str(e))
                 else:
                     if block and block.strip():
                         self.logger.info('Original log data: ' + block)
@@ -144,7 +144,7 @@ class LogCheckUI(QWidget, Logging):
         self.tableMid.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableMid.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableMid.setSortingEnabled(True)
+        # self.tableMid.setSortingEnabled(True)
         self.hboxLayoutTableMid = QVBoxLayout()
         self.hboxLayoutTableMid.addWidget(self.tableMid)
 
@@ -168,7 +168,7 @@ class LogCheckUI(QWidget, Logging):
         try:
             f = open(os.path.join(filePath, 'conf', 'cmd.json'), 'r', encoding='utf-8')
         except FileNotFoundError as e:
-            self.logger.error(str(e))
+            self.logger.error("File not found: " + str(e))
         else:
             cmdDict = json.load(f)
             self.lineEditCmdBeforeStart.setText(cmdDict['startCmd'])
@@ -199,7 +199,7 @@ class LogCheckUI(QWidget, Logging):
         self.lineEditCmdBeforeStart.textChanged.connect(lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
         self.lineEditCmdAfterStop.textChanged.connect(lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
         self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
-        # self.tableLeft.popCellTip.connect(lambda: self.popCelltTip(self.tableLeft))
+        # self.tableLeft.popCellTip.connect(lambda: self.popCellTip(self.tableLeft))
         self.workThread.add.connect(self.checkResultReceived)
         self.workThread.terminal.connect(self.terminalSignalReveived)
 
@@ -283,7 +283,7 @@ class LogCheckUI(QWidget, Logging):
         try:
             portList = getPortList()
         except Exception as e:
-            self.logger.error(str(e))
+            self.logger.error("Error occurs while get port list: " + str(e))
             QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
         if portList:
             for i in portList:
@@ -417,7 +417,6 @@ class LogCheckUI(QWidget, Logging):
         if self.tableLeft.item(row, 3) and self.tableLeft.item(row, 4):
             dictData = json.loads(json.loads(self.tableLeft.item(row, 3).text()))
             dictRes = json.loads(self.tableLeft.item(row, 4).text())
-
             n = 0
             for k in dictData:
                 self.tableMid.setRowCount(n + 1)
