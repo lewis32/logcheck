@@ -68,7 +68,7 @@ class WorkThread(QThread, Logging):
                         self.logger.info('Original log data: ' + block)
                         data, res = self.lc.check_log(block)
                         if data and res:
-                            self.add.emit(data, res)
+                            self.add.emit([{key, data[key]} for key in sorted(data.keys())], res)
                         self.logger.info('Check result: ' + str(res))
 
 
@@ -138,23 +138,23 @@ class LogCheckUI(QWidget, Logging):
         self.hboxLayoutTableLeft.addWidget(self.tableLeft)
 
         self.tableMid = QTableWidget(0, 2)
+        self.tableMid.setSortingEnabled(True)
         self.tableMid.setFont(font)
         self.tableMid.setHorizontalHeaderLabels(['Key', 'Value'])
         self.tableMid.verticalHeader().setVisible(False)
         self.tableMid.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableMid.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # self.tableMid.setSortingEnabled(True)
         self.hboxLayoutTableMid = QVBoxLayout()
         self.hboxLayoutTableMid.addWidget(self.tableMid)
 
         self.tableRight = QTableWidget(0, 1)
+        # self.tableRight.setSortingEnabled(True)
         self.tableRight.setFont(font)
         self.tableRight.setHorizontalHeaderLabels(['Key'])
         self.tableRight.verticalHeader().setVisible(False)
         self.tableRight.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableRight.setSortingEnabled(True)
         self.hboxLayoutTableRight = QVBoxLayout()
         self.hboxLayoutTableRight.addWidget(self.tableRight)
 
