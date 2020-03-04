@@ -386,14 +386,22 @@ class LogCheckUI(QWidget, Logging):
             self.tableLeft.setItem(self.row, 1,
                                    QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
 
-            if i['result']:
-                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
-                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
-                self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
-            else:
+            if i['result'] == -1:
+                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('N/A'))
+                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
+                self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
+            elif i['result'] == 0:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
                 self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
                 self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
+            elif i['result'] == 1:
+                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
+                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
+                self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
+            elif i['result'] == 2:
+                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Warning'))
+                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
+                self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
 
             # self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
             self.tableLeft.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))

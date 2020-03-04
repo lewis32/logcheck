@@ -106,11 +106,9 @@ class LogCheck():
             if lower_key == 'srceventcode':
                 title[0] = log[key]
                 res['src_event_code'] = log[key]
-
             if lower_key == 'eventcode':
                 title[1] = log[key]
                 res['event_code'] = log[key]
-
             if lower_key == 'version':
                 title[2] = log[key]
                 # res['version'] = log[key]
@@ -119,7 +117,7 @@ class LogCheck():
             conf = dict(conflist.items('_'.join(title)) + conflist.items('common'))
 
         except Exception as e:
-            res['result'] = 1
+            res['result'] = -1
             self.logger.error('Failed to combine common keys with event keys: ' + str(e))
 
         else:
@@ -130,7 +128,6 @@ class LogCheck():
             if len(log_key):
                 for key in log_key:
                     res['undefined_key'][key] = log[key]
-
             if len(conf_key):
                 for key in conf_key:
                     res['missing_key'].append(key)
@@ -145,8 +142,10 @@ class LogCheck():
             if len(invalid_mutual_dict):
                 res['invalid_key'] = {**res['invalid_key'], **invalid_mutual_dict}
 
-            if len(res['missing_key']) or len(res['undefined_key']) or len(res['invalid_key']):
+            if len(res['missing_key']) or len(res['invalid_key']):
                 res['result'] = 1
+            elif len(res['undefined_key']):
+                res['result'] = 2
 
         finally:
             return res
