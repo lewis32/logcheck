@@ -60,15 +60,18 @@ class WorkThread(QThread, Logging):
                     break
 
                 try:
-                    block = self.serial.s.read(size=10000).decode('utf-8', errors='ignore')
+                    block = self.serial.s.read(size=10000).decode(
+                        'utf-8', errors='ignore')
                 except Exception as e:
-                    self.logger.error("Error occurs while reading serial: " + str(e))
+                    self.logger.error("Error occurs while reading serial: "
+                                      + str(e))
                 else:
                     if block and block.strip():
                         self.logger.info('Original log data: ' + block)
                         data, res = self.lc.check_log(block)
                         if data and res:
-                            self.add.emit([{key, data[key]} for key in sorted(data.keys())], res)
+                            self.add.emit([{key, data[key]} for key in sorted(
+                                data.keys())], res)
                         self.logger.info('Check result: ' + str(res))
 
 
@@ -128,8 +131,10 @@ class LogCheckUI(QWidget, Logging):
         self.tableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
         self.tableLeft.setMouseTracking(True)
         self.tableLeft.setFont(font)
-        self.tableLeft.setHorizontalHeaderLabels(['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
-        self.tableLeft.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableLeft.setHorizontalHeaderLabels(
+            ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
+        self.tableLeft.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
         self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableLeft.setColumnHidden(3, True)
         self.tableLeft.setColumnHidden(4, True)
@@ -142,8 +147,10 @@ class LogCheckUI(QWidget, Logging):
         self.tableMid.setFont(font)
         self.tableMid.setHorizontalHeaderLabels(['Key', 'Value'])
         self.tableMid.verticalHeader().setVisible(False)
-        self.tableMid.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tableMid.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.tableMid.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+        self.tableMid.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
         self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.hboxLayoutTableMid = QVBoxLayout()
         self.hboxLayoutTableMid.addWidget(self.tableMid)
@@ -153,7 +160,8 @@ class LogCheckUI(QWidget, Logging):
         self.tableRight.setFont(font)
         self.tableRight.setHorizontalHeaderLabels(['Key'])
         self.tableRight.verticalHeader().setVisible(False)
-        self.tableRight.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tableRight.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
         self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.hboxLayoutTableRight = QVBoxLayout()
         self.hboxLayoutTableRight.addWidget(self.tableRight)
@@ -166,7 +174,8 @@ class LogCheckUI(QWidget, Logging):
         self.lineEditCmdAfterStop.setReadOnly(True)
         self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
         try:
-            f = open(os.path.join(filePath, 'conf', 'cmd.json'), 'r', encoding='utf-8')
+            f = open(os.path.join(
+                filePath, 'conf', 'cmd.json'), 'r', encoding='utf-8')
         except FileNotFoundError as e:
             self.logger.error("File not found: " + str(e))
         else:
@@ -192,14 +201,20 @@ class LogCheckUI(QWidget, Logging):
         self.workThread = WorkThread()
 
         self.comboBox.currentIndexChanged.connect(self.comboBoxSelected)
-        self.btnRefresh.clicked.connect(lambda: self.btnRefreshClicked(self.btnRefresh))
-        self.btnClear.clicked.connect(lambda: self.btnClearClicked(self.btnClear))
+        self.btnRefresh.clicked.connect(
+            lambda: self.btnRefreshClicked(self.btnRefresh))
+        self.btnClear.clicked.connect(
+            lambda: self.btnClearClicked(self.btnClear))
         self.btnStart.clicked.connect(self.btnStartClicked)
-        self.btnStop.clicked.connect(lambda: self.btnStopClicked(self.btnStop))
-        self.lineEditCmdBeforeStart.textChanged.connect(lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
-        self.lineEditCmdAfterStop.textChanged.connect(lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
+        self.btnStop.clicked.connect(
+            lambda: self.btnStopClicked(self.btnStop))
+        self.lineEditCmdBeforeStart.textChanged.connect(
+            lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
+        self.lineEditCmdAfterStop.textChanged.connect(
+            lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
         self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
-        # self.tableLeft.popCellTip.connect(lambda: self.popCellTip(self.tableLeft))
+        # self.tableLeft.popCellTip.connect(
+        # lambda: self.popCellTip(self.tableLeft))
         self.workThread.add.connect(self.checkResultReceived)
         self.workThread.terminal.connect(self.terminalSignalReveived)
 
@@ -250,7 +265,8 @@ class LogCheckUI(QWidget, Logging):
         self.logger.info("Text in combobox: " + self.comboBox.currentText())
 
         if self.comboBox.currentText():
-            currentPort = re.findall(r'COM[0-9]+', self.comboBox.currentText())[0]
+            currentPort = re.findall(
+                r'COM[0-9]+', self.comboBox.currentText())[0]
 
     def lineEditCmdChanged(self, i):
         """
@@ -260,7 +276,8 @@ class LogCheckUI(QWidget, Logging):
         """
         global cmdStart, cmdStop
 
-        with open(os.path.join(filePath, 'conf', 'cmd.json'), 'w+', encoding='utf-8') as f:
+        with open(os.path.join(
+                filePath, 'conf', 'cmd.json'), 'w+', encoding='utf-8') as f:
             if self.lineEditCmdBeforeStart.text():
                 cmdStart = self.lineEditCmdBeforeStart.text()
 
@@ -285,9 +302,10 @@ class LogCheckUI(QWidget, Logging):
         except Exception as e:
             self.logger.error("Error occurs while get port list: " + str(e))
             QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
-        if portList:
-            for i in portList:
-                self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
+        else:
+            if portList:
+                for i in portList:
+                    self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
 
 
     def btnClearClicked(self, btn):
@@ -343,12 +361,15 @@ class LogCheckUI(QWidget, Logging):
         global startFlag, cmdStop
 
         if not startFlag:
-            QMessageBox.information(self, '提示', '串口异常，重启后尝试！', QMessageBox.Ok)
+            QMessageBox.information(
+                self, '提示', '串口异常，重启后尝试！', QMessageBox.Ok)
             return
         self.workThread.serial.stopReadSerial()
         # TODO
-        # if self.lineEditCmdAfterStop.text() and self.lineEditCmdAfterStop.text().strip():
-        #     self.workThread.serial.sendComand(self.lineEditCmdAfterStop.text())
+        # if self.lineEditCmdAfterStop.text()
+        # and self.lineEditCmdAfterStop.text().strip():
+        #     self.workThread.serial.sendComand(
+        # self.lineEditCmdAfterStop.text())
         #     cmd_list = re.split(r'\\n', stopCmd)
         #     self.logger.info("Command List: " + str(cmd_list))
         #
@@ -381,34 +402,43 @@ class LogCheckUI(QWidget, Logging):
 
         for i in res:
             self.tableLeft.setRowCount(self.row + 1)
-            self.tableLeft.setItem(self.row, 0,
-                                   QTableWidgetItem(str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
-            self.tableLeft.setItem(self.row, 1,
-                                   QTableWidgetItem(str(i['event_code']) if i['event_code'] else 'N/A'))
+            self.tableLeft.setItem(self.row, 0, QTableWidgetItem(
+                str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
+            self.tableLeft.setItem(self.row, 1, QTableWidgetItem(
+                str(i['event_code']) if i['event_code'] else 'N/A'))
 
             if i['result'] == -1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('N/A'))
-                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
+                self.tableLeft.item(self.row, 2).setBackground(
+                    QBrush(QColor(128, 128, 64)))
                 self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
             elif i['result'] == 0:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
-                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(128, 128, 64)))
+                self.tableLeft.item(self.row, 2).setBackground(
+                    QBrush(QColor(128, 128, 64)))
                 self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
             elif i['result'] == 1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
-                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
+                self.tableLeft.item(self.row, 2).setBackground(
+                    QBrush(QColor(255, 0, 0)))
                 self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
             elif i['result'] == 2:
-                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Warning'))
-                self.tableLeft.item(self.row, 2).setBackground(QBrush(QColor(255, 0, 0)))
+                self.tableLeft.setItem(self.row, 2,
+                                       QTableWidgetItem('Warning'))
+                self.tableLeft.item(self.row, 2).setBackground(
+                    QBrush(QColor(255, 0, 0)))
                 self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
 
-            # self.table1.setItem(self.row, 2, QTableWidgetItem('Fail' if i['result'] else 'Pass'))
-            self.tableLeft.setItem(self.row, 3, QTableWidgetItem(json.dumps(data[cnt])))
-            self.tableLeft.setItem(self.row, 4, QTableWidgetItem(json.dumps(i)))
+            # self.table1.setItem(self.row, 2, QTableWidgetItem(
+            #     'Fail' if i['result'] else 'Pass'))
+            self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
+                json.dumps(data[cnt])))
+            self.tableLeft.setItem(self.row, 4, QTableWidgetItem(
+                json.dumps(i)))
 
             # textEdit.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-            # textEdit.customContextMenuRequested[QtCore.QPoint].connect(self.myListWidgetContext)
+            # textEdit.customContextMenuRequested[QtCore.QPoint].connect(
+            #     self.myListWidgetContext)
 
             cnt += 1
             self.row += 1
@@ -423,7 +453,8 @@ class LogCheckUI(QWidget, Logging):
         self.tableRight.clearContents()
 
         if self.tableLeft.item(row, 3) and self.tableLeft.item(row, 4):
-            dictData = json.loads(json.loads(self.tableLeft.item(row, 3).text()))
+            dictData = json.loads(json.loads(
+                self.tableLeft.item(row, 3).text()))
             dictRes = json.loads(self.tableLeft.item(row, 4).text())
             n = 0
             for k in dictData:
@@ -432,12 +463,16 @@ class LogCheckUI(QWidget, Logging):
                 self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictData[k])))
 
                 if k in dictRes['invalid_key']:
-                    self.tableMid.item(n, 0).setBackground(QBrush(QColor(255, 0, 0)))
-                    self.tableMid.item(n, 1).setBackground(QBrush(QColor(255, 0, 0)))
+                    self.tableMid.item(n, 0).setBackground(
+                        QBrush(QColor(255, 0, 0)))
+                    self.tableMid.item(n, 1).setBackground(
+                        QBrush(QColor(255, 0, 0)))
 
                 if k in dictRes['undefined_key']:
-                    self.tableMid.item(n, 0).setBackground(QBrush(QColor(255, 255, 0)))
-                    self.tableMid.item(n, 1).setBackground(QBrush(QColor(255, 255, 0)))
+                    self.tableMid.item(n, 0).setBackground(
+                        QBrush(QColor(255, 255, 0)))
+                    self.tableMid.item(n, 1).setBackground(
+                        QBrush(QColor(255, 255, 0)))
                 n += 1
 
             m = 0
