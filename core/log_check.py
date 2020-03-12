@@ -40,7 +40,7 @@ class LogCheck():
                 array_json.append(raw_str[stack_left_bracket[0]: stack_right_bracket.pop() + 1])
                 stack_left_bracket = []
                 stack_right_bracket = []
-        self.logger.info(str(array_json))
+        self.logger.info(array_json)
         return array_json
 
     def _load_policy(self):
@@ -89,6 +89,7 @@ class LogCheck():
         :return:
         """
         res = {
+            'data': log,
             'src_event_code': None,
             'event_code': None,
             'missing_key': [],
@@ -156,7 +157,7 @@ class LogCheck():
     def check_log(self, data=None):
         """
         main func
-        :return: log data and check result
+        :return: listed_data dict, listed_result list
         """
         if not data:
             return
@@ -169,17 +170,17 @@ class LogCheck():
 
         with open(output_path, 'w', encoding='utf-8') as f:
             listed_data = self._split_log(data)
-            results = []
+            listed_results = []
 
-            for log in listed_data:
+            for data in listed_data:
                 try:
-                    log = json.loads(log)
+                    data = json.loads(data)
                 except json.decoder.JSONDecodeError as e:
                     self.logger.error("Error occurs while decoding JSON: " + str(e))
                 else:
-                    ret = self._compare_log(log, self.conflist)
-                    self.logger.info(str(ret))
-                    results.append(ret)
-            json.dump(results, f, indent=4)
+                    ret = self._compare_log(data, self.conflist)
+                    self.logger.info(ret)
+                    listed_results.append(ret)
+            json.dump(listed_results, f, indent=4)
 
-            return listed_data, results
+            return listed_results

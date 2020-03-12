@@ -20,8 +20,7 @@ class WorkThread(QThread, Logging):
     """
     子线程，轮询校验结果返回
     """
-
-    add = pyqtSignal(list, list)
+    add = pyqtSignal(list)
     terminal = pyqtSignal(object)
     logger = Logging(__name__)
 
@@ -68,12 +67,11 @@ class WorkThread(QThread, Logging):
                 else:
                     if block and block.strip():
                         self.logger.info('Original log data: ' + block)
-                        data, res = self.lc.check_log(block)
-                        if data and res:
-                            self.add.emit([{key, data[key]} for key in sorted(
-                                data.keys())], res)
+                        res = self.lc.check_log(block)
+                        if res:
+                            for n in range(len(res)):
+                                self.add.emit(res)
                         self.logger.info('Check result: ' + str(res))
-
 
                     # 测试代码
                     # data = self.lc.load_log()
@@ -135,6 +133,8 @@ class LogCheckUI(QWidget, Logging):
             ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
         self.tableLeft.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
+        self.tableLeft.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
         self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableLeft.setColumnHidden(3, True)
         self.tableLeft.setColumnHidden(4, True)
@@ -143,7 +143,7 @@ class LogCheckUI(QWidget, Logging):
         self.hboxLayoutTableLeft.addWidget(self.tableLeft)
 
         self.tableMid = QTableWidget(0, 2)
-        self.tableMid.setSortingEnabled(True)
+        # self.tableMid.setSortingEnabled(True)
         self.tableMid.setFont(font)
         self.tableMid.setHorizontalHeaderLabels(['Key', 'Value'])
         self.tableMid.verticalHeader().setVisible(False)
@@ -155,13 +155,15 @@ class LogCheckUI(QWidget, Logging):
         self.hboxLayoutTableMid = QVBoxLayout()
         self.hboxLayoutTableMid.addWidget(self.tableMid)
 
-        self.tableRight = QTableWidget(0, 1)
+        self.tableRight = QTableWidget(0, 2)
         # self.tableRight.setSortingEnabled(True)
         self.tableRight.setFont(font)
-        self.tableRight.setHorizontalHeaderLabels(['Key'])
+        self.tableRight.setHorizontalHeaderLabels(['Key', 'Value'])
         self.tableRight.verticalHeader().setVisible(False)
         self.tableRight.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
+        self.tableRight.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
         self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.hboxLayoutTableRight = QVBoxLayout()
         self.hboxLayoutTableRight.addWidget(self.tableRight)
@@ -213,10 +215,11 @@ class LogCheckUI(QWidget, Logging):
         self.lineEditCmdAfterStop.textChanged.connect(
             lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
         self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
+        self.tableMid.cellClicked.connect(self.tableMidCellClicked)
         # self.tableLeft.popCellTip.connect(
         # lambda: self.popCellTip(self.tableLeft))
         self.workThread.add.connect(self.checkResultReceived)
-        self.workThread.terminal.connect(self.terminalSignalReveived)
+        self.workThread.terminal.connect(self.stopSignalReveived)
 
         hboxLayoutHeader.addWidget(self.comboBox)
         hboxLayoutHeader.addWidget(self.btnRefresh)
@@ -233,9 +236,9 @@ class LogCheckUI(QWidget, Logging):
         hboxLayoutBody.addWidget(groupBoxTable1)
         hboxLayoutBody.addWidget(groupBoxTable2)
         hboxLayoutBody.addWidget(groupBoxTable3)
-        hboxLayoutBody.setStretchFactor(groupBoxTable1, 3)
-        hboxLayoutBody.setStretchFactor(groupBoxTable2, 3)
-        hboxLayoutBody.setStretchFactor(groupBoxTable3, 1)
+        hboxLayoutBody.setStretchFactor(groupBoxTable1, 6)
+        hboxLayoutBody.setStretchFactor(groupBoxTable2, 7)
+        hboxLayoutBody.setStretchFactor(groupBoxTable3, 5)
 
         hboxLayoutFooter.addWidget(self.labelCmdBeforeStart, 0, 0)
         hboxLayoutFooter.addWidget(self.lineEditCmdBeforeStart, 0, 1)
@@ -388,7 +391,7 @@ class LogCheckUI(QWidget, Logging):
         self.btnStop.setEnabled(False)
         startFlag = False
 
-    def checkResultReceived(self, data, res):
+    def checkResultReceived(self, res):
         """
         获得检验结果返回触发
         :param data: dict
@@ -410,29 +413,29 @@ class LogCheckUI(QWidget, Logging):
             if i['result'] == -1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('N/A'))
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(128, 128, 64)))
+                    QBrush(QColor(230, 180, 80)))
                 self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
             elif i['result'] == 0:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(128, 128, 64)))
+                    QBrush(QColor(101, 147, 74)))
                 self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
             elif i['result'] == 1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(255, 0, 0)))
+                    QBrush(QColor(254, 67, 101)))
                 self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
             elif i['result'] == 2:
                 self.tableLeft.setItem(self.row, 2,
                                        QTableWidgetItem('Warning'))
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(255, 0, 0)))
+                    QBrush(QColor(252, 157, 154)))
                 self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
 
             # self.table1.setItem(self.row, 2, QTableWidgetItem(
             #     'Fail' if i['result'] else 'Pass'))
             self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
-                json.dumps(data[cnt])))
+                json.dumps(i['data'])))
             self.tableLeft.setItem(self.row, 4, QTableWidgetItem(
                 json.dumps(i)))
 
@@ -449,39 +452,70 @@ class LogCheckUI(QWidget, Logging):
         :param row: int
         :return: None
         """
-        self.tableMid.clearContents()
+        try:
+            self.tableMid.clearContents()
+            self.tableRight.clearContents()
+
+            if self.tableLeft.item(row, 3) and self.tableLeft.item(row, 4):
+                dictData = json.loads(self.tableLeft.item(row, 3).text())
+                dictRes = json.loads(self.tableLeft.item(row, 4).text())
+                n = 0
+                print([{k, dictData[k]} for k in sorted(dictData.keys())])
+                for k in dictData:
+                    self.tableMid.setRowCount(n + 1)
+                    self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
+                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictData[k])))
+
+                    if k in dictRes['invalid_key']:
+                        self.tableMid.item(n, 0).setBackground(
+                            QBrush(QColor(213, 26, 33)))
+                        self.tableMid.item(n, 1).setBackground(
+                            QBrush(QColor(213, 26, 33)))
+
+                    if k in dictRes['undefined_key']:
+                        self.tableMid.item(n, 0).setBackground(
+                            QBrush(QColor(178, 200, 187)))
+                        self.tableMid.item(n, 1).setBackground(
+                            QBrush(QColor(178, 200, 187)))
+                    n += 1
+
+                for i in dictRes['missing_key']:
+                    self.tableMid.setRowCount(n + 1)
+                    self.tableMid.setItem(n, 0, QTableWidgetItem(str(i)))
+                    self.tableMid.setItem(n, 1, QTableWidgetItem('MISSING!!!'))
+                    self.tableMid.item(n, 0).setBackground(
+                        QBrush(QColor(230, 180, 80)))
+                    self.tableMid.item(n, 1).setBackground(
+                        QBrush(QColor(230, 180, 80)))
+                    n += 1
+                QStandardItem()
+                # m = 0
+                # for i in dictRes['missing_key']:
+                #     self.tableRight.setRowCount(m + 1)
+                #     self.tableRight.setItem(m, 0, QTableWidgetItem(str(i)))
+                #     m += 1
+        except Exception as e:
+            print(str(e))
+
+    def tableMidCellClicked(self, row):
+        """
+        点击tableMid每行数据触发，如果是JSON则解析在tableRight展示
+        :param row: int
+        :return: None
+        """
         self.tableRight.clearContents()
-
-        if self.tableLeft.item(row, 3) and self.tableLeft.item(row, 4):
-            dictData = json.loads(json.loads(
-                self.tableLeft.item(row, 3).text()))
-            dictRes = json.loads(self.tableLeft.item(row, 4).text())
+        tmp = self.tableMid.item(row, 1).text()
+        pattern = r'^{.*}$'
+        if re.match(pattern, tmp):
+            extra_data = json.loads(tmp)
             n = 0
-            for k in dictData:
-                self.tableMid.setRowCount(n + 1)
-                self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
-                self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictData[k])))
-
-                if k in dictRes['invalid_key']:
-                    self.tableMid.item(n, 0).setBackground(
-                        QBrush(QColor(255, 0, 0)))
-                    self.tableMid.item(n, 1).setBackground(
-                        QBrush(QColor(255, 0, 0)))
-
-                if k in dictRes['undefined_key']:
-                    self.tableMid.item(n, 0).setBackground(
-                        QBrush(QColor(255, 255, 0)))
-                    self.tableMid.item(n, 1).setBackground(
-                        QBrush(QColor(255, 255, 0)))
+            for k in extra_data:
+                self.tableRight.setRowCount(n + 1)
+                self.tableRight.setItem(n, 0, QTableWidgetItem(str(k)))
+                self.tableRight.setItem(n, 1, QTableWidgetItem(str(extra_data[k])))
                 n += 1
 
-            m = 0
-            for i in dictRes['missing_key']:
-                self.tableRight.setRowCount(m + 1)
-                self.tableRight.setItem(m, 0, QTableWidgetItem(str(i)))
-                m += 1
-
-    def terminalSignalReveived(self, text):
+    def stopSignalReveived(self, text):
         """
         子线程结束触发提示
         :param text: str
