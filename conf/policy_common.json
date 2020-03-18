@@ -1,42 +1,52 @@
 ﻿{
     "deviceid":{
     	"regex":"^861003009000006000000641bc2c7490d13b6642192ef075bc433c28$",
+		"alias":null,
     	"mapping":null
     },
     "devicemsg":{
     	"regex":"^HE55A6103FUWTS351$",
+		"alias":null,
     	"mapping":null
     },
     "brand":{
     	"regex":"^his$",
+		"alias":null,
     	"mapping":null
     },
     "os":{
     	"regex":"^Linux$",
+		"alias":null,
     	"mapping":null
     },
     "capabilitycode":{
     	"regex":"^2019072901$",
+		"alias":null,
     	"mapping":null
     },
     "chipplatform":{
     	"regex":"^mstar6886$",
+		"alias":null,
     	"mapping":null
     },
     "countrycode":{
     	"regex":"^DEU$",
+		"alias":null,
     	"mapping":null
     },
     "zone":{
     	"regex":"^1$",
+		"alias":null,
     	"mapping":null
     },
     "tvversion":{
     	"regex":"^V0000\\.0\\.00C\\.K0221$",
+		"alias":null,
     	"mapping":null
     },
     "tvmode":{
         "regex":"^[0-2]$",
+		"alias":null,
         "mapping":[
             {
                 "value":0,
@@ -54,10 +64,12 @@
     },
     "eventtime":{
     	"regex":"^\\d{9,}$",
+		"alias":null,
     	"mapping":null
     },
     "version":{
     	"regex":"^3\\.0$",
+		"alias":null,
     	"mapping":null
     }
 }

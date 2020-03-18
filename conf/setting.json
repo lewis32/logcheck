@@ -1,0 +1,4 @@
+{
+	"startCmd": "(kill -9 `ps | grep tail | grep -v grep | awk '{print $1}'`;tail -fn 0 /var/local/logservice/logfile/tmp_file_se* &)",
+	"stopCmd": "TODO"
+}

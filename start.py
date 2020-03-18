@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
-
 filePath = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 startFlag = False
 portList = []
@@ -22,7 +21,7 @@ class WorkThread(QThread, Logging):
     """
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
-    logger = Logging(__name__)
+    logger = Logging(name=__name__)
 
     def run(self):
         global currentPort, startFlag, cmdStart
@@ -35,17 +34,13 @@ class WorkThread(QThread, Logging):
         except Exception as e:
             self.terminal.emit(str(e))
         else:
-            self.logger.info("Command to execute when started: " + cmdStart)
+            self.logger.info("Start command: " + cmdStart)
 
-            cmd_list = re.split(r'\\n', cmdStart)
-            self.logger.info("Multi commands: " + str(cmd_list))
-
-            for cmd in cmd_list:
-                self.serial.sendComand('\n\n')
-                self.sleep(1)
-                self.serial.sendComand(str(cmd))
-                self.serial.sendComand('\n')
-                self.sleep(1)
+            self.serial.sendComand('\n\n')
+            self.sleep(1)
+            self.serial.sendComand(cmdStart)
+            self.serial.sendComand('\n\n')
+            self.sleep(1)
 
             self.serial.s.flushOutput()
             self.serial.s.flushInput()
@@ -69,8 +64,7 @@ class WorkThread(QThread, Logging):
                         self.logger.info('Original log data: ' + block)
                         res = self.lc.check_log(block)
                         if res:
-                            for n in range(len(res)):
-                                self.add.emit(res)
+                            self.add.emit(res)
                         self.logger.info('Check result: ' + str(res))
 
                     # 测试代码
@@ -144,6 +138,7 @@ class LogCheckUI(QWidget, Logging):
 
         self.tableMid = QTableWidget(0, 2)
         # self.tableMid.setSortingEnabled(True)
+        # self.tableMid.sortByColumn(0, Qt.AscendingOrder)
         self.tableMid.setFont(font)
         self.tableMid.setHorizontalHeaderLabels(['Key', 'Value'])
         self.tableMid.verticalHeader().setVisible(False)
@@ -177,7 +172,7 @@ class LogCheckUI(QWidget, Logging):
         self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
         try:
             f = open(os.path.join(
-                filePath, 'conf', 'cmd.json'), 'r', encoding='utf-8')
+                filePath, 'conf', 'setting.json'), 'r', encoding='utf-8')
         except FileNotFoundError as e:
             self.logger.error("File not found: " + str(e))
         else:
@@ -229,14 +224,14 @@ class LogCheckUI(QWidget, Logging):
 
         groupBoxTable1 = QGroupBox('校验结果')
         groupBoxTable1.setLayout(self.hboxLayoutTableLeft)
-        groupBoxTable2 = QGroupBox('详细数据')
+        groupBoxTable2 = QGroupBox('一级数据')
         groupBoxTable2.setLayout(self.hboxLayoutTableMid)
-        groupBoxTable3 = QGroupBox('其他数据')
+        groupBoxTable3 = QGroupBox('二级数据')
         groupBoxTable3.setLayout(self.hboxLayoutTableRight)
         hboxLayoutBody.addWidget(groupBoxTable1)
         hboxLayoutBody.addWidget(groupBoxTable2)
         hboxLayoutBody.addWidget(groupBoxTable3)
-        hboxLayoutBody.setStretchFactor(groupBoxTable1, 6)
+        hboxLayoutBody.setStretchFactor(groupBoxTable1, 7)
         hboxLayoutBody.setStretchFactor(groupBoxTable2, 7)
         hboxLayoutBody.setStretchFactor(groupBoxTable3, 5)
 
@@ -280,7 +275,7 @@ class LogCheckUI(QWidget, Logging):
         global cmdStart, cmdStop
 
         with open(os.path.join(
-                filePath, 'conf', 'cmd.json'), 'w+', encoding='utf-8') as f:
+                filePath, 'conf', 'setting.json'), 'w+', encoding='utf-8') as f:
             if self.lineEditCmdBeforeStart.text():
                 cmdStart = self.lineEditCmdBeforeStart.text()
 
@@ -291,7 +286,7 @@ class LogCheckUI(QWidget, Logging):
                 'startCmd': cmdStart,
                 'stopCmd': cmdStop
             }
-            json.dump(cmdDict, f)
+            json.dump(cmdDict, f, indent=4)
 
     def btnRefreshClicked(self, btn):
         """
@@ -412,25 +407,29 @@ class LogCheckUI(QWidget, Logging):
 
             if i['result'] == -1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('N/A'))
+                # 灰色表示从配置文件中找不到对应的事件
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(230, 180, 80)))
-                self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
+                    QBrush(QColor(128, 128, 128)))
+                self.setToolTip('配置文件中没有对应的eventcode！')
             elif i['result'] == 0:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
+                # 绿色表示全部字段均正常
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(101, 147, 74)))
-                self.setToolTip('数据全部键值符合正则，Ctrl+C可复制内容')
+                    QBrush(QColor(0, 128, 0)))
+                self.setToolTip('所有字段均正常，Ctrl+C可复制内容')
             elif i['result'] == 1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
+                # 红色表示部分字段缺失或值错误
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(254, 67, 101)))
-                self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
+                    QBrush(QColor(255, 0, 0)))
+                self.setToolTip('部分字段缺失或错误，Ctrl+C可复制内容')
             elif i['result'] == 2:
                 self.tableLeft.setItem(self.row, 2,
                                        QTableWidgetItem('Warning'))
-                self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(252, 157, 154)))
-                self.setToolTip('数据部分键值不符合正则，Ctrl+C可复制内容')
+                # 黄色表示包含未定义字段
+                elf.tableLeft.item(self.row, 2).setBackground(
+                    QBrush(QColor(255, 255, 0)))
+                self.setToolTip('部分字段不在定义内，Ctrl+C可复制内容')
 
             # self.table1.setItem(self.row, 2, QTableWidgetItem(
             #     'Fail' if i['result'] else 'Pass'))
@@ -457,10 +456,10 @@ class LogCheckUI(QWidget, Logging):
             self.tableRight.clearContents()
 
             if self.tableLeft.item(row, 3) and self.tableLeft.item(row, 4):
+                self.tableMid.setSortingEnabled(False)
                 dictData = json.loads(self.tableLeft.item(row, 3).text())
                 dictRes = json.loads(self.tableLeft.item(row, 4).text())
                 n = 0
-                print([{k, dictData[k]} for k in sorted(dictData.keys())])
                 for k in dictData:
                     self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
@@ -468,34 +467,32 @@ class LogCheckUI(QWidget, Logging):
 
                     if k in dictRes['invalid_key']:
                         self.tableMid.item(n, 0).setBackground(
-                            QBrush(QColor(213, 26, 33)))
+                            QBrush(QColor(255, 0, 0)))
                         self.tableMid.item(n, 1).setBackground(
-                            QBrush(QColor(213, 26, 33)))
+                            QBrush(QColor(255, 0, 0)))
 
                     if k in dictRes['undefined_key']:
                         self.tableMid.item(n, 0).setBackground(
-                            QBrush(QColor(178, 200, 187)))
+                            QBrush(QColor(255, 255, 0)))
                         self.tableMid.item(n, 1).setBackground(
-                            QBrush(QColor(178, 200, 187)))
+                            QBrush(QColor(255, 255, 0)))
                     n += 1
 
                 for i in dictRes['missing_key']:
                     self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(i)))
-                    self.tableMid.setItem(n, 1, QTableWidgetItem('MISSING!!!'))
+                    self.tableMid.setItem(n, 1, QTableWidgetItem('该字段缺失！'))
                     self.tableMid.item(n, 0).setBackground(
-                        QBrush(QColor(230, 180, 80)))
+                        QBrush(QColor(255, 0, 0)))
                     self.tableMid.item(n, 1).setBackground(
-                        QBrush(QColor(230, 180, 80)))
+                        QBrush(QColor(255, 0, 0)))
                     n += 1
-                QStandardItem()
-                # m = 0
-                # for i in dictRes['missing_key']:
-                #     self.tableRight.setRowCount(m + 1)
-                #     self.tableRight.setItem(m, 0, QTableWidgetItem(str(i)))
-                #     m += 1
+                # QStandardItem()
+                self.tableMid.setSortingEnabled(True)
+                self.tableMid.sortByColumn(0, Qt.AscendingOrder)
+
         except Exception as e:
-            print(str(e))
+            self.logger.error(str(e))
 
     def tableMidCellClicked(self, row):
         """

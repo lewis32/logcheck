@@ -3,12 +3,12 @@
 import logging
 
 
-class MyLogging():
-    def __init__(self, name=__name__):
+class MyLogging:
+    def __init__(self, name=None):
         logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        self.logger = logging.getLogger(name)
+            level=logging.DEBUG,
+            format='[%(asctime)s] [%(levelname)s] [%(filename)s: %(lineno)s] - %(message)s')
+        self.logger = logging.getLogger(name=name)
 
     def info(self, msg, *args, **kwargs):
         self.logger.info(msg, *args, **kwargs)

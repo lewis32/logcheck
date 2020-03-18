@@ -40,7 +40,6 @@ class LogCheck():
                 array_json.append(raw_str[stack_left_bracket[0]: stack_right_bracket.pop() + 1])
                 stack_left_bracket = []
                 stack_right_bracket = []
-        self.logger.info(array_json)
         return array_json
 
     def _load_policy(self):
@@ -178,8 +177,9 @@ class LogCheck():
                 except json.decoder.JSONDecodeError as e:
                     self.logger.error("Error occurs while decoding JSON: " + str(e))
                 else:
+                    if "eventcode" not in data:
+                        continue
                     ret = self._compare_log(data, self.conflist)
-                    self.logger.info(ret)
                     listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
 
