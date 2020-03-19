@@ -416,7 +416,7 @@ class LogCheckUI(QWidget):
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('N/A'))
                 # 灰色表示从配置文件中找不到对应的事件
                 self.tableLeft.item(self.row, 2).setBackground(
-                    QBrush(QColor(128, 128, 128)))
+                    QBrush(QColor(211, 211, 211)))
                 self.setToolTip('配置文件中没有对应的eventcode！')
             elif i['result'] == 0:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
