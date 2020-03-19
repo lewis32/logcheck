@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 import os
 import re
 import json
 import time
 import bisect
-# import sys
-# sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'package'))
 from .package.myconfigparser import MyConfigParser as ConfigParser
 from .package.mylogging import MyLogging as Logging
 
 
-class LogCheck():
+class LogCheck:
     filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 

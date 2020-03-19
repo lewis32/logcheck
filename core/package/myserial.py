@@ -3,8 +3,8 @@
 import datetime
 import threading
 import time
-import sys
-import os
+# import sys
+# import os
 import serial
 from serial.tools import list_ports
 from .mylogging import MyLogging as Logging
@@ -18,7 +18,7 @@ def getPortList():
         return port_list
 
 
-class TVSerial():
+class TVSerial:
     lineNo = 1
     # currentTime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
     # filename = 'SerialLog-%s.log' % currentTime

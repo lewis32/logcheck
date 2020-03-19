@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # pylint: disable-msg=invalid-name,global-statement
 
+import sys
 from core.log_check import *
 from core.package.myserial import *
 from core.package.mylogging import MyLogging as Logging
@@ -15,13 +18,13 @@ cmdStart = ''
 cmdStop = ''
 
 
-class WorkThread(QThread, Logging):
+class WorkThread(QThread):
     """
     子线程，轮询校验结果返回
     """
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
-    logger = Logging(name=__name__)
+    logger = Logging(__name__)
 
     def run(self):
         global currentPort, startFlag, cmdStart
@@ -74,7 +77,7 @@ class WorkThread(QThread, Logging):
                     # print('This is log result from local file')
 
 
-class LogCheckUI(QWidget, Logging):
+class LogCheckUI(QWidget):
     """
     UI主线程
     """
@@ -303,7 +306,11 @@ class LogCheckUI(QWidget, Logging):
         else:
             if portList:
                 for i in portList:
-                    self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
+                    try:
+                        # self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
+                        self.comboBox.addItem(i[0])
+                    except Exception as e:
+                        self.logger.error(str(e))
 
 
     def btnClearClicked(self, btn):
