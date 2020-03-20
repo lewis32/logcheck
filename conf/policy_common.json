@@ -1,52 +1,52 @@
 ﻿{
     "deviceid":{
     	"regex":"^861003009000006000000641bc2c7490d13b6642192ef075bc433c28$",
-		"alias":null,
-    	"mapping":null
+        "alias":"设备id",
+        "mapping":null
     },
     "devicemsg":{
     	"regex":"^HE55A6103FUWTS351$",
-		"alias":null,
-    	"mapping":null
+        "alias":"扩展设备名",
+        "mapping":null
     },
     "brand":{
-    	"regex":"^his$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^his$",
+        "alias":"品牌",
+        "mapping":null
     },
     "os":{
-    	"regex":"^Linux$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^Linux$",
+        "alias":"系统版本",
+        "mapping":null
     },
     "capabilitycode":{
-    	"regex":"^2019072901$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^2019072901$",
+        "alias":"能力码",
+        "mapping":null
     },
     "chipplatform":{
-    	"regex":"^mstar6886$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^mstar6886$",
+        "alias":"平台",
+        "mapping":null
     },
     "countrycode":{
-    	"regex":"^DEU$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^DEU$",
+        "alias":"3位国家码",
+        "mapping":null
     },
     "zone":{
-    	"regex":"^1$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^1$",
+        "alias":"时区",
+        "mapping":null
     },
     "tvversion":{
-    	"regex":"^V0000\\.0\\.00C\\.K0221$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^V0000\\.0\\.00C\\.K0221$",
+        "alias":"整机版本",
+        "mapping":null
     },
     "tvmode":{
         "regex":"^[0-2]$",
-		"alias":null,
+        "alias":"电视模式",
         "mapping":[
             {
                 "value":0,
@@ -63,13 +63,8 @@
         ]
     },
     "eventtime":{
-    	"regex":"^\\d{9,}$",
-		"alias":null,
-    	"mapping":null
-    },
-    "version":{
-    	"regex":"^3\\.0$",
-		"alias":null,
-    	"mapping":null
+        "regex":"^\\d{9,}$",
+        "alias":"事件上报时间",
+        "mapping":null
     }
 }

@@ -248,7 +248,7 @@ class LogCheckUI(QWidget):
         groupBoxHeader = QGroupBox('选择端口')
         groupBoxHeader.setObjectName('groupBoxHeader')
         groupBoxHeader.setLayout(hboxLayoutHeader)
-        groupBoxFooter = QGroupBox(r'输入命令，多条用\n分隔')
+        groupBoxFooter = QGroupBox(r'输入命令')
         groupBoxFooter.setLayout(hboxLayoutFooter)
 
         mainLayout.addWidget(groupBoxHeader)
