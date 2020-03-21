@@ -175,7 +175,7 @@ class LogCheckUI(QWidget):
         self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
         try:
             f = open(os.path.join(
-                filePath, 'conf', 'setting.json'), 'r', encoding='utf-8')
+                filePath, 'conf', 'setting.json'), mode='r', encoding='utf-8')
         except FileNotFoundError as e:
             self.logger.error("File not found: " + str(e))
         else:

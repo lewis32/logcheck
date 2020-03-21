@@ -7,7 +7,6 @@ import re
 import json
 import time
 import bisect
-from .package.myconfigparser import MyConfigParser as ConfigParser
 from .package.mylogging import MyLogging as Logging
 
 
@@ -16,8 +15,8 @@ class LogCheck:
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
     def __init__(self):
-        self.logger = Logging()
-        self.conflist = self._load_policy()
+        self.logger = Logging(__name__)
+        self.policy_all = self._load_policy()
 
     def _split_log(self, raw_str):
         """
@@ -46,10 +45,53 @@ class LogCheck:
         load policy file
         :return:
         """
+        policy_path = os.path.os.path.join(self.filepath, 'conf')
+        policy_common = None
+        policy_module = {}
 
-        conf = ConfigParser()
-        conf.read(os.path.join(self.filepath, 'conf', 'policy.ini'), encoding='utf-8')
-        return conf
+        for i in os.listdir(policy_path):
+            if re.match(r'^policy_module', i):
+                policy_module_path = os.path.os.path.join(policy_path, i)
+                with open(policy_module_path, mode='r', encoding='utf-8') as f:
+                    str_policy = f.read()
+                    if str_policy.startswith(u'\ufeff'):
+                        str_policy = str_policy.encode('utf-8')[3:].decode('utf-8')
+                    dict_policy = json.loads(str_policy, encoding='utf-8')
+                    policy_module = dict(policy_module, **dict_policy)
+            if re.match(r'^policy_common', i):
+                policy_common_path = os.path.os.path.join(policy_path, i)
+                with open(policy_common_path, mode='r', encoding='utf-8') as f:
+                    str_policy = f.read()
+                    if str_policy.startswith(u'\ufeff'):
+                        str_policy = str_policy.encode('utf-8')[3:].decode('utf-8')
+                    policy_common = json.loads(str_policy, encoding='utf-8')
+
+        if policy_common and policy_module:
+            for event in policy_module:
+                print(event)
+                m = re.match(r'^(null|\d+)_(\d+)_([\d.]+)', event)
+                if m.group(0):
+                    if m.group(1) != 'null':
+                        policy_module[event]['keys']['srceventcode'] = {
+                            'regex': m.group(1),
+                            'alias': '上级事件'
+                        }
+                    policy_module[event]['keys']['eventcode'] = {
+                        'regex': m.group(2),
+                        'alias': '本级事件'
+                    }
+                    policy_module[event]['keys']['version'] = {
+                        'regex': m.group(3),
+                        'alias': '日志版本'
+                    }
+                for ex in policy_module[event]['no_common_keys']:
+                    if ex in policy_common:
+                        policy_common.pop(ex)
+                    else:
+                        self.logger.error('%s的限制公共字段不在公共字段内！' % (event,))
+                policy_module[event]['keys'] = dict(policy_module[event]['keys'], **policy_common)
+            self.logger.info(json.dumps(policy_module))
+            return policy_module
 
     def _compare_keys(self, log, conf):
         """
@@ -79,7 +121,7 @@ class LogCheck:
 
         return mutual_key, log_key, conf_key
 
-    def _compare_log(self, log, conflist):
+    def _compare_log(self, log, conf):
         """
         check log value with the pattern in policy file
         :param log:
@@ -112,41 +154,32 @@ class LogCheck:
                 title[2] = log[key]
                 # res['version'] = log[key]
 
-        try:
-            conf = dict(conflist.items('_'.join(title)) + conflist.items('common'))
+        for i in conf:
+            conf[self._to_lower_key(i)] = conf.pop(i)
 
-        except Exception as e:
-            res['result'] = -1
-            self.logger.error('Failed to combine common keys with event keys: ' + str(e))
+        mutual_key, log_key, conf_key = self._compare_keys(log, conf)
+        if len(log_key):
+            for key in log_key:
+                res['undefined_key'][key] = log[key]
+        if len(conf_key):
+            for key in conf_key:
+                res['missing_key'].append(key)
 
-        else:
-            for i in conf:
-                conf[self._to_lower_key(i)] = conf.pop(i)
+        mutual_dict = {}
+        invalid_mutual_dict = {}
+        for i in mutual_key:
+            mutual_dict[i] = conf[self._to_lower_key(i)]
+            if not re.match(eval(mutual_dict[i]), str(log[i])):
+                invalid_mutual_dict[i] = log[i]
 
-            mutual_key, log_key, conf_key = self._compare_keys(log, conf)
-            if len(log_key):
-                for key in log_key:
-                    res['undefined_key'][key] = log[key]
-            if len(conf_key):
-                for key in conf_key:
-                    res['missing_key'].append(key)
+        if len(invalid_mutual_dict):
+            res['invalid_key'] = {**res['invalid_key'], **invalid_mutual_dict}
 
-            mutual_dict = {}
-            invalid_mutual_dict = {}
-            for i in mutual_key:
-                mutual_dict[i] = conf[self._to_lower_key(i)]
-                if not re.match(eval(mutual_dict[i]), str(log[i])):
-                    invalid_mutual_dict[i] = log[i]
+        if len(res['missing_key']) or len(res['invalid_key']):
+            res['result'] = 1
+        elif len(res['undefined_key']):
+            res['result'] = 2
 
-            if len(invalid_mutual_dict):
-                res['invalid_key'] = {**res['invalid_key'], **invalid_mutual_dict}
-
-            if len(res['missing_key']) or len(res['invalid_key']):
-                res['result'] = 1
-            elif len(res['undefined_key']):
-                res['result'] = 2
-
-        finally:
             return res
 
     def _to_lower_key(self, key):
@@ -183,3 +216,6 @@ class LogCheck:
             json.dump(listed_results, f, indent=4)
 
             return listed_results
+
+    def log_policy(self):
+        self._load_policy()
