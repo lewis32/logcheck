@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# pylint: disable-msg=invalid-name,global-statement
+# pylint: disable-msg=invalid-name,global-statement,typo
 
 import sys
 from core.log_check import *
@@ -77,55 +77,67 @@ class WorkThread(QThread):
                     # print('This is log result from local file')
 
 
-class LogCheckUI(QWidget):
+class LogCheckUI(QTabWidget):
     """
     UI主线程
     """
 
     def __init__(self):
         """
-        initiate app UI
+        初始化整体UI
         :return: None
         """
         super().__init__()
         self.logger = Logging(__name__)
 
-        self.setWindowTitle('日志校验工具')
+        self.setWindowTitle('日志检验工具')
         self.resize(1000, 700)
         self.setFixedSize(self.width(), self.height())
 
-        font = QFont()
-        font.setPointSize(10)
-        font.setFamily("Microsoft YaHei UI")
+        self.font = QFont()
+        self.font.setPointSize(10)
+        self.font.setFamily("Microsoft YaHei UI")
 
-        mainLayout = QVBoxLayout()
-        mainLayout.setContentsMargins(20, 20, 20, 20)
-        hboxLayoutHeader = QHBoxLayout()
-        hboxLayoutHeader.setContentsMargins(15, 15, 600, 15)
-        hboxLayoutHeader.setObjectName('hboxLayoutHeader')
-        hboxLayoutBody = QHBoxLayout()
-        hboxLayoutBody.setObjectName('hboxLayoutBody')
+        self.tabAutoMode = QWidget()
+        self.tabManualMode = QWidget()
+        self.addTab(self.tabAutoMode, '自动模式')
+        self.addTab(self.tabManualMode, '手动模式')
+        self.initAutoModeUI()
+        self.initManualModeUI()
+
+    def initAutoModeUI(self):
+        """
+        初始化自动模式UI
+        :return: None
+        """
+        self.mainLayout = QVBoxLayout(self)
+        self.mainLayout.setContentsMargins(20, 20, 20, 20)
+        self.hboxLayoutHeader = QHBoxLayout()
+        self.hboxLayoutHeader.setContentsMargins(15, 15, 600, 15)
+        self.hboxLayoutHeader.setObjectName('hboxLayoutHeader')
+        self.hboxLayoutBody = QHBoxLayout()
+        self.hboxLayoutBody.setObjectName('hboxLayoutBody')
         # hboxLayoutBody.setContentsMargins(15, 15, 15, 15)
-        hboxLayoutFooter = QGridLayout()
-        hboxLayoutFooter.setContentsMargins(15, 15, 15, 15)
-        hboxLayoutFooter.setObjectName('hboxLayoutFooter')
+        self.hboxLayoutFooter = QGridLayout()
+        self.hboxLayoutFooter.setContentsMargins(15, 15, 15, 15)
+        self.hboxLayoutFooter.setObjectName('hboxLayoutFooter')
 
         self.comboBox = QComboBox()
-        self.setFont(font)
+        self.setFont(self.font)
         self.comboBox.setCurrentIndex(-1)
         self.btnRefresh = QPushButton('刷新')
         self.btnRefresh.setObjectName('btnRefresh')
-        self.btnRefresh.setFont(font)
+        self.btnRefresh.setFont(self.font)
         self.btnRefresh.setFixedSize(80, 25)
         self.btnClear = QPushButton('清空数据')
         self.btnClear.setObjectName('btnClearCells')
-        self.btnClear.setFont(font)
+        self.btnClear.setFont(self.font)
         self.btnClear.setFixedSize(100, 25)
 
         self.tableLeft = QTableWidget(0, 5)
         self.tableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
         self.tableLeft.setMouseTracking(True)
-        self.tableLeft.setFont(font)
+        self.tableLeft.setFont(self.font)
         self.tableLeft.setHorizontalHeaderLabels(
             ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
         self.tableLeft.horizontalHeader().setSectionResizeMode(
@@ -142,7 +154,7 @@ class LogCheckUI(QWidget):
         self.tableMid = QTableWidget(0, 2)
         # self.tableMid.setSortingEnabled(True)
         # self.tableMid.sortByColumn(0, Qt.AscendingOrder)
-        self.tableMid.setFont(font)
+        self.tableMid.setFont(self.font)
         self.tableMid.setHorizontalHeaderLabels(['Key', 'Value'])
         self.tableMid.verticalHeader().setVisible(False)
         self.tableMid.horizontalHeader().setSectionResizeMode(
@@ -155,7 +167,7 @@ class LogCheckUI(QWidget):
 
         self.tableRight = QTableWidget(0, 2)
         # self.tableRight.setSortingEnabled(True)
-        self.tableRight.setFont(font)
+        self.tableRight.setFont(self.font)
         self.tableRight.setHorizontalHeaderLabels(['Key', 'Value'])
         self.tableRight.verticalHeader().setVisible(False)
         self.tableRight.horizontalHeader().setSectionResizeMode(
@@ -190,11 +202,11 @@ class LogCheckUI(QWidget):
 
         self.btnStart = QPushButton('开始')
         self.btnStart.setObjectName('btnStart')
-        self.btnStart.setFont(font)
+        self.btnStart.setFont(self.font)
         self.btnStart.setFixedSize(80, 25)
         self.btnStop = QPushButton('停止')
         self.btnStop.setObjectName('btnStop')
-        self.btnStop.setFont(font)
+        self.btnStop.setFont(self.font)
         self.btnStop.setFixedSize(80, 25)
         self.btnStop.setEnabled(False)
 
@@ -219,42 +231,48 @@ class LogCheckUI(QWidget):
         self.workThread.add.connect(self.checkResultReceived)
         self.workThread.terminal.connect(self.stopSignalReveived)
 
-        hboxLayoutHeader.addWidget(self.comboBox)
-        hboxLayoutHeader.addWidget(self.btnRefresh)
-        hboxLayoutHeader.addWidget(self.btnClear)
-        hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
-        hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
+        self.hboxLayoutHeader.addWidget(self.comboBox)
+        self.hboxLayoutHeader.addWidget(self.btnRefresh)
+        self.hboxLayoutHeader.addWidget(self.btnClear)
+        self.hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
+        self.hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
 
-        groupBoxTable1 = QGroupBox('校验结果')
-        groupBoxTable1.setLayout(self.hboxLayoutTableLeft)
-        groupBoxTable2 = QGroupBox('一级数据')
-        groupBoxTable2.setLayout(self.hboxLayoutTableMid)
-        groupBoxTable3 = QGroupBox('二级数据')
-        groupBoxTable3.setLayout(self.hboxLayoutTableRight)
-        hboxLayoutBody.addWidget(groupBoxTable1)
-        hboxLayoutBody.addWidget(groupBoxTable2)
-        hboxLayoutBody.addWidget(groupBoxTable3)
-        hboxLayoutBody.setStretchFactor(groupBoxTable1, 7)
-        hboxLayoutBody.setStretchFactor(groupBoxTable2, 7)
-        hboxLayoutBody.setStretchFactor(groupBoxTable3, 5)
+        self.groupBoxTable1 = QGroupBox('校验结果')
+        self.groupBoxTable1.setLayout(self.hboxLayoutTableLeft)
+        self.groupBoxTable2 = QGroupBox('一级数据')
+        self.groupBoxTable2.setLayout(self.hboxLayoutTableMid)
+        self.groupBoxTable3 = QGroupBox('二级数据')
+        self.groupBoxTable3.setLayout(self.hboxLayoutTableRight)
+        self.hboxLayoutBody.addWidget(self.groupBoxTable1)
+        self.hboxLayoutBody.addWidget(self.groupBoxTable2)
+        self.hboxLayoutBody.addWidget(self.groupBoxTable3)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTable1, 7)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTable2, 7)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTable3, 5)
 
-        hboxLayoutFooter.addWidget(self.labelCmdBeforeStart, 0, 0)
-        hboxLayoutFooter.addWidget(self.lineEditCmdBeforeStart, 0, 1)
-        hboxLayoutFooter.addWidget(self.btnStart, 0, 2)
-        hboxLayoutFooter.addWidget(self.labelCmdAfterStop, 1, 0)
-        hboxLayoutFooter.addWidget(self.lineEditCmdAfterStop, 1, 1)
-        hboxLayoutFooter.addWidget(self.btnStop, 1, 2)
+        self.hboxLayoutFooter.addWidget(self.labelCmdBeforeStart, 0, 0)
+        self.hboxLayoutFooter.addWidget(self.lineEditCmdBeforeStart, 0, 1)
+        self.hboxLayoutFooter.addWidget(self.btnStart, 0, 2)
+        self.hboxLayoutFooter.addWidget(self.labelCmdAfterStop, 1, 0)
+        self.hboxLayoutFooter.addWidget(self.lineEditCmdAfterStop, 1, 1)
+        self.hboxLayoutFooter.addWidget(self.btnStop, 1, 2)
 
-        groupBoxHeader = QGroupBox('选择端口')
-        groupBoxHeader.setObjectName('groupBoxHeader')
-        groupBoxHeader.setLayout(hboxLayoutHeader)
-        groupBoxFooter = QGroupBox(r'输入命令')
-        groupBoxFooter.setLayout(hboxLayoutFooter)
+        self.groupBoxHeader = QGroupBox('选择端口')
+        self.groupBoxHeader.setObjectName('groupBoxHeader')
+        self.groupBoxHeader.setLayout(self.hboxLayoutHeader)
+        self.groupBoxFooter = QGroupBox(r'输入命令')
+        self.groupBoxFooter.setLayout(self.hboxLayoutFooter)
 
-        mainLayout.addWidget(groupBoxHeader)
-        mainLayout.addLayout(hboxLayoutBody)
-        mainLayout.addWidget(groupBoxFooter)
-        self.setLayout(mainLayout)
+        self.mainLayout.addWidget(self.groupBoxHeader)
+        self.mainLayout.addLayout(self.hboxLayoutBody)
+        self.mainLayout.addWidget(self.groupBoxFooter)
+        self.tabAutoMode.setLayout(self.mainLayout)
+
+    def initManualModeUI(self):
+        """
+        初始化手动模式UI
+        :return: None
+        """
 
     def comboBoxSelected(self, i):
         """
@@ -519,7 +537,7 @@ class LogCheckUI(QWidget):
                 self.tableRight.setItem(n, 1, QTableWidgetItem(str(extra_data[k])))
                 n += 1
 
-    def stopSignalReveived(self, text):
+    def stopSignalReceived(self, text):
         """
         子线程结束触发提示
         :param text: str
@@ -537,6 +555,7 @@ class LogCheckUI(QWidget):
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
     # def popCellTip(self, row, column):
+    #     pass
 
 
 if __name__ == "__main__":

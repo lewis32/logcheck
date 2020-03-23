@@ -16,11 +16,12 @@ class LogCheck:
 
     def __init__(self):
         self.logger = Logging(__name__)
+        print(__name__)
         self.policy_all = self._load_policy()
 
     def _split_log(self, raw_str):
         """
-        split log stream to json array
+        对源日志数据按照JSON格式进行截取
         :param raw_str:
         :return:
         """
@@ -42,7 +43,7 @@ class LogCheck:
 
     def _load_policy(self):
         """
-        load policy file
+        处理配置文件
         :return:
         """
         policy_path = os.path.os.path.join(self.filepath, 'conf')
@@ -95,7 +96,7 @@ class LogCheck:
 
     def _compare_keys(self, log, conf):
         """
-        find mutual keys, extra keys and missing keys in log
+        查找日志中重复、多余和缺失的字段
         :param log:
         :param conf:
         :return:
@@ -123,7 +124,7 @@ class LogCheck:
 
     def _compare_log(self, log, conf):
         """
-        check log value with the pattern in policy file
+        根据配置文件的正则对日志数据进行对比
         :param log:
         :param conflist:
         :return:
@@ -141,6 +142,7 @@ class LogCheck:
         # count = len(log)
         # n = 1
         title = ['null', 'null', 'null']
+        title_str = ''
 
         for key in log:
             lower_key = self._to_lower_key(key)
@@ -153,6 +155,13 @@ class LogCheck:
             if lower_key == 'version':
                 title[2] = log[key]
                 # res['version'] = log[key]
+
+        for i in title:
+            title_str += i
+
+        if title_str not in conf:
+            res['result'] = -1
+            return res
 
         for i in conf:
             conf[self._to_lower_key(i)] = conf.pop(i)
@@ -183,11 +192,16 @@ class LogCheck:
             return res
 
     def _to_lower_key(self, key):
+        """
+        复制小写字符，不影响原数据
+        :param key:
+        :return:
+        """
         return key.lower()
 
     def check_log(self, data=None):
         """
-        main func
+        对比日志
         :return: listed_data dict, listed_result list
         """
         if not data:
@@ -211,11 +225,12 @@ class LogCheck:
                 else:
                     if "eventcode" not in data:
                         continue
-                    ret = self._compare_log(data, self.conflist)
+                    ret = self._compare_log(data, self.policy_all)
                     listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
+            self.logger.info(listed_results)
 
             return listed_results
 
-    def log_policy(self):
+    def load_policy(self):
         self._load_policy()
