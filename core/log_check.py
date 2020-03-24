@@ -160,6 +160,7 @@ class LogCheck:
             title_str += i
 
         if title_str not in conf:
+            # 找不到对应字段，直接返回-1
             res['result'] = -1
             return res
 
@@ -182,14 +183,16 @@ class LogCheck:
                 invalid_mutual_dict[i] = log[i]
 
         if len(invalid_mutual_dict):
-            res['invalid_key'] = {**res['invalid_key'], **invalid_mutual_dict}
+            res['invalid_key'] = dict(**res['invalid_key'], **invalid_mutual_dict)
 
+        # 存在不合法键值或丢失键值，返回1
         if len(res['missing_key']) or len(res['invalid_key']):
             res['result'] = 1
-        elif len(res['undefined_key']):
-            res['result'] = 2
 
-            return res
+        # 存在策略中未定义的键值，返回2
+        if len(res['undefined_key']):
+            res['result'] = 2
+        return res
 
     def _to_lower_key(self, key):
         """

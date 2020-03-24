@@ -229,7 +229,7 @@ class LogCheckUI(QTabWidget):
         # self.tableLeft.popCellTip.connect(
         # lambda: self.popCellTip(self.tableLeft))
         self.workThread.add.connect(self.checkResultReceived)
-        self.workThread.terminal.connect(self.stopSignalReveived)
+        self.workThread.terminal.connect(self.stopSignalReceived)
 
         self.hboxLayoutHeader.addWidget(self.comboBox)
         self.hboxLayoutHeader.addWidget(self.btnRefresh)
@@ -436,19 +436,22 @@ class LogCheckUI(QTabWidget):
                 self.tableLeft.item(self.row, 2).setBackground(
                     QBrush(QColor(211, 211, 211)))
                 self.setToolTip('配置文件中没有对应的eventcode！')
-            elif i['result'] == 0:
+            if i['result'] == 0:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
                 # 绿色表示全部字段均正常
                 self.tableLeft.item(self.row, 2).setBackground(
                     QBrush(QColor(0, 128, 0)))
+                # fontLight = QFont()
+                # fontLight.setStyle()
+                # self.tableLeft.item(self.row, 2).setFont(QFont(QFont="White"))
                 self.setToolTip('所有字段均正常，Ctrl+C可复制内容')
-            elif i['result'] == 1:
+            if i['result'] == 1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
                 # 红色表示部分字段缺失或值错误
                 self.tableLeft.item(self.row, 2).setBackground(
                     QBrush(QColor(255, 0, 0)))
                 self.setToolTip('部分字段缺失或错误，Ctrl+C可复制内容')
-            elif i['result'] == 2:
+            if i['result'] == 2:
                 self.tableLeft.setItem(self.row, 2,
                                        QTableWidgetItem('Warning'))
                 # 黄色表示包含未定义字段
@@ -553,9 +556,6 @@ class LogCheckUI(QTabWidget):
         self.btnStop.setEnabled(False)
         startFlag = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
-
-    # def popCellTip(self, row, column):
-    #     pass
 
 
 if __name__ == "__main__":
