@@ -91,7 +91,7 @@ class LogCheckUI(QTabWidget):
         self.logger = Logging(__name__)
 
         self.setWindowTitle('日志检验工具')
-        self.resize(1000, 700)
+        self.resize(1500, 700)
         self.setFixedSize(self.width(), self.height())
 
         self.font = QFont()
@@ -104,6 +104,8 @@ class LogCheckUI(QTabWidget):
         self.addTab(self.tabManualMode, '手动模式')
         self.initAutoModeUI()
         self.initManualModeUI()
+        # self.tabAutoMode.clicked.connect(self.tabSwitched)
+        # self.tabManualMode.clicked.connect(self.tabSwitched)
 
     def initAutoModeUI(self):
         """
@@ -134,28 +136,28 @@ class LogCheckUI(QTabWidget):
         self.btnClear.setFont(self.font)
         self.btnClear.setFixedSize(100, 25)
 
-        self.tableLeft = QTableWidget(0, 5)
+        self.tableLeft = QTableWidget(0, 6)
         self.tableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
         self.tableLeft.setMouseTracking(True)
         self.tableLeft.setFont(self.font)
         self.tableLeft.setHorizontalHeaderLabels(
-            ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
+            ['src_event_code', 'event_code', 'event_alias', 'result', 'detail', 'more_detail'])
         self.tableLeft.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
         self.tableLeft.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeToContents)
         self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableLeft.setColumnHidden(3, True)
         self.tableLeft.setColumnHidden(4, True)
+        self.tableLeft.setColumnHidden(5, True)
 
         self.hboxLayoutTableLeft = QVBoxLayout()
         self.hboxLayoutTableLeft.addWidget(self.tableLeft)
 
-        self.tableMid = QTableWidget(0, 2)
+        self.tableMid = QTableWidget(0, 4)
         # self.tableMid.setSortingEnabled(True)
         # self.tableMid.sortByColumn(0, Qt.AscendingOrder)
         self.tableMid.setFont(self.font)
-        self.tableMid.setHorizontalHeaderLabels(['Key', 'Value'])
+        self.tableMid.setHorizontalHeaderLabels(['key', 'key_alias', 'value', 'value_alias'])
         self.tableMid.verticalHeader().setVisible(False)
         self.tableMid.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
@@ -165,10 +167,10 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutTableMid = QVBoxLayout()
         self.hboxLayoutTableMid.addWidget(self.tableMid)
 
-        self.tableRight = QTableWidget(0, 2)
+        self.tableRight = QTableWidget(0, 4)
         # self.tableRight.setSortingEnabled(True)
         self.tableRight.setFont(self.font)
-        self.tableRight.setHorizontalHeaderLabels(['Key', 'Value'])
+        self.tableRight.setHorizontalHeaderLabels(['key', 'key_alias', 'value', 'value_alias'])
         self.tableRight.verticalHeader().setVisible(False)
         self.tableRight.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
@@ -273,6 +275,107 @@ class LogCheckUI(QTabWidget):
         初始化手动模式UI
         :return: None
         """
+        self.manualMainLayout = QVBoxLayout(self)
+        self.manualMainLayout.setContentsMargins(20, 20, 20, 20)
+        self.manualHboxLayoutHeader = QHBoxLayout()
+        self.manualHboxLayoutHeader.setContentsMargins(10, 10, 10, 10)
+        self.manualHboxLayoutHeader.setObjectName('hboxLayoutHeader')
+        self.manualHboxLayoutBody = QHBoxLayout()
+        self.manualHboxLayoutBody.setObjectName('hboxLayoutBody')
+
+        self.manualTableLeft = QTableWidget(0, 5)
+        self.manualTableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
+        self.manualTableLeft.setMouseTracking(True)
+        self.manualTableLeft.setFont(self.font)
+        self.manualTableLeft.setHorizontalHeaderLabels(
+            ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
+        self.manualTableLeft.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+        self.manualTableLeft.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self.manualTableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.manualTableLeft.setColumnHidden(3, True)
+        self.manualTableLeft.setColumnHidden(4, True)
+
+        self.manualHboxLayoutTableLeft = QVBoxLayout()
+        self.manualHboxLayoutTableLeft.addWidget(self.manualTableLeft)
+
+        self.manualTableMid = QTableWidget(0, 2)
+        self.manualTableMid.setFont(self.font)
+        self.manualTableMid.setHorizontalHeaderLabels(['Key', 'Value'])
+        self.manualTableMid.verticalHeader().setVisible(False)
+        self.manualTableMid.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+        self.manualTableMid.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self.manualTableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.manualHboxLayoutTableMid = QVBoxLayout()
+        self.manualHboxLayoutTableMid.addWidget(self.manualTableMid)
+
+        self.manualTableRight = QTableWidget(0, 2)
+        self.manualTableRight.setFont(self.font)
+        self.manualTableRight.setHorizontalHeaderLabels(['Key', 'Value'])
+        self.manualTableRight.verticalHeader().setVisible(False)
+        self.manualTableRight.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+        self.manualTableRight.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self.manualTableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.manualHboxLayoutTableRight = QVBoxLayout()
+        self.manualHboxLayoutTableRight.addWidget(self.manualTableRight)
+
+        self.manualEditBox = QTextEdit()
+        self.manualEditBox.setObjectName('manualTextEdit')
+        self.manualEditBox.setFont(self.font)
+        self.manualEditBox.setFixedSize(800, 100)
+        self.manualBtnStart = QPushButton('校验')
+        self.manualBtnStart.setObjectName('btnStart')
+        self.manualBtnStart.setFont(self.font)
+        self.manualBtnStart.setFixedSize(80, 25)
+        self.manualBtnStop = QPushButton('清空')
+        self.manualBtnStop.setObjectName('btnStop')
+        self.manualBtnStop.setFont(self.font)
+        self.manualBtnStop.setFixedSize(80, 25)
+        # self.manualBtnStop.setEnabled(False)
+
+        self.manualBtnStart.clicked.connect(self.manualBtnStartClicked)
+        self.manualBtnStop.clicked.connect(
+            lambda: self.manualBtnStopClicked(self.manualBtnStop))
+        # self.manualTableLeft.cellClicked.connect(self.tableLeftCellClicked)
+        # self.manualTableMid.cellClicked.connect(self.tableMidCellClicked)
+
+        self.manualGroupBoxTable1 = QGroupBox('校验结果')
+        self.manualGroupBoxTable1.setLayout(self.manualHboxLayoutTableLeft)
+        self.manualGroupBoxTable2 = QGroupBox('一级数据')
+        self.manualGroupBoxTable2.setLayout(self.manualHboxLayoutTableMid)
+        self.manualGroupBoxTable3 = QGroupBox('二级数据')
+        self.manualGroupBoxTable3.setLayout(self.manualHboxLayoutTableRight)
+        self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable1)
+        self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable2)
+        self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable3)
+        self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable1, 7)
+        self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable2, 7)
+        self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable3, 5)
+
+        self.manualVBoxLayoutHeaderBtn = QVBoxLayout()
+        self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStart)
+        self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStop)
+        self.manualHboxLayoutHeader.addWidget(self.manualEditBox)
+        # self.manualHboxLayoutHeader.addWidget(self.manualBtnStart)
+        # self.manualHboxLayoutHeader.addWidget(self.manualBtnStop)
+        self.manualHboxLayoutHeader.addLayout(self.manualVBoxLayoutHeaderBtn)
+        # self.manualHboxLayoutHeader.setStretchFactor(self.manualEditBox, 20)
+        # self.manualHboxLayoutHeader.setStretchFactor(self.manualBtnStart, 1)
+        # self.manualHboxLayoutHeader.setStretchFactor(self.manualBtnStop, 1)
+        # self.manualHboxLayoutHeader.setStretchFactor(self.manualVBoxLayoutHeaderBtn, 1)
+
+        self.manualGroupBoxHeader = QGroupBox('输入源数据')
+        self.manualGroupBoxHeader.setObjectName('groupBoxHeader')
+        self.manualGroupBoxHeader.setLayout(self.manualHboxLayoutHeader)
+
+        self.manualMainLayout.addWidget(self.manualGroupBoxHeader, stretch=1)
+        self.manualMainLayout.addLayout(self.manualHboxLayoutBody, stretch=3)
+        self.tabManualMode.setLayout(self.manualMainLayout)
 
     def comboBoxSelected(self, i):
         """
@@ -428,7 +531,9 @@ class LogCheckUI(QTabWidget):
             self.tableLeft.setItem(self.row, 0, QTableWidgetItem(
                 str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
             self.tableLeft.setItem(self.row, 1, QTableWidgetItem(
-                str(i['event_code']) if i['event_code'] else 'N/A'))
+                str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
+            self.tableLeft.setItem(self.row, 2, QTableWidgetItem(
+                str(i['alias']) if i['alias'] else 'N/A'))
 
             if i['result'] == -1:
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem('N/A'))
@@ -557,6 +662,21 @@ class LogCheckUI(QTabWidget):
         startFlag = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
+    def manualBtnStartClicked(self, i):
+        """
+        点击手动模式的校验按钮
+        :param i: object
+        :return: None
+        """
+        pass
+
+    def manualBtnStopClicked(self, i):
+        """
+        点击手动模式的清空按钮
+        :param i: object
+        :return: None
+        """
+        self.manualEditBox.clear()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -610,6 +730,13 @@ if __name__ == "__main__":
             width:200px;
         }
         .QLineEdit#lineEditCmdAfterStop {
+            border:1px solid #8f8f91;
+            border-radius:4px;
+            margin-left:5px;
+            margin-right:5px;
+            width:200px;
+        }
+        .QLineEdit#manualTextEdit {
             border:1px solid #8f8f91;
             border-radius:4px;
             margin-left:5px;

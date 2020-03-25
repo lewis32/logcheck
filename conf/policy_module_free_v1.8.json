@@ -13,7 +13,7 @@
                 "mapping":null
             }
         },
-        "no_common_keys":[
+        "ignore_keys":[
             "eventtime"
         ]
     },
@@ -61,7 +61,7 @@
                 "mapping":null
             }
         },
-        "no_common_keys":[
+        "ignore_keys":[
             "eventtime"
         ]
     },
@@ -119,7 +119,7 @@
                 "mapping":null
             }
         },
-        "no_common_keys":[
+        "ignore_keys":[
             "eventtime"
         ]
     }

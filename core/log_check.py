@@ -16,7 +16,6 @@ class LogCheck:
 
     def __init__(self):
         self.logger = Logging(__name__)
-        print(__name__)
         self.policy_all = self._load_policy()
 
     def _split_log(self, raw_str):
@@ -69,7 +68,6 @@ class LogCheck:
 
         if policy_common and policy_module:
             for event in policy_module:
-                print(event)
                 m = re.match(r'^(null|\d+)_(\d+)_([\d.]+)', event)
                 if m.group(0):
                     if m.group(1) != 'null':
@@ -85,13 +83,15 @@ class LogCheck:
                         'regex': m.group(3),
                         'alias': '日志版本'
                     }
-                for ex in policy_module[event]['no_common_keys']:
+                for ex in policy_module[event]['ignore_keys']:
                     if ex in policy_common:
                         policy_common.pop(ex)
+                    if ex in policy_module:
+                        policy_module[event]['keys'].pop(ex)
                     else:
-                        self.logger.error('%s的限制公共字段不在公共字段内！' % (event,))
+                        self.logger.error('找不到限制字段%s！' % (ex,))
                 policy_module[event]['keys'] = dict(policy_module[event]['keys'], **policy_common)
-            self.logger.info(json.dumps(policy_module))
+            self.logger.info("policy: " + str(policy_module))
             return policy_module
 
     def _compare_keys(self, log, conf):
@@ -107,6 +107,7 @@ class LogCheck:
 
         log = [i for i in log]
         conf = [i for i in conf]
+        self.logger.info("conf" + str(conf))
         conf.sort()
 
         for i in log:
@@ -133,6 +134,7 @@ class LogCheck:
             'data': log,
             'src_event_code': None,
             'event_code': None,
+            'alias': None,
             'missing_key': [],
             'undefined_key': {},
             'invalid_key': {},
@@ -142,7 +144,6 @@ class LogCheck:
         # count = len(log)
         # n = 1
         title = ['null', 'null', 'null']
-        title_str = ''
 
         for key in log:
             lower_key = self._to_lower_key(key)
@@ -155,19 +156,19 @@ class LogCheck:
             if lower_key == 'version':
                 title[2] = log[key]
                 # res['version'] = log[key]
+        title = '_'.join(title)
 
-        for i in title:
-            title_str += i
-
-        if title_str not in conf:
-            # 找不到对应字段，直接返回-1
+        if title not in conf:
+            # 找不到对应事件，直接返回-1
             res['result'] = -1
             return res
 
-        for i in conf:
-            conf[self._to_lower_key(i)] = conf.pop(i)
+        for i in conf[title]['keys']:
+            conf[title]['keys'][self._to_lower_key(i)] = conf[title]['keys'].pop(i)
 
-        mutual_key, log_key, conf_key = self._compare_keys(log, conf)
+        mutual_key, log_key, conf_key = self._compare_keys(log, conf[title]['keys'])
+        self.logger.info('mutual key:' + str(mutual_key))
+        self.logger.info('conf_key:' + str(conf_key))
         if len(log_key):
             for key in log_key:
                 res['undefined_key'][key] = log[key]
@@ -178,6 +179,8 @@ class LogCheck:
         mutual_dict = {}
         invalid_mutual_dict = {}
         for i in mutual_key:
+            print(i)
+            print(conf[self._to_lower_key(i)])
             mutual_dict[i] = conf[self._to_lower_key(i)]
             if not re.match(eval(mutual_dict[i]), str(log[i])):
                 invalid_mutual_dict[i] = log[i]
