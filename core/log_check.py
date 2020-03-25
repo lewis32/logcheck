@@ -21,8 +21,8 @@ class LogCheck:
     def _split_log(self, raw_str):
         """
         对源日志数据按照JSON格式进行截取
-        :param raw_str:
-        :return:
+        :param raw_str: str
+        :return: list
         """
 
         stack_left_bracket = []
@@ -43,7 +43,7 @@ class LogCheck:
     def _load_policy(self):
         """
         处理配置文件
-        :return:
+        :return: dict
         """
         policy_path = os.path.os.path.join(self.filepath, 'conf')
         policy_common = None
@@ -73,15 +73,15 @@ class LogCheck:
                     if m.group(1) != 'null':
                         policy_module[event]['keys']['srceventcode'] = {
                             'regex': m.group(1),
-                            'alias': '上级事件'
+                            'key_alias': '上级事件'
                         }
                     policy_module[event]['keys']['eventcode'] = {
                         'regex': m.group(2),
-                        'alias': '本级事件'
+                        'key_alias': '本级事件'
                     }
                     policy_module[event]['keys']['version'] = {
                         'regex': m.group(3),
-                        'alias': '日志版本'
+                        'key_alias': '日志版本'
                     }
                 for ex in policy_module[event]['ignore_keys']:
                     if ex in policy_common:
@@ -97,9 +97,9 @@ class LogCheck:
     def _compare_keys(self, log, conf):
         """
         查找日志中重复、多余和缺失的字段
-        :param log:
-        :param conf:
-        :return:
+        :param log: dict
+        :param conf: dict
+        :return: list, list, list
         """
 
         mutual_key = []
@@ -111,10 +111,10 @@ class LogCheck:
         conf.sort()
 
         for i in log:
-            pos = bisect.bisect_left(conf, self._to_lower_key(i))
-            if pos < len(conf) and conf[pos] == self._to_lower_key(i):
+            pos = bisect.bisect_left(conf, (lambda x: x.lower())(i))
+            if pos < len(conf) and conf[pos] == (lambda x: x.lower())(i):
                 mutual_key.append(i)
-                mutual_key_lower.append(self._to_lower_key(i))
+                mutual_key_lower.append((lambda x: x.lower())(i))
 
         mutual_key = list(set(mutual_key))
         mutual_key_lower = list(set(mutual_key_lower))
@@ -126,16 +126,16 @@ class LogCheck:
     def _compare_log(self, log, conf):
         """
         根据配置文件的正则对日志数据进行对比
-        :param log:
-        :param conflist:
-        :return:
+        :param log: dict
+        :param conf: dict
+        :return: dict
         """
         res = {
-            'data': log,
+            'data': {},
             'src_event_code': None,
             'event_code': None,
-            'alias': None,
-            'missing_key': [],
+            'event_alias': None,
+            'missing_key': {},
             'undefined_key': {},
             'invalid_key': {},
             'result': 0
@@ -146,7 +146,7 @@ class LogCheck:
         title = ['null', 'null', 'null']
 
         for key in log:
-            lower_key = self._to_lower_key(key)
+            lower_key = (lambda x: x.lower())(key)
             if lower_key == 'srceventcode':
                 title[0] = log[key]
                 res['src_event_code'] = log[key]
@@ -163,52 +163,66 @@ class LogCheck:
             res['result'] = -1
             return res
 
+        if conf[title]['event_alias'].strip() != '':
+            res['event_alias'] = conf[title]['event_alias']
+
         for i in conf[title]['keys']:
-            conf[title]['keys'][self._to_lower_key(i)] = conf[title]['keys'].pop(i)
+            conf[title]['keys'][(lambda x:x.lower())(i)] = conf[title]['keys'].pop(i)
 
         mutual_key, log_key, conf_key = self._compare_keys(log, conf[title]['keys'])
         self.logger.info('mutual key:' + str(mutual_key))
         self.logger.info('conf_key:' + str(conf_key))
         if len(log_key):
             for key in log_key:
-                res['undefined_key'][key] = log[key]
+                res['undefined_key'][key] = {}
+                res['undefined_key'][key]['value'] = log[key]
+                res['data'][key] = {}
+                res['data'][key]['value'] = log[key]
         if len(conf_key):
             for key in conf_key:
-                res['missing_key'].append(key)
+                res['missing_key'][key] = {}
+                res['missing_key'][key]['key_alias'] = conf[title]['keys'][key]['key_alias']
 
         mutual_dict = {}
         invalid_mutual_dict = {}
         for i in mutual_key:
-            print(i)
-            print(conf[self._to_lower_key(i)])
-            mutual_dict[i] = conf[self._to_lower_key(i)]
-            if not re.match(eval(mutual_dict[i]), str(log[i])):
-                invalid_mutual_dict[i] = log[i]
+            mutual_dict[i] = conf[title]['keys'][(lambda x: x.lower())(i)]
+            res['data'][i] = {}
+            res['data'][i]['value'] = log[i]
+            res['data'][i]['key_alias'] = conf[title]['keys'][(lambda x: x.lower())(i)]['key_alias']
+            # if not re.match(eval(mutual_dict[i]['regex']), str(log[i])):
+            if not re.match(mutual_dict[i]['regex'], str(log[i])):
+                invalid_mutual_dict[i] = {}
+                invalid_mutual_dict[i]['value'] = log[i]
+                invalid_mutual_dict[i]['key_alias'] = conf[title]['keys'][key]['key_alias']
+                # invalid_mutual_dict[i] = log[i]
 
         if len(invalid_mutual_dict):
             res['invalid_key'] = dict(**res['invalid_key'], **invalid_mutual_dict)
+
+        # 存在策略中未定义的键值，返回2
+        if len(res['undefined_key']):
+            res['result'] = 2
 
         # 存在不合法键值或丢失键值，返回1
         if len(res['missing_key']) or len(res['invalid_key']):
             res['result'] = 1
 
-        # 存在策略中未定义的键值，返回2
-        if len(res['undefined_key']):
-            res['result'] = 2
         return res
 
     def _to_lower_key(self, key):
         """
         复制小写字符，不影响原数据
-        :param key:
-        :return:
+        :param key: str
+        :return: str
         """
         return key.lower()
 
     def check_log(self, data=None):
         """
         对比日志
-        :return: listed_data dict, listed_result list
+        :param data: str
+        :return: listed_results list
         """
         if not data:
             return
@@ -225,6 +239,7 @@ class LogCheck:
 
             for data in listed_data:
                 try:
+                    print(data)
                     data = json.loads(data)
                 except json.decoder.JSONDecodeError as e:
                     self.logger.error("Error occurs while decoding JSON: " + str(e))
@@ -234,7 +249,7 @@ class LogCheck:
                     ret = self._compare_log(data, self.policy_all)
                     listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
-            self.logger.info(listed_results)
+            self.logger.info(json.dumps(listed_results))
 
             return listed_results
 

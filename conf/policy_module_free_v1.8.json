@@ -1,15 +1,15 @@
 ﻿{
     "null_211010_3.0":{
-        "alias":"VIDAA Free首页展示",
+        "event_alias":"VIDAA Free首页展示",
         "keys":{
             "pageid":{
                 "regex":"^home$",
-                "alias":"",
+                "key_alias":"",
                 "mapping":null
             },
             "pagetype":{
                 "regex":"^-1$",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             }
         },
@@ -18,46 +18,46 @@
         ]
     },
     "null_211011_3.0":{
-        "alias":"VIDAA Free点击二级页",
+        "event_alias":"VIDAA Free点击二级页",
         "keys":{
             "columnid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "original":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "rowindex":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "posindex":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "pageid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "pagetype":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "objecttype":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "objectid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             }
         },
@@ -66,56 +66,56 @@
         ]
     },
     "null_211012_3.0":{
-        "alias":"VIDAA Free点击视频媒资",
+        "event_alias":"VIDAA Free点击视频媒资",
         "keys":{
             "columnid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "original":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "rowindex":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "posindex":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "pageid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "pagetype":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "objecttype":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "objectid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "videoid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "vendorid":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             }
         },

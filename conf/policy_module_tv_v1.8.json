@@ -1,40 +1,40 @@
 ﻿{
     "null_200101_3.0":{
-        "alias":"应用启动",
+        "event_alias":"应用启动",
         "keys":{
             "starttime":{
                 "regex":"^1\\d{9,}$",
-                "alias":"启动时间",
+                "key_alias":"启动时间",
                 "mapping":null
             },
             "endtime":{
                 "regex":"^0|(1\\d{9,})$",
-                "alias":"结束时间",
+                "key_alias":"结束时间",
                 "mapping":null
             },
             "apppackage":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "appid":{
                 "regex":"^-1|([1-9]\\d*)$",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "appname":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "appversion":{
                 "regex":"",
-                "alias":null,
+                "key_alias":null,
                 "mapping":null
             },
             "launchsource":{
                 "regex":"^\\d+$",
-                "alias":"启动来源",
+                "key_alias":"启动来源",
                 "mapping":null
             }
         },
@@ -47,12 +47,12 @@
         "keys":{
             "keyname":{
                 "regex":"",
-                "alias":"按键名",
+                "key_alias":"按键名",
                 "mapping":null
             },
             "remotecontroltype":{
                 "regex":"",
-                "alias":"遥控器型号",
+                "key_alias":"遥控器型号",
                 "mapping":null
             }
         },

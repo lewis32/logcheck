@@ -91,7 +91,7 @@ class LogCheckUI(QTabWidget):
         self.logger = Logging(__name__)
 
         self.setWindowTitle('日志检验工具')
-        self.resize(1500, 700)
+        self.resize(1200, 700)
         self.setFixedSize(self.width(), self.height())
 
         self.font = QFont()
@@ -115,7 +115,7 @@ class LogCheckUI(QTabWidget):
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
         self.hboxLayoutHeader = QHBoxLayout()
-        self.hboxLayoutHeader.setContentsMargins(15, 15, 600, 15)
+        self.hboxLayoutHeader.setContentsMargins(15, 15, 740, 15)
         self.hboxLayoutHeader.setObjectName('hboxLayoutHeader')
         self.hboxLayoutBody = QHBoxLayout()
         self.hboxLayoutBody.setObjectName('hboxLayoutBody')
@@ -135,6 +135,10 @@ class LogCheckUI(QTabWidget):
         self.btnClear.setObjectName('btnClearCells')
         self.btnClear.setFont(self.font)
         self.btnClear.setFixedSize(100, 25)
+        self.btnTest = QPushButton('模拟调试')
+        self.btnTest.setObjectName('btnClearCells')
+        self.btnTest.setFont(self.font)
+        self.btnTest.setFixedSize(100, 25)
 
         self.tableLeft = QTableWidget(0, 6)
         self.tableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
@@ -153,11 +157,11 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutTableLeft = QVBoxLayout()
         self.hboxLayoutTableLeft.addWidget(self.tableLeft)
 
-        self.tableMid = QTableWidget(0, 4)
+        self.tableMid = QTableWidget(0, 3)
         # self.tableMid.setSortingEnabled(True)
         # self.tableMid.sortByColumn(0, Qt.AscendingOrder)
         self.tableMid.setFont(self.font)
-        self.tableMid.setHorizontalHeaderLabels(['key', 'key_alias', 'value', 'value_alias'])
+        self.tableMid.setHorizontalHeaderLabels(['key', 'key_alias', 'value'])
         self.tableMid.verticalHeader().setVisible(False)
         self.tableMid.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
@@ -167,10 +171,10 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutTableMid = QVBoxLayout()
         self.hboxLayoutTableMid.addWidget(self.tableMid)
 
-        self.tableRight = QTableWidget(0, 4)
+        self.tableRight = QTableWidget(0, 3)
         # self.tableRight.setSortingEnabled(True)
         self.tableRight.setFont(self.font)
-        self.tableRight.setHorizontalHeaderLabels(['key', 'key_alias', 'value', 'value_alias'])
+        self.tableRight.setHorizontalHeaderLabels(['key', 'key_alias', 'value'])
         self.tableRight.verticalHeader().setVisible(False)
         self.tableRight.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
@@ -222,6 +226,8 @@ class LogCheckUI(QTabWidget):
         self.btnStart.clicked.connect(self.btnStartClicked)
         self.btnStop.clicked.connect(
             lambda: self.btnStopClicked(self.btnStop))
+        self.btnTest.clicked.connect(
+            lambda: self.btnTestClicked(self.btnTest))
         self.lineEditCmdBeforeStart.textChanged.connect(
             lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
         self.lineEditCmdAfterStop.textChanged.connect(
@@ -236,6 +242,7 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutHeader.addWidget(self.comboBox)
         self.hboxLayoutHeader.addWidget(self.btnRefresh)
         self.hboxLayoutHeader.addWidget(self.btnClear)
+        self.hboxLayoutHeader.addWidget(self.btnTest)
         self.hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
         self.hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
 
@@ -278,7 +285,7 @@ class LogCheckUI(QTabWidget):
         self.manualMainLayout = QVBoxLayout(self)
         self.manualMainLayout.setContentsMargins(20, 20, 20, 20)
         self.manualHboxLayoutHeader = QHBoxLayout()
-        self.manualHboxLayoutHeader.setContentsMargins(10, 10, 10, 10)
+        self.manualHboxLayoutHeader.setContentsMargins(10, 10, 300, 10)
         self.manualHboxLayoutHeader.setObjectName('hboxLayoutHeader')
         self.manualHboxLayoutBody = QHBoxLayout()
         self.manualHboxLayoutBody.setObjectName('hboxLayoutBody')
@@ -327,7 +334,7 @@ class LogCheckUI(QTabWidget):
         self.manualEditBox = QTextEdit()
         self.manualEditBox.setObjectName('manualTextEdit')
         self.manualEditBox.setFont(self.font)
-        self.manualEditBox.setFixedSize(800, 100)
+        self.manualEditBox.setFixedSize(700, 100)
         self.manualBtnStart = QPushButton('校验')
         self.manualBtnStart.setObjectName('btnStart')
         self.manualBtnStart.setFont(self.font)
@@ -433,7 +440,6 @@ class LogCheckUI(QTabWidget):
                     except Exception as e:
                         self.logger.error(str(e))
 
-
     def btnClearClicked(self, btn):
         """
         点击清空按钮触发
@@ -531,44 +537,44 @@ class LogCheckUI(QTabWidget):
             self.tableLeft.setItem(self.row, 0, QTableWidgetItem(
                 str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
             self.tableLeft.setItem(self.row, 1, QTableWidgetItem(
-                str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
+                str(i['event_code']) if i['event_code'] else 'N/A'))
             self.tableLeft.setItem(self.row, 2, QTableWidgetItem(
-                str(i['alias']) if i['alias'] else 'N/A'))
+                str(i['event_alias']) if i['event_alias'] else 'N/A'))
 
             if i['result'] == -1:
-                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('N/A'))
+                self.tableLeft.setItem(self.row, 3, QTableWidgetItem('N/A'))
                 # 灰色表示从配置文件中找不到对应的事件
                 self.tableLeft.item(self.row, 2).setBackground(
                     QBrush(QColor(211, 211, 211)))
                 self.setToolTip('配置文件中没有对应的eventcode！')
             if i['result'] == 0:
-                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Pass'))
+                self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Pass'))
                 # 绿色表示全部字段均正常
-                self.tableLeft.item(self.row, 2).setBackground(
+                self.tableLeft.item(self.row, 3).setBackground(
                     QBrush(QColor(0, 128, 0)))
                 # fontLight = QFont()
                 # fontLight.setStyle()
                 # self.tableLeft.item(self.row, 2).setFont(QFont(QFont="White"))
                 self.setToolTip('所有字段均正常，Ctrl+C可复制内容')
             if i['result'] == 1:
-                self.tableLeft.setItem(self.row, 2, QTableWidgetItem('Fail'))
+                self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Fail'))
                 # 红色表示部分字段缺失或值错误
-                self.tableLeft.item(self.row, 2).setBackground(
+                self.tableLeft.item(self.row, 3).setBackground(
                     QBrush(QColor(255, 0, 0)))
                 self.setToolTip('部分字段缺失或错误，Ctrl+C可复制内容')
             if i['result'] == 2:
-                self.tableLeft.setItem(self.row, 2,
-                                       QTableWidgetItem('Warning'))
+                self.tableLeft.setItem(self.row, 3,
+                                       QTableWidgetItem('Warn'))
                 # 黄色表示包含未定义字段
-                elf.tableLeft.item(self.row, 2).setBackground(
+                self.tableLeft.item(self.row, 3).setBackground(
                     QBrush(QColor(255, 255, 0)))
                 self.setToolTip('部分字段不在定义内，Ctrl+C可复制内容')
 
             # self.table1.setItem(self.row, 2, QTableWidgetItem(
             #     'Fail' if i['result'] else 'Pass'))
-            self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
-                json.dumps(i['data'])))
             self.tableLeft.setItem(self.row, 4, QTableWidgetItem(
+                json.dumps(i['data'])))
+            self.tableLeft.setItem(self.row, 5, QTableWidgetItem(
                 json.dumps(i)))
 
             # textEdit.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -588,20 +594,25 @@ class LogCheckUI(QTabWidget):
             self.tableMid.clearContents()
             self.tableRight.clearContents()
 
-            if self.tableLeft.item(row, 3) and self.tableLeft.item(row, 4):
+            if self.tableLeft.item(row, 4) and self.tableLeft.item(row, 5):
                 self.tableMid.setSortingEnabled(False)
-                dictData = json.loads(self.tableLeft.item(row, 3).text())
-                dictRes = json.loads(self.tableLeft.item(row, 4).text())
+                dictData = json.loads(self.tableLeft.item(row, 4).text())
+                dictRes = json.loads(self.tableLeft.item(row, 5).text())
                 n = 0
-                for k in dictData:
+                # for k in dictData:
+                for k in dictRes['data']:
                     self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
-                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictData[k])))
+                    print(k)
+                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['data'][k].get('key_alias'))))
+                    self.tableMid.setItem(n, 2, QTableWidgetItem(str(dictRes['data'][k].get('value'))))
 
                     if k in dictRes['invalid_key']:
                         self.tableMid.item(n, 0).setBackground(
                             QBrush(QColor(255, 0, 0)))
                         self.tableMid.item(n, 1).setBackground(
+                            QBrush(QColor(255, 0, 0)))
+                        self.tableMid.item(n, 2).setBackground(
                             QBrush(QColor(255, 0, 0)))
 
                     if k in dictRes['undefined_key']:
@@ -609,15 +620,20 @@ class LogCheckUI(QTabWidget):
                             QBrush(QColor(255, 255, 0)))
                         self.tableMid.item(n, 1).setBackground(
                             QBrush(QColor(255, 255, 0)))
+                        self.tableMid.item(n, 2).setBackground(
+                            QBrush(QColor(255, 255, 0)))
                     n += 1
 
                 for i in dictRes['missing_key']:
                     self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(i)))
-                    self.tableMid.setItem(n, 1, QTableWidgetItem('该字段缺失！'))
+                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['missing_key'][i].get('key_alias'))))
+                    self.tableMid.setItem(n, 2, QTableWidgetItem('该字段缺失！'))
                     self.tableMid.item(n, 0).setBackground(
                         QBrush(QColor(255, 0, 0)))
                     self.tableMid.item(n, 1).setBackground(
+                        QBrush(QColor(255, 0, 0)))
+                    self.tableMid.item(n, 2).setBackground(
                         QBrush(QColor(255, 0, 0)))
                     n += 1
                 # QStandardItem()
@@ -634,7 +650,7 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         self.tableRight.clearContents()
-        tmp = self.tableMid.item(row, 1).text()
+        tmp = self.tableMid.item(row, 2).text()
         pattern = r'^{.*}$'
         if re.match(pattern, tmp):
             extra_data = json.loads(tmp)
@@ -642,7 +658,8 @@ class LogCheckUI(QTabWidget):
             for k in extra_data:
                 self.tableRight.setRowCount(n + 1)
                 self.tableRight.setItem(n, 0, QTableWidgetItem(str(k)))
-                self.tableRight.setItem(n, 1, QTableWidgetItem(str(extra_data[k])))
+                self.tableRight.setItem(n, 1, QTableWidgetItem())
+                self.tableRight.setItem(n, 2, QTableWidgetItem(str(extra_data[k])))
                 n += 1
 
     def stopSignalReceived(self, text):
@@ -669,6 +686,42 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         pass
+
+    def btnTestClicked(self, i):
+        """
+        点击自动模式的模拟调试按钮
+        :param i: object
+        :return: None
+        """
+        data = """{
+                "appname": "vidaa-free", "launchsource": "1", "appid": "184",
+                 "eventcode": "211010", "version": "3.0", "starttime": "1584944040",
+                 "endtime": "0", "appversion": "", "apppackage": "vidaa-free",
+                 "deviceid": "861003009000004000000730458b8c7f0935ab94f026120720b3c354",
+                 "os": "Linux", "chipplatform": "MTK9602", "zone": "-10",
+                 "countrycode": "USA", "capabilitycode": "2019101201",
+                 "tvversion": "V0000.01.00S.K0321", "brand": "his",
+                 "devicemsg": "HU50A6109FUWV591", "tvmode": "2", "time": "1584944058",
+                 "extra": "{\\"a\\":1, \\"b\\":2}"
+            },{
+                "appname": "vidaa-free", "launchsource": "1", "appid": "184",
+                 "eventcode": "200120", "version": "3.0", "starttime": "1584944040",
+                 "endtime": "0", "appversion": "", "apppackage": "vidaa-free",
+                 "deviceid": "861003009000004000000730458b8c7f0935ab94f026120720b3c354",
+                 "os": "Linux", "chipplatform": "MTK9602", "zone": "-10",
+                 "countrycode": "USA", "capabilitycode": "2019101201",
+                 "tvversion": "V0000.01.00S.K0321", "brand": "his",
+                 "devicemsg": "HU50A6109FUWV591", "tvmode": "2", "time": "1584944058"
+            }"""
+        self.logger.info('Mock log data: ' + data)
+        self.test = LogCheck()
+        res = self.test.check_log(data)
+        print(res)
+        if res:
+            self.row = 0
+            self.checkResultReceived(res)
+        self.logger.info('Mock Check result: ' + str(res))
+
 
     def manualBtnStopClicked(self, i):
         """
