@@ -90,7 +90,7 @@ class LogCheckUI(QTabWidget):
         super().__init__()
         self.logger = Logging(__name__)
 
-        self.setWindowTitle('日志检验工具')
+        self.setWindowTitle('日志验证工具')
         self.resize(1200, 700)
         self.setFixedSize(self.width(), self.height())
 
@@ -100,10 +100,10 @@ class LogCheckUI(QTabWidget):
 
         self.tabAutoMode = QWidget()
         self.tabManualMode = QWidget()
-        self.addTab(self.tabAutoMode, '自动模式')
-        self.addTab(self.tabManualMode, '手动模式')
+        self.addTab(self.tabAutoMode, '日志验证')
+        self.addTab(self.tabManualMode, '规则编辑')
         self.initAutoModeUI()
-        self.initManualModeUI()
+        # self.initManualModeUI()
         # self.tabAutoMode.clicked.connect(self.tabSwitched)
         # self.tabManualMode.clicked.connect(self.tabSwitched)
 
@@ -115,7 +115,7 @@ class LogCheckUI(QTabWidget):
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
         self.hboxLayoutHeader = QHBoxLayout()
-        self.hboxLayoutHeader.setContentsMargins(15, 15, 740, 15)
+        self.hboxLayoutHeader.setContentsMargins(15, 15, 650, 15)
         self.hboxLayoutHeader.setObjectName('hboxLayoutHeader')
         self.hboxLayoutBody = QHBoxLayout()
         self.hboxLayoutBody.setObjectName('hboxLayoutBody')
@@ -139,13 +139,34 @@ class LogCheckUI(QTabWidget):
         self.btnTest.setObjectName('btnClearCells')
         self.btnTest.setFont(self.font)
         self.btnTest.setFixedSize(100, 25)
+        self.btnSwitchManual = QPushButton('切换手动')
+        self.btnSwitchManual.setObjectName('btnClearCells')
+        self.btnSwitchManual.setFont(self.font)
+        self.btnSwitchManual.setFixedSize(100, 25)
+
+        self.editBoxManual = QTextEdit()
+        self.editBoxManual.setObjectName('manualTextEdit')
+        self.editBoxManual.setFont(self.font)
+        self.editBoxManual.setFixedSize(700, 100)
+        self.btnManualCheck = QPushButton('验证')
+        self.btnManualCheck.setObjectName('btnStart')
+        self.btnManualCheck.setFont(self.font)
+        self.btnManualCheck.setFixedSize(80, 25)
+        self.btnManualClear = QPushButton('清空')
+        self.btnManualClear.setObjectName('btnStop')
+        self.btnManualClear.setFont(self.font)
+        self.btnManualClear.setFixedSize(80, 25)
+        self.btnSwitchAuto = QPushButton('切换自动')
+        self.btnSwitchAuto.setObjectName('btnStop')
+        self.btnSwitchAuto.setFont(self.font)
+        self.btnSwitchAuto.setFixedSize(80, 25)
 
         self.tableLeft = QTableWidget(0, 6)
-        self.tableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
+        self.tableLeft.setToolTip('点击查看详细结果，右键复制验证数据')
         self.tableLeft.setMouseTracking(True)
         self.tableLeft.setFont(self.font)
         self.tableLeft.setHorizontalHeaderLabels(
-            ['src', 'event_code', 'event_alias', 'result', 'detail', 'more_detail'])
+            ['src_event_code', 'event_code', 'event_alias', 'result', 'detail', 'more_detail'])
         self.tableLeft.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
         self.tableLeft.horizontalHeader().setSectionResizeMode(
@@ -228,6 +249,14 @@ class LogCheckUI(QTabWidget):
             lambda: self.btnStopClicked(self.btnStop))
         self.btnTest.clicked.connect(
             lambda: self.btnTestClicked(self.btnTest))
+        self.btnSwitchManual.clicked.connect(
+            lambda: self.btnSwitchManualClicked(self.btnSwitchManual))
+        self.btnSwitchAuto.clicked.connect(
+            lambda: self.btnSwitchAutoClicked(self.btnSwitchAuto))
+        self.btnManualCheck.clicked.connect(
+            lambda: self.btnManualClearClicked(self.btnManualCheck))
+        self.btnManualClear.clicked.connect(
+            lambda: self.btnManualClearClicked(self.btnManualClear))
         self.lineEditCmdBeforeStart.textChanged.connect(
             lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
         self.lineEditCmdAfterStop.textChanged.connect(
@@ -243,8 +272,32 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutHeader.addWidget(self.btnRefresh)
         self.hboxLayoutHeader.addWidget(self.btnClear)
         self.hboxLayoutHeader.addWidget(self.btnTest)
+        self.hboxLayoutHeader.addWidget(self.btnSwitchManual)
         self.hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
         self.hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
+
+        # self.hboxLayoutHeader.addWidget(self.comboBox)
+        # self.hboxLayoutHeader.addWidget(self.btnRefresh)
+        # self.hboxLayoutHeader.addWidget(self.btnClear)
+        # self.hboxLayoutHeader.addWidget(self.btnTest)
+        # self.hboxLayoutHeader.addWidget(self.btnSwitchManual)
+        # self.hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
+        # self.hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
+
+        self.hboxLayoutManualHeader = QHBoxLayout()
+        self.hboxLayoutManualHeader.setContentsMargins(10, 10, 10, 10)
+        self.hboxLayoutManualHeader.addWidget(self.editBoxManual)
+        self.vboxLayoutManualHeader = QVBoxLayout()
+        self.vboxLayoutManualHeader.addWidget(self.btnManualCheck)
+        self.vboxLayoutManualHeader.addWidget(self.btnManualClear)
+        self.vboxLayoutManualHeader.addWidget(self.btnSwitchAuto)
+        self.hboxLayoutManualHeader.addLayout(self.vboxLayoutManualHeader)
+
+        self.groupBoxManualHeader = QGroupBox('输入日志数据')
+        self.groupBoxManualHeader.setObjectName('groupBoxHeader')
+        self.groupBoxManualHeader.setLayout(self.hboxLayoutManualHeader)
+        self.groupBoxManualHeader.setVisible(False)
+        self.groupBoxManualHeader.setFixedSize(850, 150)
 
         self.groupBoxTable1 = QGroupBox('校验结果')
         self.groupBoxTable1.setLayout(self.hboxLayoutTableLeft)
@@ -273,116 +326,111 @@ class LogCheckUI(QTabWidget):
         self.groupBoxFooter.setLayout(self.hboxLayoutFooter)
 
         self.mainLayout.addWidget(self.groupBoxHeader)
+        self.mainLayout.addWidget(self.groupBoxManualHeader)
         self.mainLayout.addLayout(self.hboxLayoutBody)
         self.mainLayout.addWidget(self.groupBoxFooter)
         self.tabAutoMode.setLayout(self.mainLayout)
 
-    def initManualModeUI(self):
-        """
-        初始化手动模式UI
-        :return: None
-        """
-        self.manualMainLayout = QVBoxLayout(self)
-        self.manualMainLayout.setContentsMargins(20, 20, 20, 20)
-        self.manualHboxLayoutHeader = QHBoxLayout()
-        self.manualHboxLayoutHeader.setContentsMargins(10, 10, 300, 10)
-        self.manualHboxLayoutHeader.setObjectName('hboxLayoutHeader')
-        self.manualHboxLayoutBody = QHBoxLayout()
-        self.manualHboxLayoutBody.setObjectName('hboxLayoutBody')
-
-        self.manualTableLeft = QTableWidget(0, 5)
-        self.manualTableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
-        self.manualTableLeft.setMouseTracking(True)
-        self.manualTableLeft.setFont(self.font)
-        self.manualTableLeft.setHorizontalHeaderLabels(
-            ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
-        self.manualTableLeft.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.manualTableLeft.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
-        self.manualTableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.manualTableLeft.setColumnHidden(3, True)
-        self.manualTableLeft.setColumnHidden(4, True)
-
-        self.manualHboxLayoutTableLeft = QVBoxLayout()
-        self.manualHboxLayoutTableLeft.addWidget(self.manualTableLeft)
-
-        self.manualTableMid = QTableWidget(0, 2)
-        self.manualTableMid.setFont(self.font)
-        self.manualTableMid.setHorizontalHeaderLabels(['Key', 'Value'])
-        self.manualTableMid.verticalHeader().setVisible(False)
-        self.manualTableMid.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.manualTableMid.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
-        self.manualTableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.manualHboxLayoutTableMid = QVBoxLayout()
-        self.manualHboxLayoutTableMid.addWidget(self.manualTableMid)
-
-        self.manualTableRight = QTableWidget(0, 2)
-        self.manualTableRight.setFont(self.font)
-        self.manualTableRight.setHorizontalHeaderLabels(['Key', 'Value'])
-        self.manualTableRight.verticalHeader().setVisible(False)
-        self.manualTableRight.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.manualTableRight.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
-        self.manualTableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.manualHboxLayoutTableRight = QVBoxLayout()
-        self.manualHboxLayoutTableRight.addWidget(self.manualTableRight)
-
-        self.manualEditBox = QTextEdit()
-        self.manualEditBox.setObjectName('manualTextEdit')
-        self.manualEditBox.setFont(self.font)
-        self.manualEditBox.setFixedSize(700, 100)
-        self.manualBtnStart = QPushButton('校验')
-        self.manualBtnStart.setObjectName('btnStart')
-        self.manualBtnStart.setFont(self.font)
-        self.manualBtnStart.setFixedSize(80, 25)
-        self.manualBtnStop = QPushButton('清空')
-        self.manualBtnStop.setObjectName('btnStop')
-        self.manualBtnStop.setFont(self.font)
-        self.manualBtnStop.setFixedSize(80, 25)
-        # self.manualBtnStop.setEnabled(False)
-
-        self.manualBtnStart.clicked.connect(self.manualBtnStartClicked)
-        self.manualBtnStop.clicked.connect(
-            lambda: self.manualBtnStopClicked(self.manualBtnStop))
-        # self.manualTableLeft.cellClicked.connect(self.tableLeftCellClicked)
-        # self.manualTableMid.cellClicked.connect(self.tableMidCellClicked)
-
-        self.manualGroupBoxTable1 = QGroupBox('校验结果')
-        self.manualGroupBoxTable1.setLayout(self.manualHboxLayoutTableLeft)
-        self.manualGroupBoxTable2 = QGroupBox('一级数据')
-        self.manualGroupBoxTable2.setLayout(self.manualHboxLayoutTableMid)
-        self.manualGroupBoxTable3 = QGroupBox('二级数据')
-        self.manualGroupBoxTable3.setLayout(self.manualHboxLayoutTableRight)
-        self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable1)
-        self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable2)
-        self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable3)
-        self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable1, 7)
-        self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable2, 7)
-        self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable3, 5)
-
-        self.manualVBoxLayoutHeaderBtn = QVBoxLayout()
-        self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStart)
-        self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStop)
-        self.manualHboxLayoutHeader.addWidget(self.manualEditBox)
-        # self.manualHboxLayoutHeader.addWidget(self.manualBtnStart)
-        # self.manualHboxLayoutHeader.addWidget(self.manualBtnStop)
-        self.manualHboxLayoutHeader.addLayout(self.manualVBoxLayoutHeaderBtn)
-        # self.manualHboxLayoutHeader.setStretchFactor(self.manualEditBox, 20)
-        # self.manualHboxLayoutHeader.setStretchFactor(self.manualBtnStart, 1)
-        # self.manualHboxLayoutHeader.setStretchFactor(self.manualBtnStop, 1)
-        # self.manualHboxLayoutHeader.setStretchFactor(self.manualVBoxLayoutHeaderBtn, 1)
-
-        self.manualGroupBoxHeader = QGroupBox('输入源数据')
-        self.manualGroupBoxHeader.setObjectName('groupBoxHeader')
-        self.manualGroupBoxHeader.setLayout(self.manualHboxLayoutHeader)
-
-        self.manualMainLayout.addWidget(self.manualGroupBoxHeader, stretch=1)
-        self.manualMainLayout.addLayout(self.manualHboxLayoutBody, stretch=3)
-        self.tabManualMode.setLayout(self.manualMainLayout)
+    # def initManualModeUI(self):
+    #     """
+    #     初始化手动模式UI
+    #     :return: None
+    #     """
+    #     self.manualMainLayout = QVBoxLayout(self)
+    #     self.manualMainLayout.setContentsMargins(20, 20, 20, 20)
+    #     self.manualHboxLayoutHeader = QHBoxLayout()
+    #     self.manualHboxLayoutHeader.setContentsMargins(10, 10, 300, 10)
+    #     self.manualHboxLayoutHeader.setObjectName('hboxLayoutHeader')
+    #     self.manualHboxLayoutBody = QHBoxLayout()
+    #     self.manualHboxLayoutBody.setObjectName('hboxLayoutBody')
+    #
+    #     self.manualTableLeft = QTableWidget(0, 5)
+    #     self.manualTableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
+    #     self.manualTableLeft.setMouseTracking(True)
+    #     self.manualTableLeft.setFont(self.font)
+    #     self.manualTableLeft.setHorizontalHeaderLabels(
+    #         ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
+    #     self.manualTableLeft.horizontalHeader().setSectionResizeMode(
+    #         QHeaderView.Stretch)
+    #     self.manualTableLeft.horizontalHeader().setSectionResizeMode(
+    #         0, QHeaderView.ResizeToContents)
+    #     self.manualTableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    #     self.manualTableLeft.setColumnHidden(3, True)
+    #     self.manualTableLeft.setColumnHidden(4, True)
+    #
+    #     self.manualHboxLayoutTableLeft = QVBoxLayout()
+    #     self.manualHboxLayoutTableLeft.addWidget(self.manualTableLeft)
+    #
+    #     self.manualTableMid = QTableWidget(0, 2)
+    #     self.manualTableMid.setFont(self.font)
+    #     self.manualTableMid.setHorizontalHeaderLabels(['Key', 'Value'])
+    #     self.manualTableMid.verticalHeader().setVisible(False)
+    #     self.manualTableMid.horizontalHeader().setSectionResizeMode(
+    #         QHeaderView.Stretch)
+    #     self.manualTableMid.horizontalHeader().setSectionResizeMode(
+    #         0, QHeaderView.ResizeToContents)
+    #     self.manualTableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    #     self.manualHboxLayoutTableMid = QVBoxLayout()
+    #     self.manualHboxLayoutTableMid.addWidget(self.manualTableMid)
+    #
+    #     self.manualTableRight = QTableWidget(0, 2)
+    #     self.manualTableRight.setFont(self.font)
+    #     self.manualTableRight.setHorizontalHeaderLabels(['Key', 'Value'])
+    #     self.manualTableRight.verticalHeader().setVisible(False)
+    #     self.manualTableRight.horizontalHeader().setSectionResizeMode(
+    #         QHeaderView.Stretch)
+    #     self.manualTableRight.horizontalHeader().setSectionResizeMode(
+    #         0, QHeaderView.ResizeToContents)
+    #     self.manualTableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    #     self.manualHboxLayoutTableRight = QVBoxLayout()
+    #     self.manualHboxLayoutTableRight.addWidget(self.manualTableRight)
+    #
+    #     self.manualEditBox = QTextEdit()
+    #     self.manualEditBox.setObjectName('manualTextEdit')
+    #     self.manualEditBox.setFont(self.font)
+    #     self.manualEditBox.setFixedSize(700, 100)
+    #     self.manualBtnStart = QPushButton('校验')
+    #     self.manualBtnStart.setObjectName('btnStart')
+    #     self.manualBtnStart.setFont(self.font)
+    #     self.manualBtnStart.setFixedSize(80, 25)
+    #     self.manualBtnStop = QPushButton('清空')
+    #     self.manualBtnStop.setObjectName('btnStop')
+    #     self.manualBtnStop.setFont(self.font)
+    #     self.manualBtnStop.setFixedSize(80, 25)
+    #     # self.manualBtnStop.setEnabled(False)
+    #
+    #     self.manualBtnStart.clicked.connect(self.manualBtnStartClicked)
+    #     self.manualBtnStop.clicked.connect(
+    #         lambda: self.manualBtnStopClicked(self.manualBtnStop))
+    #     # self.manualTableLeft.cellClicked.connect(self.tableLeftCellClicked)
+    #     # self.manualTableMid.cellClicked.connect(self.tableMidCellClicked)
+    #
+    #     self.manualGroupBoxTable1 = QGroupBox('校验结果')
+    #     self.manualGroupBoxTable1.setLayout(self.manualHboxLayoutTableLeft)
+    #     self.manualGroupBoxTable2 = QGroupBox('一级数据')
+    #     self.manualGroupBoxTable2.setLayout(self.manualHboxLayoutTableMid)
+    #     self.manualGroupBoxTable3 = QGroupBox('二级数据')
+    #     self.manualGroupBoxTable3.setLayout(self.manualHboxLayoutTableRight)
+    #     self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable1)
+    #     self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable2)
+    #     self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable3)
+    #     self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable1, 7)
+    #     self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable2, 7)
+    #     self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable3, 5)
+    #
+    #     self.manualVBoxLayoutHeaderBtn = QVBoxLayout()
+    #     self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStart)
+    #     self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStop)
+    #     self.manualHboxLayoutHeader.addWidget(self.manualEditBox)
+    #     self.manualHboxLayoutHeader.addLayout(self.manualVBoxLayoutHeaderBtn)
+    #
+    #     self.manualGroupBoxHeader = QGroupBox('输入源数据')
+    #     self.manualGroupBoxHeader.setObjectName('groupBoxHeader')
+    #     self.manualGroupBoxHeader.setLayout(self.manualHboxLayoutHeader)
+    #
+    #     self.manualMainLayout.addWidget(self.manualGroupBoxHeader, stretch=1)
+    #     self.manualMainLayout.addLayout(self.manualHboxLayoutBody, stretch=3)
+    #     self.tabManualMode.setLayout(self.manualMainLayout)
 
     def comboBoxSelected(self, i):
         """
@@ -678,14 +726,6 @@ class LogCheckUI(QTabWidget):
         startFlag = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
-    def manualBtnStartClicked(self, i):
-        """
-        点击手动模式的校验按钮
-        :param i: object
-        :return: None
-        """
-        pass
-
     def btnTestClicked(self, i):
         """
         点击自动模式的模拟调试按钮
@@ -702,14 +742,60 @@ class LogCheckUI(QTabWidget):
             self.checkResultReceived(res)
         self.logger.info('Mock Check result: ' + str(res))
 
+    def btnManualCheckClicked(self, i):
+        """
+        点击手动模式的校验按钮
+        :param i: object
+        :return: None
+        """
+        data = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
+        ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
+        self.logger.info('Mock log data: ' + data)
+        self.test = LogCheck()
+        res = self.test.check_log(data)
+        if res:
+            self.row = 0
+            self.checkResultReceived(res)
+        self.logger.info('Mock Check result: ' + str(res))
 
-    def manualBtnStopClicked(self, i):
+    def btnManualClearClicked(self, i):
         """
         点击手动模式的清空按钮
         :param i: object
         :return: None
         """
-        self.manualEditBox.clear()
+        self.editBoxManual.clear()
+
+    def btnSwitchManualClicked(self, i):
+        """
+        切换手动模式UI
+        :param i: object
+        :return: None
+        """
+        try:
+            self.groupBoxHeader.setVisible(False)
+            self.groupBoxFooter.setVisible(False)
+            self.groupBoxManualHeader.setVisible(True)
+            self.resize(100, 500)
+
+        except Exception as e:
+            print(str(e))
+
+    def btnSwitchAutoClicked(self, i):
+        """
+        切换手动模式UI
+        :param i: object
+        :return: None
+        """
+        try:
+            self.groupBoxHeader.setVisible(True)
+            self.groupBoxFooter.setVisible(True)
+            self.groupBoxManualHeader.setVisible(False)
+            self.resize(100, 500)
+
+        except Exception as e:
+            print(str(e))
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
