@@ -1,6 +1,6 @@
 ﻿{
     "deviceid":{
-    	"regex":"^861003009000006000000641bc2c7490d13b6642192ef075bc433c28$",
+    	"regex":"^861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a$",
         "key_alias":"设备id",
         "mapping":null
     },
@@ -30,17 +30,17 @@
         "mapping":null
     },
     "countrycode":{
-        "regex":"^DEU$",
+        "regex":"^GBR$",
         "key_alias":"3位国家码",
         "mapping":null
     },
     "zone":{
-        "regex":"^1$",
+        "regex":"^0$",
         "key_alias":"时区",
         "mapping":null
     },
     "tvversion":{
-        "regex":"^V0000\\.0\\.00C\\.K0221$",
+        "regex":"^V0000\\.01\\.00G\\.K0324$",
         "key_alias":"整机版本",
         "mapping":null
     },

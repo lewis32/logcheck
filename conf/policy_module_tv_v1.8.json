@@ -38,9 +38,7 @@
                 "mapping":null
             }
         },
-        "ignore_keys":[
-            "eventtime"
-        ]
+        "ignore_keys":[]
     },
     "null_200120_3.0":{
         "event_alias":"遥控器按键",
@@ -56,8 +54,6 @@
                 "mapping":null
             }
         },
-        "ignore_keys":[
-            "eventtime"
-        ]
+        "ignore_keys":[]
     }
 }

@@ -91,7 +91,7 @@ class LogCheck:
                     else:
                         self.logger.error('找不到限制字段%s！' % (ex,))
                 policy_module[event]['keys'] = dict(policy_module[event]['keys'], **policy_common)
-            self.logger.info("policy: " + str(policy_module))
+            self.logger.info("policy: " + json.dumps(policy_module))
             return policy_module
 
     def _compare_keys(self, log, conf):
@@ -160,6 +160,9 @@ class LogCheck:
 
         if title not in conf:
             # 找不到对应事件，直接返回-1
+            for key in log:
+                res['data'][key] = {}
+                res['data'][key]['value'] = log[key]
             res['result'] = -1
             return res
 
@@ -239,14 +242,16 @@ class LogCheck:
 
             for data in listed_data:
                 try:
-                    print(data)
                     data = json.loads(data)
                 except json.decoder.JSONDecodeError as e:
                     self.logger.error("Error occurs while decoding JSON: " + str(e))
                 else:
                     if "eventcode" not in data:
                         continue
-                    ret = self._compare_log(data, self.policy_all)
+                    try:
+                        ret = self._compare_log(data, self.policy_all)
+                    except Exception as e:
+                        self.logger.error(str(e))
                     listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
             self.logger.info(json.dumps(listed_results))

@@ -13,9 +13,7 @@
                 "mapping":null
             }
         },
-        "ignore_keys":[
-            "eventtime"
-        ]
+        "ignore_keys":[]
     },
     "null_211011_3.0":{
         "event_alias":"VIDAA Free点击二级页",
@@ -61,9 +59,7 @@
                 "mapping":null
             }
         },
-        "ignore_keys":[
-            "eventtime"
-        ]
+        "ignore_keys":[]
     },
     "null_211012_3.0":{
         "event_alias":"VIDAA Free点击视频媒资",
@@ -119,8 +115,6 @@
                 "mapping":null
             }
         },
-        "ignore_keys":[
-            "eventtime"
-        ]
+        "ignore_keys":[]
     }
 }
