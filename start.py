@@ -98,16 +98,15 @@ class LogCheckUI(QTabWidget):
         self.font.setPointSize(10)
         self.font.setFamily("Microsoft YaHei UI")
 
-        self.tabAutoMode = QWidget()
-        self.tabManualMode = QWidget()
-        self.addTab(self.tabAutoMode, '日志验证')
-        self.addTab(self.tabManualMode, '规则编辑')
-        self.initAutoModeUI()
-        # self.initManualModeUI()
-        # self.tabAutoMode.clicked.connect(self.tabSwitched)
-        # self.tabManualMode.clicked.connect(self.tabSwitched)
+        self.tabUI = QWidget()
+        self.tabEditUI = QWidget()
+        self.tabHintUI = QWidget()
+        self.addTab(self.tabUI, '日志验证')
+        self.addTab(self.tabEditUI, '规则编辑')
+        self.addTab(self.tabHintUI, '使用说明')
+        self.initUI()
 
-    def initAutoModeUI(self):
+    def initUI(self):
         """
         初始化自动模式UI
         :return: None
@@ -115,7 +114,7 @@ class LogCheckUI(QTabWidget):
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
         self.hboxLayoutHeader = QHBoxLayout()
-        self.hboxLayoutHeader.setContentsMargins(15, 15, 650, 15)
+        self.hboxLayoutHeader.setContentsMargins(15, 15, 15, 15)
         self.hboxLayoutHeader.setObjectName('hboxLayoutHeader')
         self.hboxLayoutBody = QHBoxLayout()
         self.hboxLayoutBody.setObjectName('hboxLayoutBody')
@@ -134,15 +133,16 @@ class LogCheckUI(QTabWidget):
         self.btnClear = QPushButton('清空数据')
         self.btnClear.setObjectName('btnClearCells')
         self.btnClear.setFont(self.font)
-        self.btnClear.setFixedSize(100, 25)
+        self.btnClear.setFixedSize(80, 25)
         self.btnTest = QPushButton('模拟调试')
         self.btnTest.setObjectName('btnClearCells')
         self.btnTest.setFont(self.font)
-        self.btnTest.setFixedSize(100, 25)
+        self.btnTest.setFixedSize(80, 25)
+        self.btnTest.setVisible(False)
         self.btnSwitchManual = QPushButton('切换手动')
         self.btnSwitchManual.setObjectName('btnClearCells')
         self.btnSwitchManual.setFont(self.font)
-        self.btnSwitchManual.setFixedSize(100, 25)
+        self.btnSwitchManual.setFixedSize(80, 25)
 
         self.editBoxManual = QTextEdit()
         self.editBoxManual.setObjectName('manualTextEdit')
@@ -276,14 +276,6 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
         self.hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
 
-        # self.hboxLayoutHeader.addWidget(self.comboBox)
-        # self.hboxLayoutHeader.addWidget(self.btnRefresh)
-        # self.hboxLayoutHeader.addWidget(self.btnClear)
-        # self.hboxLayoutHeader.addWidget(self.btnTest)
-        # self.hboxLayoutHeader.addWidget(self.btnSwitchManual)
-        # self.hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
-        # self.hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
-
         self.hboxLayoutManualHeader = QHBoxLayout()
         self.hboxLayoutManualHeader.setContentsMargins(10, 10, 10, 10)
         self.hboxLayoutManualHeader.addWidget(self.editBoxManual)
@@ -322,6 +314,7 @@ class LogCheckUI(QTabWidget):
         self.groupBoxHeader = QGroupBox('选择端口')
         self.groupBoxHeader.setObjectName('groupBoxHeader')
         self.groupBoxHeader.setLayout(self.hboxLayoutHeader)
+        self.groupBoxHeader.setFixedSize(420, 90)
         self.groupBoxFooter = QGroupBox(r'输入命令')
         self.groupBoxFooter.setLayout(self.hboxLayoutFooter)
 
@@ -329,108 +322,7 @@ class LogCheckUI(QTabWidget):
         self.mainLayout.addWidget(self.groupBoxManualHeader)
         self.mainLayout.addLayout(self.hboxLayoutBody)
         self.mainLayout.addWidget(self.groupBoxFooter)
-        self.tabAutoMode.setLayout(self.mainLayout)
-
-    # def initManualModeUI(self):
-    #     """
-    #     初始化手动模式UI
-    #     :return: None
-    #     """
-    #     self.manualMainLayout = QVBoxLayout(self)
-    #     self.manualMainLayout.setContentsMargins(20, 20, 20, 20)
-    #     self.manualHboxLayoutHeader = QHBoxLayout()
-    #     self.manualHboxLayoutHeader.setContentsMargins(10, 10, 300, 10)
-    #     self.manualHboxLayoutHeader.setObjectName('hboxLayoutHeader')
-    #     self.manualHboxLayoutBody = QHBoxLayout()
-    #     self.manualHboxLayoutBody.setObjectName('hboxLayoutBody')
-    #
-    #     self.manualTableLeft = QTableWidget(0, 5)
-    #     self.manualTableLeft.setToolTip('点击查看详细结果，右键复制原始数据')
-    #     self.manualTableLeft.setMouseTracking(True)
-    #     self.manualTableLeft.setFont(self.font)
-    #     self.manualTableLeft.setHorizontalHeaderLabels(
-    #         ['SrcEventCode', 'EventCode', 'Result', 'Detail', 'MoreDetail'])
-    #     self.manualTableLeft.horizontalHeader().setSectionResizeMode(
-    #         QHeaderView.Stretch)
-    #     self.manualTableLeft.horizontalHeader().setSectionResizeMode(
-    #         0, QHeaderView.ResizeToContents)
-    #     self.manualTableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    #     self.manualTableLeft.setColumnHidden(3, True)
-    #     self.manualTableLeft.setColumnHidden(4, True)
-    #
-    #     self.manualHboxLayoutTableLeft = QVBoxLayout()
-    #     self.manualHboxLayoutTableLeft.addWidget(self.manualTableLeft)
-    #
-    #     self.manualTableMid = QTableWidget(0, 2)
-    #     self.manualTableMid.setFont(self.font)
-    #     self.manualTableMid.setHorizontalHeaderLabels(['Key', 'Value'])
-    #     self.manualTableMid.verticalHeader().setVisible(False)
-    #     self.manualTableMid.horizontalHeader().setSectionResizeMode(
-    #         QHeaderView.Stretch)
-    #     self.manualTableMid.horizontalHeader().setSectionResizeMode(
-    #         0, QHeaderView.ResizeToContents)
-    #     self.manualTableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    #     self.manualHboxLayoutTableMid = QVBoxLayout()
-    #     self.manualHboxLayoutTableMid.addWidget(self.manualTableMid)
-    #
-    #     self.manualTableRight = QTableWidget(0, 2)
-    #     self.manualTableRight.setFont(self.font)
-    #     self.manualTableRight.setHorizontalHeaderLabels(['Key', 'Value'])
-    #     self.manualTableRight.verticalHeader().setVisible(False)
-    #     self.manualTableRight.horizontalHeader().setSectionResizeMode(
-    #         QHeaderView.Stretch)
-    #     self.manualTableRight.horizontalHeader().setSectionResizeMode(
-    #         0, QHeaderView.ResizeToContents)
-    #     self.manualTableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    #     self.manualHboxLayoutTableRight = QVBoxLayout()
-    #     self.manualHboxLayoutTableRight.addWidget(self.manualTableRight)
-    #
-    #     self.manualEditBox = QTextEdit()
-    #     self.manualEditBox.setObjectName('manualTextEdit')
-    #     self.manualEditBox.setFont(self.font)
-    #     self.manualEditBox.setFixedSize(700, 100)
-    #     self.manualBtnStart = QPushButton('校验')
-    #     self.manualBtnStart.setObjectName('btnStart')
-    #     self.manualBtnStart.setFont(self.font)
-    #     self.manualBtnStart.setFixedSize(80, 25)
-    #     self.manualBtnStop = QPushButton('清空')
-    #     self.manualBtnStop.setObjectName('btnStop')
-    #     self.manualBtnStop.setFont(self.font)
-    #     self.manualBtnStop.setFixedSize(80, 25)
-    #     # self.manualBtnStop.setEnabled(False)
-    #
-    #     self.manualBtnStart.clicked.connect(self.manualBtnStartClicked)
-    #     self.manualBtnStop.clicked.connect(
-    #         lambda: self.manualBtnStopClicked(self.manualBtnStop))
-    #     # self.manualTableLeft.cellClicked.connect(self.tableLeftCellClicked)
-    #     # self.manualTableMid.cellClicked.connect(self.tableMidCellClicked)
-    #
-    #     self.manualGroupBoxTable1 = QGroupBox('校验结果')
-    #     self.manualGroupBoxTable1.setLayout(self.manualHboxLayoutTableLeft)
-    #     self.manualGroupBoxTable2 = QGroupBox('一级数据')
-    #     self.manualGroupBoxTable2.setLayout(self.manualHboxLayoutTableMid)
-    #     self.manualGroupBoxTable3 = QGroupBox('二级数据')
-    #     self.manualGroupBoxTable3.setLayout(self.manualHboxLayoutTableRight)
-    #     self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable1)
-    #     self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable2)
-    #     self.manualHboxLayoutBody.addWidget(self.manualGroupBoxTable3)
-    #     self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable1, 7)
-    #     self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable2, 7)
-    #     self.manualHboxLayoutBody.setStretchFactor(self.manualGroupBoxTable3, 5)
-    #
-    #     self.manualVBoxLayoutHeaderBtn = QVBoxLayout()
-    #     self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStart)
-    #     self.manualVBoxLayoutHeaderBtn.addWidget(self.manualBtnStop)
-    #     self.manualHboxLayoutHeader.addWidget(self.manualEditBox)
-    #     self.manualHboxLayoutHeader.addLayout(self.manualVBoxLayoutHeaderBtn)
-    #
-    #     self.manualGroupBoxHeader = QGroupBox('输入源数据')
-    #     self.manualGroupBoxHeader.setObjectName('groupBoxHeader')
-    #     self.manualGroupBoxHeader.setLayout(self.manualHboxLayoutHeader)
-    #
-    #     self.manualMainLayout.addWidget(self.manualGroupBoxHeader, stretch=1)
-    #     self.manualMainLayout.addLayout(self.manualHboxLayoutBody, stretch=3)
-    #     self.tabManualMode.setLayout(self.manualMainLayout)
+        self.tabUI.setLayout(self.mainLayout)
 
     def comboBoxSelected(self, i):
         """
@@ -776,7 +668,6 @@ class LogCheckUI(QTabWidget):
             self.groupBoxHeader.setVisible(False)
             self.groupBoxFooter.setVisible(False)
             self.groupBoxManualHeader.setVisible(True)
-            self.resize(100, 500)
 
         except Exception as e:
             print(str(e))
@@ -791,7 +682,7 @@ class LogCheckUI(QTabWidget):
             self.groupBoxHeader.setVisible(True)
             self.groupBoxFooter.setVisible(True)
             self.groupBoxManualHeader.setVisible(False)
-            self.resize(100, 500)
+            self.workThread.sleep()
 
         except Exception as e:
             print(str(e))
