@@ -19,3 +19,4 @@ venv/
 # output files
 result/
 log/
+release/

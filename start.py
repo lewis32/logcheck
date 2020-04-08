@@ -70,12 +70,6 @@ class WorkThread(QThread):
                             self.add.emit(res)
                         self.logger.info('Check result: ' + str(res))
 
-                    # 测试代码
-                    # data = self.lc.load_log()
-                    # res = self.lc.check_log(data)
-                    # self.add.emit(data, res)
-                    # print('This is log result from local file')
-
 
 class LogCheckUI(QTabWidget):
     """
