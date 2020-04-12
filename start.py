@@ -92,17 +92,18 @@ class LogCheckUI(QTabWidget):
         self.font.setPointSize(10)
         self.font.setFamily("Microsoft YaHei UI")
 
-        self.tabUI = QWidget()
+        self.tabMainUI = QWidget()
         self.tabEditUI = QWidget()
         self.tabHintUI = QWidget()
-        self.addTab(self.tabUI, '日志验证')
+        self.addTab(self.tabMainUI, '日志验证')
         self.addTab(self.tabEditUI, '规则编辑')
         self.addTab(self.tabHintUI, '使用说明')
-        self.initUI()
+        self.initMainUI()
+        self.initHintUI()
 
-    def initUI(self):
+    def initMainUI(self):
         """
-        初始化自动模式UI
+        初始化主UI
         :return: None
         """
         self.mainLayout = QVBoxLayout(self)
@@ -316,7 +317,22 @@ class LogCheckUI(QTabWidget):
         self.mainLayout.addWidget(self.groupBoxManualHeader)
         self.mainLayout.addLayout(self.hboxLayoutBody)
         self.mainLayout.addWidget(self.groupBoxFooter)
-        self.tabUI.setLayout(self.mainLayout)
+        self.tabMainUI.setLayout(self.mainLayout)
+
+    def initHintUI(self):
+        """
+        初始化提示UI
+        :return: None
+        """
+        self.hintLayout = QVBoxLayout()
+        self.hintLayout.setContentsMargins(20, 20, 20, 20)
+
+        self.groupBoxHint1 = QGroupBox('提示1')
+        self.groupBoxHint2 = QGroupBox('提示2')
+
+        self.hintLayout.addWidget(self.groupBoxHint1)
+        self.hintLayout.addWidget(self.groupBoxHint2)
+        self.tabHintUI.setLayout(self.hintLayout)
 
     def comboBoxSelected(self, i):
         """
