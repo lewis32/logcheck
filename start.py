@@ -5,6 +5,7 @@
 import sys
 from core.log_check import *
 from core.package.myserial import *
+from core.package.myssh import MySsh as ssh
 from core.package.mylogging import MyLogging as Logging
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -20,7 +21,7 @@ cmdStop = ''
 
 class WorkThread(QThread):
     """
-    子线程，轮询校验结果返回
+    子线程，轮询验证结果返回
     """
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
@@ -91,6 +92,7 @@ class LogCheckUI(QTabWidget):
         self.font = QFont()
         self.font.setPointSize(10)
         self.font.setFamily("Microsoft YaHei UI")
+        self.setFont(self.font)
 
         self.tabMainUI = QWidget()
         self.tabEditUI = QWidget()
@@ -100,6 +102,7 @@ class LogCheckUI(QTabWidget):
         self.addTab(self.tabHintUI, '使用说明')
         self.initMainUI()
         self.initHintUI()
+        self.bind()
 
     def initMainUI(self):
         """
@@ -108,97 +111,35 @@ class LogCheckUI(QTabWidget):
         """
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
-        self.hboxLayoutHeader = QHBoxLayout()
-        self.hboxLayoutHeader.setContentsMargins(15, 15, 15, 15)
-        self.hboxLayoutHeader.setObjectName('hboxLayoutHeader')
-        self.hboxLayoutBody = QHBoxLayout()
-        self.hboxLayoutBody.setObjectName('hboxLayoutBody')
-        # hboxLayoutBody.setContentsMargins(15, 15, 15, 15)
-        self.hboxLayoutFooter = QGridLayout()
-        self.hboxLayoutFooter.setContentsMargins(15, 15, 15, 15)
-        self.hboxLayoutFooter.setObjectName('hboxLayoutFooter')
 
-        self.comboBox = QComboBox()
-        self.setFont(self.font)
-        self.comboBox.setCurrentIndex(-1)
-        self.btnRefresh = QPushButton('刷新')
-        self.btnRefresh.setObjectName('btnRefresh')
-        self.btnRefresh.setFont(self.font)
-        self.btnRefresh.setFixedSize(80, 25)
-        self.btnClear = QPushButton('清空数据')
-        self.btnClear.setObjectName('btnClearCells')
-        self.btnClear.setFont(self.font)
-        self.btnClear.setFixedSize(80, 25)
-        self.btnTest = QPushButton('模拟调试')
-        self.btnTest.setObjectName('btnClearCells')
-        self.btnTest.setFont(self.font)
-        self.btnTest.setFixedSize(80, 25)
-        self.btnTest.setVisible(False)
-        self.btnSwitchManual = QPushButton('切换手动')
-        self.btnSwitchManual.setObjectName('btnClearCells')
-        self.btnSwitchManual.setFont(self.font)
-        self.btnSwitchManual.setFixedSize(80, 25)
+        # 创建串口模式header
+        self.hboxLayoutSerialHeader = QHBoxLayout()
+        self.gridLayoutSerialHeader = QGridLayout()
+        self.gridLayoutSerialHeader.setContentsMargins(10, 10, 10, 10)
+        self.gridLayoutSerialHeader.setObjectName('hboxLayoutHeader')
+        self.gridLayoutSerialCmdHeader = QGridLayout()
+        self.gridLayoutSerialCmdHeader.setContentsMargins(15, 15, 15, 15)
+        self.gridLayoutSerialCmdHeader.setObjectName('hboxLayoutHeader')
 
-        self.editBoxManual = QTextEdit()
-        self.editBoxManual.setObjectName('manualTextEdit')
-        self.editBoxManual.setFont(self.font)
-        self.editBoxManual.setFixedSize(700, 100)
-        self.btnManualCheck = QPushButton('验证')
-        self.btnManualCheck.setObjectName('btnStart')
-        self.btnManualCheck.setFont(self.font)
-        self.btnManualCheck.setFixedSize(80, 25)
-        self.btnManualClear = QPushButton('清空')
-        self.btnManualClear.setObjectName('btnStop')
-        self.btnManualClear.setFont(self.font)
-        self.btnManualClear.setFixedSize(80, 25)
-        self.btnSwitchAuto = QPushButton('切换自动')
-        self.btnSwitchAuto.setObjectName('btnStop')
-        self.btnSwitchAuto.setFont(self.font)
-        self.btnSwitchAuto.setFixedSize(80, 25)
-
-        self.tableLeft = QTableWidget(0, 6)
-        self.tableLeft.setToolTip('点击查看详细结果，右键复制验证数据')
-        self.tableLeft.setMouseTracking(True)
-        self.tableLeft.setFont(self.font)
-        self.tableLeft.setHorizontalHeaderLabels(
-            ['src_event_code', 'event_code', 'event_alias', 'result', 'detail', 'more_detail'])
-        self.tableLeft.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.tableLeft.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
-        self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableLeft.setColumnHidden(4, True)
-        self.tableLeft.setColumnHidden(5, True)
-
-        self.hboxLayoutTableLeft = QVBoxLayout()
-        self.hboxLayoutTableLeft.addWidget(self.tableLeft)
-
-        self.tableMid = QTableWidget(0, 3)
-        # self.tableMid.setSortingEnabled(True)
-        # self.tableMid.sortByColumn(0, Qt.AscendingOrder)
-        self.tableMid.setFont(self.font)
-        self.tableMid.setHorizontalHeaderLabels(['key', 'key_alias', 'value'])
-        self.tableMid.verticalHeader().setVisible(False)
-        self.tableMid.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.tableMid.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
-        self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.hboxLayoutTableMid = QVBoxLayout()
-        self.hboxLayoutTableMid.addWidget(self.tableMid)
-
-        self.tableRight = QTableWidget(0, 3)
-        # self.tableRight.setSortingEnabled(True)
-        self.tableRight.setFont(self.font)
-        self.tableRight.setHorizontalHeaderLabels(['key', 'key_alias', 'value'])
-        self.tableRight.verticalHeader().setVisible(False)
-        self.tableRight.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.tableRight.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
-        self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.hboxLayoutTableRight = QVBoxLayout()
-        self.hboxLayoutTableRight.addWidget(self.tableRight)
+        self.comboBoxSerial = QComboBox()
+        self.comboBoxSerial.setObjectName('comboBoxSerial')
+        self.comboBoxSerial.setCurrentIndex(-1)
+        self.btnSerialRefresh = QPushButton('刷新')
+        self.btnSerialRefresh.setObjectName('btnHeader')
+        self.btnSerialRefresh.setFixedSize(90, 25)
+        self.btnSerialClear = QPushButton('清空')
+        self.btnSerialClear.setObjectName('btnHeader')
+        self.btnSerialClear.setFixedSize(90, 25)
+        self.btnSerialTest = QPushButton('模拟调试')
+        self.btnSerialTest.setObjectName('btnHeader')
+        self.btnSerialTest.setFixedSize(90, 25)
+        self.btnSerialTest.setVisible(False)
+        self.btnSerial2Manual = QPushButton('切换手动')
+        self.btnSerial2Manual.setObjectName('btnHeader')
+        self.btnSerial2Manual.setFixedSize(90, 25)
+        self.btnSerial2Kafka = QPushButton('切换Kafka')
+        self.btnSerial2Kafka.setObjectName('btnHeader')
+        self.btnSerial2Kafka.setFixedSize(90, 25)
 
         self.labelCmdBeforeStart = QLabel('开始前执行命令')
         self.lineEditCmdBeforeStart = QLineEdit()
@@ -222,101 +163,225 @@ class LogCheckUI(QTabWidget):
             cmdStart = cmdDict['startCmd']
             cmdStop = cmdDict['stopCmd']
 
-        self.btnStart = QPushButton('开始')
-        self.btnStart.setObjectName('btnStart')
-        self.btnStart.setFont(self.font)
-        self.btnStart.setFixedSize(80, 25)
-        self.btnStop = QPushButton('停止')
-        self.btnStop.setObjectName('btnStop')
-        self.btnStop.setFont(self.font)
-        self.btnStop.setFixedSize(80, 25)
-        self.btnStop.setEnabled(False)
+        self.btnSerialStart = QPushButton('开始')
+        self.btnSerialStart.setObjectName('btnFooter')
+        self.btnSerialStart.setFont(self.font)
+        self.btnSerialStop = QPushButton('停止')
+        self.btnSerialStop.setObjectName('btnFooter')
+        self.btnSerialStop.setFont(self.font)
+        self.btnSerialStop.setEnabled(False)
 
-        self.workThread = WorkThread()
+        self.gridLayoutSerialCmdHeader.addWidget(self.labelCmdBeforeStart, 0, 0)
+        self.gridLayoutSerialCmdHeader.addWidget(self.lineEditCmdBeforeStart, 0, 1)
+        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStart, 0, 2)
+        self.gridLayoutSerialCmdHeader.addWidget(self.labelCmdAfterStop, 1, 0)
+        self.gridLayoutSerialCmdHeader.addWidget(self.lineEditCmdAfterStop, 1, 1)
+        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStop, 1, 2)
+        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerial, 0, 0)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 0)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialRefresh, 0, 1)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 1)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerial2Kafka, 0, 2)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerial2Manual, 1, 2)
 
-        self.comboBox.currentIndexChanged.connect(self.comboBoxSelected)
-        self.btnRefresh.clicked.connect(
-            lambda: self.btnRefreshClicked(self.btnRefresh))
-        self.btnClear.clicked.connect(
-            lambda: self.btnClearClicked(self.btnClear))
-        self.btnStart.clicked.connect(self.btnStartClicked)
-        self.btnStop.clicked.connect(
-            lambda: self.btnStopClicked(self.btnStop))
-        self.btnTest.clicked.connect(
-            lambda: self.btnTestClicked(self.btnTest))
-        self.btnSwitchManual.clicked.connect(
-            lambda: self.btnSwitchManualClicked(self.btnSwitchManual))
-        self.btnSwitchAuto.clicked.connect(
-            lambda: self.btnSwitchAutoClicked(self.btnSwitchAuto))
-        self.btnManualCheck.clicked.connect(
-            lambda: self.btnManualCheckClicked(self.btnManualCheck))
-        self.btnManualClear.clicked.connect(
-            lambda: self.btnManualClearClicked(self.btnManualClear))
-        self.lineEditCmdBeforeStart.textChanged.connect(
-            lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
-        self.lineEditCmdAfterStop.textChanged.connect(
-            lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
-        self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
-        self.tableMid.cellClicked.connect(self.tableMidCellClicked)
-        # self.tableLeft.popCellTip.connect(
-        # lambda: self.popCellTip(self.tableLeft))
-        self.workThread.add.connect(self.checkResultReceived)
-        self.workThread.terminal.connect(self.stopSignalReceived)
+        self.groupBoxSerialHeader = QGroupBox('选择端口')
+        self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
+        self.groupBoxSerialHeader.setLayout(self.gridLayoutSerialHeader)
+        self.groupBoxSerialHeader.setFixedSize(420, 120)
+        self.groupBoxSerialCmdHeader = QGroupBox(r'输入命令')
+        self.groupBoxSerialCmdHeader.setLayout(self.gridLayoutSerialCmdHeader)
+        self.groupBoxSerialCmdHeader.setFixedSize(730, 120)
+        self.hboxLayoutSerialHeader.addWidget(self.groupBoxSerialHeader)
+        self.hboxLayoutSerialHeader.addWidget(self.groupBoxSerialCmdHeader)
 
-        self.hboxLayoutHeader.addWidget(self.comboBox)
-        self.hboxLayoutHeader.addWidget(self.btnRefresh)
-        self.hboxLayoutHeader.addWidget(self.btnClear)
-        self.hboxLayoutHeader.addWidget(self.btnTest)
-        self.hboxLayoutHeader.addWidget(self.btnSwitchManual)
-        self.hboxLayoutHeader.setStretchFactor(self.comboBox, 2)
-        self.hboxLayoutHeader.setStretchFactor(self.btnRefresh, 1)
+        # 创建Kafka模式header
+        self.hboxLayoutKafkaHeader = QHBoxLayout()
+        self.gridLayoutKafkaSshHeader = QGridLayout()
+        self.gridLayoutKafkaSshHeader.setContentsMargins(10, 10, 10, 10)
+        self.gridLayoutKafkaKafkaHeader = QGridLayout()
+        self.gridLayoutKafkaKafkaHeader.setContentsMargins(10, 10, 10, 10)
+        self.gridLayoutKafkaFilterHeader = QGridLayout()
+        self.gridLayoutKafkaFilterHeader.setContentsMargins(10, 10, 10, 10)
 
-        self.hboxLayoutManualHeader = QHBoxLayout()
-        self.hboxLayoutManualHeader.setContentsMargins(10, 10, 10, 10)
-        self.hboxLayoutManualHeader.addWidget(self.editBoxManual)
-        self.vboxLayoutManualHeader = QVBoxLayout()
-        self.vboxLayoutManualHeader.addWidget(self.btnManualCheck)
-        self.vboxLayoutManualHeader.addWidget(self.btnManualClear)
-        self.vboxLayoutManualHeader.addWidget(self.btnSwitchAuto)
-        self.hboxLayoutManualHeader.addLayout(self.vboxLayoutManualHeader)
+        self.labelKafkaSshHost = QLabel('Host')
+        self.lineEditKafkaSshHost = QLineEdit()
+        self.labelKafkaSshPort = QLabel('Port')
+        self.lineEditKafkaSshPort = QLineEdit()
+        self.labelKafkaSshUser = QLabel('User')
+        self.lineEditKafkaSshUser = QLineEdit()
+        self.labelKafkaSshPwd = QLabel('Pwd')
+        self.lineEditKafkaSshPwd = QLineEdit()
+        self.btnKafkaSshConnect = QPushButton('连接')
+        self.btnKafkaSshConnect.setObjectName('btnHeader')
+        self.labelKafkaCluster = QLabel('Kafka Server')
+        self.lineEditKafkaCluster = QLineEdit()
+        self.labelKafkaTopic = QLabel('Kafka Topic')
+        self.comboBoxKafkaTopic = QComboBox()
+        self.comboBoxKafkaTopic.setObjectName('comboBoxKafkaTopic')
+        self.btnKafkaKafkaConnect = QPushButton('连接')
+        self.btnKafkaKafkaConnect.setObjectName('btnHeader')
+        self.labelKafkaFilter = QLabel('Filter')
+        self.lineEditKafkaFilter = QLineEdit()
+        self.btnKafkaCheck = QPushButton('开始验证')
+        self.btnKafkaCheck.setObjectName('btnHeader')
+        self.btnKafka2Manual = QPushButton('切换手动')
+        self.btnKafka2Manual.setObjectName('btnHeader')
+        self.btnKafka2Serial = QPushButton('切换串口')
+        self.btnKafka2Serial.setObjectName('btnHeader')
+
+        self.gridLayoutKafkaSshHeader.addWidget(self.labelKafkaSshHost, 0, 0)
+        self.gridLayoutKafkaSshHeader.addWidget(self.lineEditKafkaSshHost, 0, 1)
+        self.gridLayoutKafkaSshHeader.addWidget(self.labelKafkaSshPort, 0, 2)
+        self.gridLayoutKafkaSshHeader.addWidget(self.lineEditKafkaSshPort, 0, 3)
+        self.gridLayoutKafkaSshHeader.addWidget(self.labelKafkaSshUser, 1, 0)
+        self.gridLayoutKafkaSshHeader.addWidget(self.lineEditKafkaSshUser, 1, 1)
+        self.gridLayoutKafkaSshHeader.addWidget(self.labelKafkaSshPwd, 1, 2)
+        self.gridLayoutKafkaSshHeader.addWidget(self.lineEditKafkaSshPwd, 1, 3)
+        self.gridLayoutKafkaSshHeader.addWidget(self.btnKafkaSshConnect, 0, 4)
+        self.gridLayoutKafkaKafkaHeader.addWidget(self.labelKafkaCluster, 0, 0)
+        self.gridLayoutKafkaKafkaHeader.addWidget(self.lineEditKafkaCluster, 0, 1)
+        self.gridLayoutKafkaKafkaHeader.addWidget(self.labelKafkaTopic, 1, 0)
+        self.gridLayoutKafkaKafkaHeader.addWidget(self.comboBoxKafkaTopic, 1, 1)
+        self.gridLayoutKafkaKafkaHeader.addWidget(self.btnKafkaKafkaConnect, 0, 2)
+        self.gridLayoutKafkaFilterHeader.addWidget(self.labelKafkaFilter, 0, 0)
+        self.gridLayoutKafkaFilterHeader.addWidget(self.lineEditKafkaFilter, 0, 1, 1, 2)
+        self.gridLayoutKafkaFilterHeader.addWidget(self.btnKafkaCheck, 1, 0)
+        self.gridLayoutKafkaFilterHeader.addWidget(self.btnKafka2Serial, 1, 1)
+        self.gridLayoutKafkaFilterHeader.addWidget(self.btnKafka2Manual, 1, 2)
+
+        self.groupBoxKafkaSshHeader = QGroupBox('SSH')
+        self.groupBoxKafkaSshHeader.setObjectName('groupBoxHeader')
+        self.groupBoxKafkaSshHeader.setLayout(self.gridLayoutKafkaSshHeader)
+        self.groupBoxKafkaSshHeader.setVisible(False)
+        self.groupBoxKafkaSshHeader.setFixedSize(420, 120)
+
+        self.groupBoxKafkaKafkaHeader = QGroupBox('Kafka')
+        self.groupBoxKafkaKafkaHeader.setObjectName('groupBoxHeader')
+        self.groupBoxKafkaKafkaHeader.setLayout(self.gridLayoutKafkaKafkaHeader)
+        self.groupBoxKafkaKafkaHeader.setVisible(False)
+        self.groupBoxKafkaKafkaHeader.setFixedSize(420, 120)
+
+        self.groupBoxKafkaFilterHeader = QGroupBox('Kafka')
+        self.groupBoxKafkaFilterHeader.setObjectName('groupBoxHeader')
+        self.groupBoxKafkaFilterHeader.setLayout(self.gridLayoutKafkaFilterHeader)
+        self.groupBoxKafkaFilterHeader.setVisible(False)
+        self.groupBoxKafkaFilterHeader.setFixedSize(300, 120)
+
+        self.hboxLayoutKafkaHeader.addWidget(self.groupBoxKafkaSshHeader)
+        self.hboxLayoutKafkaHeader.addWidget(self.groupBoxKafkaKafkaHeader)
+        self.hboxLayoutKafkaHeader.addWidget(self.groupBoxKafkaFilterHeader)
+
+        # 创建手动模式header
+        self.gridLayoutManualHeader = QGridLayout()
+        self.gridLayoutManualHeader.setContentsMargins(10, 10, 10, 10)
+
+        self.editBoxManual = QTextEdit()
+        self.editBoxManual.setObjectName('textEditManual')
+        # self.editBoxManual.setFixedSize(800, 100)
+        self.btnManualCheck = QPushButton('验证')
+        self.btnManualCheck.setObjectName('btnHeader')
+        self.btnManualClear = QPushButton('清空')
+        self.btnManualClear.setObjectName('btnHeader')
+        self.btnManual2Serial = QPushButton('切换串口')
+        self.btnManual2Serial.setObjectName('btnHeader')
+        self.btnManual2Kafka = QPushButton('切换Kafka')
+        self.btnManual2Kafka.setObjectName('btnHeader')
+
+        self.gridLayoutManualHeader.addWidget(self.editBoxManual, 0, 0, 2, 1)
+        self.gridLayoutManualHeader.addWidget(self.btnManualCheck, 0, 1)
+        self.gridLayoutManualHeader.addWidget(self.btnManualClear, 0, 2)
+        self.gridLayoutManualHeader.addWidget(self.btnManual2Serial, 1, 1)
+        self.gridLayoutManualHeader.addWidget(self.btnManual2Kafka, 1, 2)
 
         self.groupBoxManualHeader = QGroupBox('输入日志数据')
         self.groupBoxManualHeader.setObjectName('groupBoxHeader')
-        self.groupBoxManualHeader.setLayout(self.hboxLayoutManualHeader)
+        self.groupBoxManualHeader.setLayout(self.gridLayoutManualHeader)
         self.groupBoxManualHeader.setVisible(False)
-        self.groupBoxManualHeader.setFixedSize(850, 150)
+        self.groupBoxManualHeader.setFixedSize(850, 120)
 
-        self.groupBoxTable1 = QGroupBox('校验结果')
-        self.groupBoxTable1.setLayout(self.hboxLayoutTableLeft)
-        self.groupBoxTable2 = QGroupBox('一级数据')
-        self.groupBoxTable2.setLayout(self.hboxLayoutTableMid)
-        self.groupBoxTable3 = QGroupBox('二级数据')
-        self.groupBoxTable3.setLayout(self.hboxLayoutTableRight)
-        self.hboxLayoutBody.addWidget(self.groupBoxTable1)
-        self.hboxLayoutBody.addWidget(self.groupBoxTable2)
-        self.hboxLayoutBody.addWidget(self.groupBoxTable3)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTable1, 7)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTable2, 7)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTable3, 5)
+        # 创建显示结果数据body
+        self.hboxLayoutBody = QHBoxLayout()
+        self.hboxLayoutBody.setObjectName('hboxLayoutBody')
+        # hboxLayoutBody.setContentsMargins(15, 15, 15, 15)
+        self.hboxLayoutTableLeft = QVBoxLayout()
+        self.hboxLayoutTableMid = QVBoxLayout()
+        self.hboxLayoutTableRight = QVBoxLayout()
 
-        self.hboxLayoutFooter.addWidget(self.labelCmdBeforeStart, 0, 0)
-        self.hboxLayoutFooter.addWidget(self.lineEditCmdBeforeStart, 0, 1)
-        self.hboxLayoutFooter.addWidget(self.btnStart, 0, 2)
-        self.hboxLayoutFooter.addWidget(self.labelCmdAfterStop, 1, 0)
-        self.hboxLayoutFooter.addWidget(self.lineEditCmdAfterStop, 1, 1)
-        self.hboxLayoutFooter.addWidget(self.btnStop, 1, 2)
+        self.tableLeft = QTableWidget(0, 6)
+        self.tableLeft.setToolTip('点击查看详细结果，右键复制验证数据')
+        self.tableLeft.setMouseTracking(True)
+        self.tableLeft.setFont(self.font)
+        self.tableLeft.setHorizontalHeaderLabels(
+            [
+                'src_event_code',
+                'event_code',
+                'event_alias',
+                'result',
+                'detail',
+                'more_detail'
+            ]
+        )
+        self.tableLeft.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+        self.tableLeft.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableLeft.setColumnHidden(4, True)
+        self.tableLeft.setColumnHidden(5, True)
 
-        self.groupBoxHeader = QGroupBox('选择端口')
-        self.groupBoxHeader.setObjectName('groupBoxHeader')
-        self.groupBoxHeader.setLayout(self.hboxLayoutHeader)
-        self.groupBoxHeader.setFixedSize(420, 90)
-        self.groupBoxFooter = QGroupBox(r'输入命令')
-        self.groupBoxFooter.setLayout(self.hboxLayoutFooter)
+        self.tableMid = QTableWidget(0, 3)
+        self.tableMid.setFont(self.font)
+        self.tableMid.setHorizontalHeaderLabels(
+            [
+                'key',
+                'key_alias',
+                'value'
+            ]
+        )
+        self.tableMid.verticalHeader().setVisible(False)
+        self.tableMid.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+        self.tableMid.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        self.mainLayout.addWidget(self.groupBoxHeader)
+        self.tableRight = QTableWidget(0, 3)
+        self.tableRight.setFont(self.font)
+        self.tableRight.setHorizontalHeaderLabels(
+            [
+                'key',
+                'key_alias',
+                'value'
+            ]
+        )
+        self.tableRight.verticalHeader().setVisible(False)
+        self.tableRight.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+        self.tableRight.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents)
+        self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+        self.hboxLayoutTableLeft.addWidget(self.tableLeft)
+        self.hboxLayoutTableMid.addWidget(self.tableMid)
+        self.hboxLayoutTableRight.addWidget(self.tableRight)
+
+        self.groupBoxTableLeft = QGroupBox('验证结果')
+        self.groupBoxTableLeft.setLayout(self.hboxLayoutTableLeft)
+        self.groupBoxTableMid = QGroupBox('一级数据')
+        self.groupBoxTableMid.setLayout(self.hboxLayoutTableMid)
+        self.groupBoxTableRight = QGroupBox('二级数据')
+        self.groupBoxTableRight.setLayout(self.hboxLayoutTableRight)
+        self.hboxLayoutBody.addWidget(self.groupBoxTableLeft)
+        self.hboxLayoutBody.addWidget(self.groupBoxTableMid)
+        self.hboxLayoutBody.addWidget(self.groupBoxTableRight)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableLeft, 7)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableMid, 7)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableRight, 5)
+
+        self.mainLayout.addLayout(self.hboxLayoutSerialHeader)
+        self.mainLayout.addLayout(self.hboxLayoutKafkaHeader)
         self.mainLayout.addWidget(self.groupBoxManualHeader)
         self.mainLayout.addLayout(self.hboxLayoutBody)
-        self.mainLayout.addWidget(self.groupBoxFooter)
         self.tabMainUI.setLayout(self.mainLayout)
 
     def initHintUI(self):
@@ -334,6 +399,61 @@ class LogCheckUI(QTabWidget):
         self.hintLayout.addWidget(self.groupBoxHint2)
         self.tabHintUI.setLayout(self.hintLayout)
 
+    def bind(self):
+        """
+        绑定信号
+        :return: None
+        """
+        self.comboBoxSerial.currentIndexChanged.connect(self.comboBoxSelected)
+        self.btnSerialRefresh.clicked.connect(
+            lambda: self.btnRefreshClicked(self.btnSerialRefresh))
+        self.btnSerialClear.clicked.connect(
+            lambda: self.btnClearClicked(self.btnSerialClear))
+        self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
+        self.btnSerialStop.clicked.connect(
+            lambda: self.btnSerialStopClicked(self.btnSerialStop))
+        self.btnSerialTest.clicked.connect(
+            lambda: self.btnSerialTestClicked(self.btnSerialTest))
+        self.btnSerial2Manual.clicked.connect(
+            lambda: self.btnSwitchManualClicked(self.btnSerial2Manual))
+        self.btnSerial2Kafka.clicked.connect(
+            lambda: self.btnSwitchKafkaClicked(self.btnSerial2Kafka))
+        self.lineEditCmdBeforeStart.textChanged.connect(
+            lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart)
+        )
+        self.lineEditCmdAfterStop.textChanged.connect(
+            lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop)
+        )
+        self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
+        self.tableMid.cellClicked.connect(self.tableMidCellClicked)
+
+        self.btnKafkaSshConnect.clicked.connect(
+            lambda: self.btnKafkaSshConnectClicked(self.btnKafkaSshConnect)
+        )
+        self.btnKafka2Manual.clicked.connect(
+            lambda: self.btnSwitchManualClicked(self.btnKafka2Manual)
+        )
+        self.btnKafka2Serial.clicked.connect(
+            lambda: self.btnSwitchSerialClicked(self.btnKafka2Serial)
+        )
+
+        self.btnManual2Serial.clicked.connect(
+            lambda: self.btnSwitchSerialClicked(self.btnManual2Serial)
+        )
+        self.btnManual2Kafka.clicked.connect(
+            lambda: self.btnSwitchKafkaClicked(self.btnManual2Kafka)
+        )
+        self.btnManualCheck.clicked.connect(
+            lambda: self.btnManualCheckClicked(self.btnManualCheck)
+        )
+        self.btnManualClear.clicked.connect(
+            lambda: self.btnManualClearClicked(self.btnManualClear)
+        )
+
+        self.workThread = WorkThread()
+        self.workThread.add.connect(self.checkResultReceived)
+        self.workThread.terminal.connect(self.stopSignalReceived)
+
     def comboBoxSelected(self, i):
         """
         下拉框选择端口触发
@@ -341,11 +461,11 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         global currentPort
-        self.logger.info("Text in combobox: " + self.comboBox.currentText())
+        self.logger.info("Text in combobox: " + self.comboBoxSerial.currentText())
 
-        if self.comboBox.currentText():
+        if self.comboBoxSerial.currentText():
             currentPort = re.findall(
-                r'COM[0-9]+', self.comboBox.currentText())[0]
+                r'COM[0-9]+', self.comboBoxSerial.currentText())[0]
 
     def lineEditCmdChanged(self, i):
         """
@@ -375,7 +495,7 @@ class LogCheckUI(QTabWidget):
         :param btn: object
         :return: None
         """
-        self.comboBox.clear()
+        self.comboBoxSerial.clear()
         try:
             portList = getPortList()
         except Exception as e:
@@ -386,7 +506,7 @@ class LogCheckUI(QTabWidget):
                 for i in portList:
                     try:
                         # self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
-                        self.comboBox.addItem(i[0])
+                        self.comboBoxSerial.addItem(i[0])
                     except Exception as e:
                         self.logger.error(str(e))
 
@@ -401,40 +521,43 @@ class LogCheckUI(QTabWidget):
         self.tableRight.clearContents()
         self.row = 0
 
-    def btnStartClicked(self, btn):
+    def btnSerialStartClicked(self, btn):
         """
         点击开始按钮触发
         :param btn: object
         :return: None
         """
-        global startFlag
+        try:
+            global startFlag
 
-        if not currentPort:
-            QMessageBox.information(self, '提示', '请先选择端口！',
-                QMessageBox.Ok)
-            return
+            if not currentPort:
+                QMessageBox.information(self, '提示', '请先选择端口！',
+                    QMessageBox.Ok)
+                return
 
-        self.row = 0
-        self.tableLeft.clearContents()
-        self.tableMid.clearContents()
-        self.tableRight.clearContents()
-        self.workThread.start()
+            self.row = 0
+            self.tableLeft.clearContents()
+            self.tableMid.clearContents()
+            self.tableRight.clearContents()
+            self.workThread.start()
 
-        self.comboBox.setEnabled(False)
-        self.btnRefresh.setEnabled(False)
-        self.lineEditCmdBeforeStart.setEnabled(False)
-        self.lineEditCmdAfterStop.setEnabled(False)
-        self.btnStart.setEnabled(False)
-        self.btnStop.setEnabled(False)
+            self.comboBoxSerial.setEnabled(False)
+            self.btnSerialRefresh.setEnabled(False)
+            self.lineEditCmdBeforeStart.setEnabled(False)
+            self.lineEditCmdAfterStop.setEnabled(False)
+            self.btnSerialStart.setEnabled(False)
+            self.btnSerialStop.setEnabled(False)
 
-        # 开始后马上点击结束会报错，添加延时
-        self.timer = QTimer(self)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(lambda: self.btnStop.setEnabled(True))
-        self.timer.start(5000)
-        self.timer.start(5000)
+            # 开始后马上点击结束会报错，添加延时
+            self.timer = QTimer(self)
+            self.timer.setSingleShot(True)
+            self.timer.timeout.connect(lambda: self.btnSerialStop.setEnabled(True))
+            self.timer.start(5000)
+            self.timer.start(5000)
+        except Exception as e:
+            print(str(e))
 
-    def btnStopClicked(self, btn):
+    def btnSerialStopClicked(self, btn):
         """
         点击结束按钮触发
         :param btn: object
@@ -462,12 +585,12 @@ class LogCheckUI(QTabWidget):
         #         self.logger.info("Execute command: " + str(cmd))
         self.workThread.serial.close()
 
-        self.comboBox.setEnabled(True)
-        self.btnRefresh.setEnabled(True)
+        self.comboBoxSerial.setEnabled(True)
+        self.btnSerialRefresh.setEnabled(True)
         self.lineEditCmdBeforeStart.setEnabled(True)
         self.lineEditCmdAfterStop.setEnabled(True)
-        self.btnStart.setEnabled(True)
-        self.btnStop.setEnabled(False)
+        self.btnSerialStart.setEnabled(True)
+        self.btnSerialStop.setEnabled(False)
         startFlag = False
 
     def checkResultReceived(self, res):
@@ -619,16 +742,16 @@ class LogCheckUI(QTabWidget):
         """
         global startFlag
 
-        self.comboBox.setEnabled(True)
-        self.btnRefresh.setEnabled(True)
+        self.comboBoxSerial.setEnabled(True)
+        self.btnSerialRefresh.setEnabled(True)
         self.lineEditCmdBeforeStart.setEnabled(True)
         self.lineEditCmdAfterStop.setEnabled(True)
-        self.btnStart.setEnabled(True)
-        self.btnStop.setEnabled(False)
+        self.btnSerialStart.setEnabled(True)
+        self.btnSerialStop.setEnabled(False)
         startFlag = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
-    def btnTestClicked(self, i):
+    def btnSerialTestClicked(self, i):
         """
         点击自动模式的模拟调试按钮
         :param i: object
@@ -646,7 +769,7 @@ class LogCheckUI(QTabWidget):
 
     def btnManualCheckClicked(self, i):
         """
-        点击手动模式的校验按钮
+        点击手动模式的验证按钮
         :param i: object
         :return: None
         """
@@ -680,19 +803,21 @@ class LogCheckUI(QTabWidget):
 
     def btnSwitchManualClicked(self, i):
         """
-        切换手动模式UI
+        切换手动模式
         :param i: object
         :return: None
         """
         global startFlag
 
         try:
-            self.groupBoxHeader.setVisible(False)
-            self.groupBoxFooter.setVisible(False)
+            self.groupBoxSerialHeader.setVisible(False)
+            self.groupBoxKafkaSshHeader.setVisible(False)
+            self.groupBoxKafkaKafkaHeader.setVisible(False)
+            self.groupBoxKafkaFilterHeader.setVisible(False)
+            self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(True)
             if startFlag is True:
                 self.workThread.wait()
-            # self.workThread.sleep(ULONG_MAX)
             self.tableLeft.clearContents()
             self.tableMid.clearContents()
             self.tableRight.clearContents()
@@ -701,18 +826,21 @@ class LogCheckUI(QTabWidget):
         except Exception as e:
             print(str(e))
 
-    def btnSwitchAutoClicked(self, i):
+    def btnSwitchSerialClicked(self, i):
         """
-        切换手动模式UI
+        切换串口模式
         :param i: object
         :return: None
         """
         global startFlag
 
         try:
-            self.groupBoxHeader.setVisible(True)
-            self.groupBoxFooter.setVisible(True)
+            self.groupBoxKafkaSshHeader.setVisible(False)
+            self.groupBoxKafkaKafkaHeader.setVisible(False)
+            self.groupBoxKafkaFilterHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(False)
+            self.groupBoxSerialCmdHeader.setVisible(True)
+            self.groupBoxSerialHeader.setVisible(True)
             if startFlag is True:
                 self.workThread.start()
             self.tableLeft.clearContents()
@@ -722,6 +850,53 @@ class LogCheckUI(QTabWidget):
 
         except Exception as e:
             print(str(e))
+
+    def btnSwitchKafkaClicked(self, i):
+        """
+        切换Kafka模式
+        :param i: object
+        :return: None
+        """
+        global startFlag
+
+        try:
+            self.groupBoxSerialHeader.setVisible(False)
+            self.groupBoxManualHeader.setVisible(False)
+            self.groupBoxSerialCmdHeader.setVisible(False)
+            self.groupBoxKafkaSshHeader.setVisible(True)
+            self.groupBoxKafkaKafkaHeader.setVisible(True)
+            self.groupBoxKafkaFilterHeader.setVisible(True)
+            if startFlag is True:
+                self.workThread.start()
+            self.tableLeft.clearContents()
+            self.tableMid.clearContents()
+            self.tableRight.clearContents()
+            self.row = 0
+
+        except Exception as e:
+            print(str(e))
+
+    def btnKafkaSshConnectClicked(self, i):
+        """
+        点击SSH连接按钮
+        :param i: object
+        :return: None
+        """
+        global ssh_host, ssh_port, ssh_user, ssh_pwd
+
+        try:
+            ssh_host = self.lineEditKafkaSshHost.text()
+            ssh_port = self.lineEditKafkaSshPort.text()
+            ssh_user = self.lineEditKafkaSshUser.text()
+            ssh_pwd = self.lineEditKafkaSshPwd.text()
+
+            self.session = ssh(ssh_host, int(ssh_port), ssh_user, ssh_pwd, '192.169.1.181', 9092)
+            self.session.start()
+
+        except Exception as e:
+            self.logger.error(str(e))
+            QMessageBox.information(self, '提示', str(e),
+                                    QMessageBox.Ok)
 
 
 if __name__ == "__main__":
@@ -734,39 +909,37 @@ if __name__ == "__main__":
             margin-right:5px;
             margin-bottom:5px;
         }
-        .QComboBox {
+        .QComboBox#comboBoxSerial {
             border:1px solid #8f8f91;
-            border-radius:4px;
+            width:150px;
+            height:25px;
             position:relative;
-            max-width:100px;
+            max-width:1000px;
         }
-        .QPushButton#btnRefresh {
+        .QComboBox#comboBoxKafkaTopic {
             border:1px solid #8f8f91;
+            width:250px;
+            height:25px;
+            position:relative;
+            max-width:1000px;
+        }
+        .QPushButton#btnHeader {
+            border:1px solid #8f8f91;
+            width:90px;
+            height:25px;
             border-radius:4px;
             position:relative;
             margin-left:5px;
             max-width:80px;
         }
-        .QPushButton#btnClearCells {
+        .QPushButton#btnFooter {
             border:1px solid #8f8f91;
+            width:70px;
+            height:25px;
             border-radius:4px;
             position:relative;
             margin-left:5px;
             max-width:80px;
-        }
-        .QPushButton#btnStart {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            position:relative;
-            margin-right:5px;
-            margin-left:5px;
-        }
-        .QPushButton#btnStop {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            position:relative;
-            margin-right:5px;
-            margin-left:5px;
         }
         .QLineEdit#lineEditCmdBeforeStart {
             border:1px solid #8f8f91;
