@@ -1,4 +1,19 @@
 {
-    "stopCmd": "TODO",
-    "startCmd": "(kill -9 `ps | grep tail | grep -v grep | awk '{print $1}'`;tail -fn 0 /var/local/logservice/logfile/tmp_file_se* &)"
+    "kafka_config": {
+        "filter": "",
+        "server": "10.18.220.142:9092",
+        "ssh_config": {
+            "host": "",
+            "port": "",
+            "pwd": "",
+            "user": ""
+        },
+        "ssh_enable": false,
+        "topic": ""
+    },
+    "mode": "kafka",
+    "serial_config": {
+        "start_cmd": "",
+        "stop_cmd": ""
+    }
 }
