@@ -3,24 +3,19 @@
 # pylint: disable-msg=invalid-name,global-statement,typo
 
 import sys
-from core.log_check import *
-from core.package.myserial import *
-from core.package.myssh import MySsh as ssh
-from core.package.mylogging import MyLogging as Logging
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+from core.log_check import *
+from core.package.myserial import *
+from core.package.myssh import MySsh as Ssh
 from core.package.myconfig import LoadConfig
+from core.package.mylogging import MyLogging as Logging
 
-CURRENT_MODE = ''
-# FILE_PATH = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
-CONFIG = LoadConfig()
+CONFIG = LoadConfig().get_config()
 THREAD_START_FLAG = False
 SERIAL_LIST = []
 CURRENT_SERIAL = None
-START_CMD = ''
-STOP_CMD = ''
-CONFIG = None
 
 
 class WorkThread(QThread):
@@ -32,7 +27,7 @@ class WorkThread(QThread):
     logger = Logging(__name__)
 
     def run(self):
-        global CURRENT_SERIAL, THREAD_START_FLAG, START_CMD
+        global CONFIG, CURRENT_SERIAL, THREAD_START_FLAG
 
         if not CURRENT_SERIAL:
             return
@@ -42,11 +37,9 @@ class WorkThread(QThread):
         except Exception as e:
             self.terminal.emit(str(e))
         else:
-            self.logger.info("Start command: " + START_CMD)
-
             self.serial.sendComand('\n\n')
             self.sleep(1)
-            self.serial.sendComand(START_CMD)
+            self.serial.sendComand(CONFIG.start_cmd)
             self.serial.sendComand('\n\n')
             self.sleep(1)
 
@@ -86,16 +79,12 @@ class LogCheckUI(QTabWidget):
         初始化整体UI
         :return: None
         """
-        super().__init__()
-        self.logger = Logging(__name__)
-
-        # with open(os.path.join(
-        #         FILE_PATH, 'conf', 'setting.json'), 'r+', encoding='utf-8') as f:
-        #     global CONFIG
-        #     CONFIG = json.load(f)
-        #     print(CONFIG)
         global CONFIG
 
+        super().__init__()
+        self.logger = Logging(__name__)
+        self.workThread = WorkThread()
+        self.row = 0
 
         self.setWindowTitle('日志验证工具')
         self.resize(1200, 700)
@@ -115,12 +104,15 @@ class LogCheckUI(QTabWidget):
         self.initMainUI()
         self.initHintUI()
         self.bind()
+        self.loadConfig()
 
     def initMainUI(self):
         """
         初始化主UI
         :return: None
         """
+        global CONFIG
+
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
 
@@ -169,20 +161,8 @@ class LogCheckUI(QTabWidget):
         self.lineEditCmdAfterStop = QLineEdit()
         self.lineEditCmdAfterStop.setReadOnly(True)
         self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
-        # try:
-        #     f = open(os.path.join(
-        #         FILE_PATH, 'conf', 'setting.json'), mode='r', encoding='utf-8')
-        # except FileNotFoundError as e:
-        #     self.logger.error("File not found: " + str(e))
-        else:
-            cmdDict = json.load(f)
-            self.lineEditCmdBeforeStart.setText(cmdDict['startCmd'])
-            self.lineEditCmdAfterStop.setText(cmdDict['stopCmd'])
-            f.close()
-
-            global START_CMD, STOP_CMD
-            START_CMD = cmdDict['startCmd']
-            STOP_CMD = cmdDict['stopCmd']
+        self.lineEditCmdBeforeStart.setText(CONFIG.start_cmd)
+        self.lineEditCmdAfterStop.setText(CONFIG.stop_cmd)
 
         self.btnSerialStart = QPushButton('开始')
         self.btnSerialStart.setObjectName('btnFooter')
@@ -403,6 +383,18 @@ class LogCheckUI(QTabWidget):
         self.mainLayout.addLayout(self.hboxLayoutBody)
         self.tabMainUI.setLayout(self.mainLayout)
 
+    def loadConfig(self):
+        global CONFIG
+
+        if CONFIG.mode == 'serial':
+            self.radioBtnSerialMode.setChecked(True)
+        if CONFIG.mode == 'kafka':
+            self.radioBtnKafkaMode.setChecked(True)
+        if CONFIG.mode == 'manual':
+            self.radioBtnManualMode.setChecked(True)
+
+
+
     def initHintUI(self):
         """
         初始化提示UI
@@ -464,7 +456,6 @@ class LogCheckUI(QTabWidget):
         self.btnManualClear.clicked.connect(
             lambda: self.btnManualClearClicked(self.btnManualClear))
 
-        self.workThread = WorkThread()
         self.workThread.add.connect(self.checkResultReceived)
         self.workThread.terminal.connect(self.stopSignalReceived)
 
@@ -474,24 +465,30 @@ class LogCheckUI(QTabWidget):
         :param i: object
         :return: None
         """
+        global CONFIG
+
         if i.text() == '串口模式':
             self.groupBoxSerialHeader.setVisible(True)
             self.groupBoxSerialCmdHeader.setVisible(True)
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(False)
+            CONFIG.mode = 'serial'
+            CONFIG.
         if i.text() == 'Kafka模式':
             self.groupBoxSerialHeader.setVisible(False)
             self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(True)
             self.groupBoxKafkaHeader.setVisible(True)
             self.groupBoxManualHeader.setVisible(False)
+            CONFIG.mode = 'kafka'
         if i.text() == '手动模式':
             self.groupBoxSerialHeader.setVisible(False)
             self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(True)
+            CONFIG.mode = 'manual'
 
     def comboBoxSelected(self, i):
         """
@@ -500,6 +497,7 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         global CURRENT_SERIAL
+
         self.logger.info("Text in combobox: " + self.comboBoxSerial.currentText())
 
         if self.comboBoxSerial.currentText():
@@ -512,21 +510,12 @@ class LogCheckUI(QTabWidget):
         :param i: object
         :return: None
         """
-        global START_CMD, STOP_CMD
+        global CONFIG
 
-        with open(os.path.join(
-                FILE_PATH, 'conf', 'setting.json'), 'w+', encoding='utf-8') as f:
-            if self.lineEditCmdBeforeStart.text():
-                START_CMD = self.lineEditCmdBeforeStart.text()
-
-            if self.lineEditCmdAfterStop.text():
-                STOP_CMD = self.lineEditCmdAfterStop.text()
-
-            cmdDict = {
-                'startCmd': START_CMD,
-                'stopCmd': STOP_CMD
-            }
-            json.dump(cmdDict, f, indent=4)
+        if self.lineEditCmdBeforeStart.text():
+            CONFIG.start_cmd = self.lineEditCmdBeforeStart.text()
+        if self.lineEditCmdAfterStop.text():
+            CONFIG.stop_cmd = self.lineEditCmdAfterStop.text()
 
     def btnRefreshClicked(self, btn):
         """
@@ -544,7 +533,6 @@ class LogCheckUI(QTabWidget):
             if portList:
                 for i in portList:
                     try:
-                        # self.comboBox.addItem(re.match(r'^(COM\d).*', str(i)).group(1))
                         self.comboBoxSerial.addItem(i[0])
                     except Exception as e:
                         self.logger.error(str(e))
@@ -588,11 +576,11 @@ class LogCheckUI(QTabWidget):
             self.btnSerialStop.setEnabled(False)
 
             # 开始后马上点击结束会报错，添加延时
-            self.timer = QTimer(self)
-            self.timer.setSingleShot(True)
-            self.timer.timeout.connect(lambda: self.btnSerialStop.setEnabled(True))
-            self.timer.start(5000)
-            self.timer.start(5000)
+            timer = QTimer(self)
+            timer.setSingleShot(True)
+            timer.timeout.connect(lambda: self.btnSerialStop.setEnabled(True))
+            timer.start(5000)
+            timer.start(5000)
         except Exception as e:
             print(str(e))
 
@@ -602,7 +590,7 @@ class LogCheckUI(QTabWidget):
         :param btn: object
         :return: None
         """
-        global THREAD_START_FLAG, STOP_CMD
+        global CONFIG, THREAD_START_FLAG
 
         if not THREAD_START_FLAG:
             QMessageBox.information(
@@ -635,7 +623,6 @@ class LogCheckUI(QTabWidget):
     def checkResultReceived(self, res):
         """
         获得检验结果返回触发
-        :param data: dict
         :param res: dict
         :return: None
         """
@@ -815,8 +802,8 @@ class LogCheckUI(QTabWidget):
             data = self.textEditManual.toPlainText() if self.textEditManual.toPlainText().strip() \
                 else data_tmp
             self.logger.info('Mock log data: ' + data)
-            self.test = LogCheck()
-            res = self.test.check_log(data)
+            test = LogCheck()
+            res = test.check_log(data)
             if res:
                 self.row = 0
                 self.checkResultReceived(res)
@@ -925,7 +912,7 @@ class LogCheckUI(QTabWidget):
             ssh_user = self.lineEditSshUser.text()
             ssh_pwd = self.lineEditSshPwd.text()
 
-            self.session = ssh(ssh_host, int(ssh_port), ssh_user, ssh_pwd, '192.169.1.181', 9092)
+            self.session = Ssh(ssh_host, int(ssh_port), ssh_user, ssh_pwd, '192.169.1.181', 9092)
             self.session.start()
 
         except Exception as e:
@@ -943,6 +930,7 @@ class LogCheckUI(QTabWidget):
             self.groupBoxSshHeader.setEnabled(False)
         else:
             self.groupBoxSshHeader.setEnabled(True)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

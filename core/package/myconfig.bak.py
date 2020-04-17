@@ -4,6 +4,12 @@ import json
 
 class Config:
     def __init__(self, dict_):
+        self._config_path = os.path.join(
+            os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(
+                os.path.realpath(__file__))))),
+            'conf',
+            'setting.json'
+        )
         self.stop_cmd = dict_['serial_config']['stop_cmd']
         self.start_cmd = dict_['serial_config']['start_cmd']
         self.kafka_server = dict_['kafka_config']['server']
@@ -36,16 +42,6 @@ class Config:
             },
             'mode': self.mode
         }
-
-
-class LoadConfig:
-    def __init__(self):
-        self._config_path = os.path.join(
-            os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(
-                os.path.realpath(__file__))))),
-            'conf',
-            'setting.json'
-        )
 
     def get_config(self):
         with open(self._config_path, 'r+') as f:

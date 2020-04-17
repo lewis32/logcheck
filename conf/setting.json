@@ -11,7 +11,7 @@
         "ssh_enable": false,
         "topic": ""
     },
-    "mode": "kafka",
+    "mode": "manual",
     "serial_config": {
         "start_cmd": "",
         "stop_cmd": ""
