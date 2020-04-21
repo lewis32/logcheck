@@ -9,10 +9,12 @@ from PyQt5.QtGui import *
 from core.log_check import *
 from core.package.myserial import *
 from core.package.myssh import MySsh as Ssh
+from core.package.mykafka import Kafka
 from core.package.myconfig import LoadConfig
 from core.package.mylogging import MyLogging as Logging
 
-CONFIG = LoadConfig().get_config()
+CONFIG_LOAD = LoadConfig()
+CONFIG = CONFIG_LOAD.get_config()
 THREAD_START_FLAG = False
 SERIAL_LIST = []
 CURRENT_SERIAL = None
@@ -99,7 +101,7 @@ class LogCheckUI(QTabWidget):
         self.tabEditUI = QWidget()
         self.tabHintUI = QWidget()
         self.addTab(self.tabMainUI, '日志验证')
-        self.addTab(self.tabEditUI, '规则编辑')
+        # self.addTab(self.tabEditUI, '规则编辑')
         self.addTab(self.tabHintUI, '使用说明')
         self.initMainUI()
         self.initHintUI()
@@ -147,12 +149,6 @@ class LogCheckUI(QTabWidget):
         self.btnSerialTest.setObjectName('btnHeader')
         self.btnSerialTest.setFixedSize(90, 25)
         self.btnSerialTest.setVisible(False)
-        self.btnSerial2Manual = QPushButton('切换手动')
-        self.btnSerial2Manual.setObjectName('btnHeader')
-        self.btnSerial2Manual.setFixedSize(90, 25)
-        self.btnSerial2Kafka = QPushButton('切换Kafka')
-        self.btnSerial2Kafka.setObjectName('btnHeader')
-        self.btnSerial2Kafka.setFixedSize(90, 25)
 
         self.labelCmdBeforeStart = QLabel('开始前执行命令')
         self.lineEditCmdBeforeStart = QLineEdit()
@@ -181,9 +177,7 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutSerialHeader.addWidget(self.comboBoxSerial, 0, 0)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 0)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialRefresh, 0, 1)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 1)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerial2Kafka, 0, 2)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerial2Manual, 1, 2)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 0, 2)
 
         self.groupBoxSerialHeader = QGroupBox('选择端口')
         self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
@@ -231,10 +225,6 @@ class LogCheckUI(QTabWidget):
         self.btnKafkaStart.setObjectName('btnHeader')
         self.btnKafkaStop = QPushButton('停止')
         self.btnKafkaStop.setObjectName('btnHeader')
-        self.btnKafka2Manual = QPushButton('切换手动')
-        self.btnKafka2Manual.setObjectName('btnHeader')
-        self.btnKafka2Serial = QPushButton('切换串口')
-        self.btnKafka2Serial.setObjectName('btnHeader')
 
         self.gridLayoutSshHeader.addWidget(self.labelSshHost, 0, 0)
         self.gridLayoutSshHeader.addWidget(self.lineEditSshHost, 0, 1)
@@ -246,15 +236,13 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutSshHeader.addWidget(self.lineEditSshPwd, 1, 3)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaCluster, 0, 0)
         self.gridLayoutKafkaHeader.addWidget(self.lineEditKafkaCluster, 0, 1)
-        self.gridLayoutKafkaHeader.addWidget(self.labelKafkaTopic, 1, 0)
-        self.gridLayoutKafkaHeader.addWidget(self.comboBoxKafkaTopic, 1, 1)
-        self.gridLayoutKafkaHeader.addWidget(self.checkBoxKafkaSshEnable, 1, 2)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaFilter, 0, 2)
         self.gridLayoutKafkaHeader.addWidget(self.lineEditKafkaFilter, 0, 3, 1, 4)
-        self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStart, 1, 3)
-        self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStop, 1, 4)
-        self.gridLayoutKafkaHeader.addWidget(self.btnKafka2Serial, 1, 5)
-        self.gridLayoutKafkaHeader.addWidget(self.btnKafka2Manual, 1, 6)
+        self.gridLayoutKafkaHeader.addWidget(self.labelKafkaTopic, 1, 0)
+        self.gridLayoutKafkaHeader.addWidget(self.comboBoxKafkaTopic, 1, 1)
+        self.gridLayoutKafkaHeader.addWidget(self.checkBoxKafkaSshEnable, 1, 3)
+        self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStart, 1, 4)
+        self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStop, 1, 5)
 
         self.groupBoxSshHeader = QGroupBox('SSH')
         self.groupBoxSshHeader.setObjectName('groupBoxHeader')
@@ -280,16 +268,10 @@ class LogCheckUI(QTabWidget):
         self.btnManualCheck.setObjectName('btnHeader')
         self.btnManualClear = QPushButton('清空')
         self.btnManualClear.setObjectName('btnHeader')
-        self.btnManual2Serial = QPushButton('切换串口')
-        self.btnManual2Serial.setObjectName('btnHeader')
-        self.btnManual2Kafka = QPushButton('切换Kafka')
-        self.btnManual2Kafka.setObjectName('btnHeader')
 
         self.gridLayoutManualHeader.addWidget(self.textEditManual, 0, 0, 2, 1)
         self.gridLayoutManualHeader.addWidget(self.btnManualCheck, 0, 1)
         self.gridLayoutManualHeader.addWidget(self.btnManualClear, 0, 2)
-        self.gridLayoutManualHeader.addWidget(self.btnManual2Serial, 1, 1)
-        self.gridLayoutManualHeader.addWidget(self.btnManual2Kafka, 1, 2)
 
         self.groupBoxManualHeader = QGroupBox('输入日志数据')
         self.groupBoxManualHeader.setObjectName('groupBoxHeader')
@@ -393,7 +375,17 @@ class LogCheckUI(QTabWidget):
         if CONFIG.mode == 'manual':
             self.radioBtnManualMode.setChecked(True)
 
+        self.lineEditCmdBeforeStart.setText(CONFIG.start_cmd)
+        self.lineEditCmdAfterStop.setText(CONFIG.stop_cmd)
 
+        self.lineEditSshHost.setText(CONFIG.ssh_host)
+        self.lineEditSshPort.setText(CONFIG.ssh_port)
+        self.lineEditSshUser.setText(CONFIG.ssh_user)
+        self.lineEditSshPwd.setText(CONFIG.ssh_pwd)
+        self.groupBoxSshHeader.setEnabled(True if CONFIG.ssh_enable else False)
+        self.checkBoxKafkaSshEnable.setCheckState(2 if CONFIG.ssh_enable else 0)
+        self.lineEditKafkaCluster.setText(CONFIG.kafka_server)
+        self.lineEditKafkaFilter.setText(CONFIG.kafka_filter)
 
     def initHintUI(self):
         """
@@ -422,6 +414,7 @@ class LogCheckUI(QTabWidget):
         self.radioBtnManualMode.toggled.connect(
             lambda: self.radioBtnModeToggled(self.radioBtnManualMode))
         self.comboBoxSerial.currentIndexChanged.connect(self.comboBoxSelected)
+        self.comboBoxKafkaTopic.cl
         self.btnSerialRefresh.clicked.connect(
             lambda: self.btnRefreshClicked(self.btnSerialRefresh))
         self.btnSerialClear.clicked.connect(
@@ -431,26 +424,14 @@ class LogCheckUI(QTabWidget):
             lambda: self.btnSerialStopClicked(self.btnSerialStop))
         self.btnSerialTest.clicked.connect(
             lambda: self.btnSerialTestClicked(self.btnSerialTest))
-        self.btnSerial2Manual.clicked.connect(
-            lambda: self.btnSwitchManualClicked(self.btnSerial2Manual))
-        self.btnSerial2Kafka.clicked.connect(
-            lambda: self.btnSwitchKafkaClicked(self.btnSerial2Kafka))
         self.lineEditCmdBeforeStart.textChanged.connect(
             lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
         self.lineEditCmdAfterStop.textChanged.connect(
             lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
         self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
         self.tableMid.cellClicked.connect(self.tableMidCellClicked)
-        self.btnKafka2Manual.clicked.connect(
-            lambda: self.btnSwitchManualClicked(self.btnKafka2Manual))
-        self.btnKafka2Serial.clicked.connect(
-            lambda: self.btnSwitchSerialClicked(self.btnKafka2Serial))
         self.checkBoxKafkaSshEnable.stateChanged.connect(
             lambda: self.checkBoxKafkaSshEnableChanged(self.checkBoxKafkaSshEnable))
-        self.btnManual2Serial.clicked.connect(
-            lambda: self.btnSwitchSerialClicked(self.btnManual2Serial))
-        self.btnManual2Kafka.clicked.connect(
-            lambda: self.btnSwitchKafkaClicked(self.btnManual2Kafka))
         self.btnManualCheck.clicked.connect(
             lambda: self.btnManualCheckClicked(self.btnManualCheck))
         self.btnManualClear.clicked.connect(
@@ -474,7 +455,7 @@ class LogCheckUI(QTabWidget):
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(False)
             CONFIG.mode = 'serial'
-            CONFIG.
+            CONFIG_LOAD.set_config(CONFIG)
         if i.text() == 'Kafka模式':
             self.groupBoxSerialHeader.setVisible(False)
             self.groupBoxSerialCmdHeader.setVisible(False)
@@ -482,6 +463,7 @@ class LogCheckUI(QTabWidget):
             self.groupBoxKafkaHeader.setVisible(True)
             self.groupBoxManualHeader.setVisible(False)
             CONFIG.mode = 'kafka'
+            CONFIG_LOAD.set_config(CONFIG)
         if i.text() == '手动模式':
             self.groupBoxSerialHeader.setVisible(False)
             self.groupBoxSerialCmdHeader.setVisible(False)
@@ -489,6 +471,7 @@ class LogCheckUI(QTabWidget):
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(True)
             CONFIG.mode = 'manual'
+            CONFIG_LOAD.set_config(CONFIG)
 
     def comboBoxSelected(self, i):
         """
@@ -516,6 +499,7 @@ class LogCheckUI(QTabWidget):
             CONFIG.start_cmd = self.lineEditCmdBeforeStart.text()
         if self.lineEditCmdAfterStop.text():
             CONFIG.stop_cmd = self.lineEditCmdAfterStop.text()
+        CONFIG_LOAD.set_config(CONFIG)
 
     def btnRefreshClicked(self, btn):
         """
@@ -823,81 +807,6 @@ class LogCheckUI(QTabWidget):
         self.tableRight.clearContents()
         self.row = 0
 
-    def btnSwitchManualClicked(self, i):
-        """
-        切换手动模式
-        :param i: object
-        :return: None
-        """
-        global THREAD_START_FLAG
-
-        try:
-            self.groupBoxSerialHeader.setVisible(False)
-            self.groupBoxSshHeader.setVisible(False)
-            self.groupBoxKafkaHeader.setVisible(False)
-            # self.groupBoxKafkaFilterHeader.setVisible(False)
-            self.groupBoxSerialCmdHeader.setVisible(False)
-            self.groupBoxManualHeader.setVisible(True)
-            if THREAD_START_FLAG is True:
-                self.workThread.wait()
-            self.tableLeft.clearContents()
-            self.tableMid.clearContents()
-            self.tableRight.clearContents()
-            self.row = 0
-
-        except Exception as e:
-            print(str(e))
-
-    def btnSwitchSerialClicked(self, i):
-        """
-        切换串口模式
-        :param i: object
-        :return: None
-        """
-        global THREAD_START_FLAG
-
-        try:
-            self.groupBoxSshHeader.setVisible(False)
-            self.groupBoxKafkaHeader.setVisible(False)
-            # self.groupBoxKafkaFilterHeader.setVisible(False)
-            self.groupBoxManualHeader.setVisible(False)
-            self.groupBoxSerialCmdHeader.setVisible(True)
-            self.groupBoxSerialHeader.setVisible(True)
-            if THREAD_START_FLAG is True:
-                self.workThread.start()
-            self.tableLeft.clearContents()
-            self.tableMid.clearContents()
-            self.tableRight.clearContents()
-            self.row = 0
-
-        except Exception as e:
-            print(str(e))
-
-    def btnSwitchKafkaClicked(self, i):
-        """
-        切换Kafka模式
-        :param i: object
-        :return: None
-        """
-        global THREAD_START_FLAG
-
-        try:
-            self.groupBoxSerialHeader.setVisible(False)
-            self.groupBoxManualHeader.setVisible(False)
-            self.groupBoxSerialCmdHeader.setVisible(False)
-            self.groupBoxSshHeader.setVisible(True)
-            self.groupBoxKafkaHeader.setVisible(True)
-            # self.groupBoxKafkaFilterHeader.setVisible(True)
-            if THREAD_START_FLAG is True:
-                self.workThread.start()
-            self.tableLeft.clearContents()
-            self.tableMid.clearContents()
-            self.tableRight.clearContents()
-            self.row = 0
-
-        except Exception as e:
-            print(str(e))
-
     def btnKafkaSshConnectClicked(self, i):
         """
         点击SSH连接按钮
@@ -931,6 +840,18 @@ class LogCheckUI(QTabWidget):
         else:
             self.groupBoxSshHeader.setEnabled(True)
 
+    def comboBoxKafkaTopicClicked(self, i):
+        """
+        点击查询Kafka Topic
+        :param i:
+        :return: None
+        """
+        self.kafka = Kafka()
+        self.kafka.start_kafka()
+        self.kafka_topics = self.kafka.topics_kafka()
+        if self.kafka_topics:
+            for i in self.kafka_topics:
+                self.comboBoxKafkaTopic.addItem(str(i))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

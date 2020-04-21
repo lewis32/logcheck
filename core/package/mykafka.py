@@ -4,72 +4,50 @@ import json
 import random
 
 
-server = ssh(
-    ('52.38.247.195', 22),
-    ssh_username='root',
-    ssh_password='AWS@nus!S1t#!#',
-    remote_bind_address=('192.169.1.181', 9092)
-)
+class Kafka:
+    def __init__(self, kafka_config, ssh_config=None):
+        self.ssh_config = ssh_config
+        self.kafka_config = kafka_config
 
-server.start()
+    def _start_ssh(self):
+        if not self.ssh_config:
+            self.server = ssh(
+                (self.ssh_config['host'], self.ssh_config['port']),
+                ssh_username=self.ssh_config['user'],
+                ssh_password=self.ssh_config['pwd'],
+                remote_bind_address=(self.kafka_config['host'], self.kafka_config['port'])
+            )
+            self.server.start()
 
-topics = [
-    'json.na.ter.terminal'
-]
+    def _stop_ssh(self):
+        self.server.stop()
 
-configs = {
-    'bootstrap_servers': '127.0.0.1:'+str(server.local_bind_port),
-    'group_id': str(random.random())
-}
+    def start_kafka(self):
+        self._start_ssh()
+        self.kafka_configs = {
+            'bootstrap_servers': '127.0.0.1:'+str(self.server.local_bind_port),
+            'group_id': str(random.random())
+        } if not self.ssh_config else {
+            'bootstrap_servers': self.kafka_config['host'] + ':' + self.kafka_config['port'],
+            'group_id': str(random.random())
+        }
 
-consumer = kc(**configs)
+        self.consumer = kc(**self.kafka_configs)
 
-print(json.dumps(list(consumer.topics())))
+    def consume_kafka(self, topics=None):
+        self.consumer.subscribe(topics=topics)
+        count = 0
+        while True:
+            if count > 9:
+                break
+            print(self.consumer.poll(timeout_ms=1000))
+            count += 1
 
-consumer.subscribe(topics=list(consumer.topics()))
+    def stop_kafka(self):
+        self.consumer.unsubscribe()
+        self.consumer.close()
+        if not self.ssh_config:
+            self.server.stop()
 
-count = 0
-while True:
-    if count > 9:
-        break
-    print(consumer.poll(timeout_ms=1000))
-    count += 1
-
-consumer.unsubscribe()
-consumer.close()
-
-server.stop()
-
-
-topics = [
-    'json.exposure'
-]
-
-configs = {
-    'bootstrap_servers': '10.18.220.142:9092',
-}
-
-consumer = kc(
-    **configs
-)
-
-print(json.dumps(list(consumer.topics())))
-
-consumer.subscribe(
-    topics=topics
-)
-
-print('partition:', consumer.partitions_for_topic(topic=topics[0]))
-
-count = 0
-while True:
-    if count > 9:
-        break
-    print(consumer.poll(timeout_ms=1000))
-    count += 1
-
-consumer.unsubscribe()
-consumer.close()
-
-
-
+    def topics_kafka(self):
+        return self.consumer.topics()

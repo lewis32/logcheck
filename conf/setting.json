@@ -1,19 +1,19 @@
 {
     "kafka_config": {
-        "filter": "",
+        "filter": "eventcode",
         "server": "10.18.220.142:9092",
         "ssh_config": {
-            "host": "",
-            "port": "",
-            "pwd": "",
-            "user": ""
+            "host": "52.38.247.195",
+            "port": "22",
+            "pwd": "AWS@nus!S1t#!#",
+            "user": "root"
         },
         "ssh_enable": false,
         "topic": ""
     },
-    "mode": "manual",
+    "mode": "kafka",
     "serial_config": {
-        "start_cmd": "",
+        "start_cmd": "(busybox kill `ps -ef | grep tail | grep -v grep | awk '{print $2}'`;busybox tail -fn 0 /var/local/logservice/logfile/tmp_file_se* &)",
         "stop_cmd": ""
     }
 }
