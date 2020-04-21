@@ -4,7 +4,7 @@ import json
 import random
 
 
-class Kafka:
+class MyKafka:
     def __init__(self, kafka_config, ssh_config=None):
         self.ssh_config = ssh_config
         self.kafka_config = kafka_config
@@ -25,7 +25,8 @@ class Kafka:
     def start_kafka(self):
         self._start_ssh()
         self.kafka_configs = {
-            'bootstrap_servers': '127.0.0.1:'+str(self.server.local_bind_port),
+            'bootstrap_servers': '127.0.0.1:'
+                                 + str(self.server.local_bind_port),
             'group_id': str(random.random())
         } if not self.ssh_config else {
             'bootstrap_servers': self.kafka_config['host'] + ':' + self.kafka_config['port'],

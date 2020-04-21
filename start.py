@@ -9,7 +9,7 @@ from PyQt5.QtGui import *
 from core.log_check import *
 from core.package.myserial import *
 from core.package.myssh import MySsh as Ssh
-from core.package.mykafka import Kafka
+from core.package.mykafka import MyKafka as Kafka
 from core.package.myconfig import LoadConfig
 from core.package.mylogging import MyLogging as Logging
 
@@ -141,19 +141,18 @@ class LogCheckUI(QTabWidget):
         self.comboBoxSerial.setCurrentIndex(-1)
         self.btnSerialRefresh = QPushButton('刷新')
         self.btnSerialRefresh.setObjectName('btnHeader')
-        self.btnSerialRefresh.setFixedSize(90, 25)
         self.btnSerialClear = QPushButton('清空')
         self.btnSerialClear.setObjectName('btnHeader')
-        self.btnSerialClear.setFixedSize(90, 25)
         self.btnSerialTest = QPushButton('模拟调试')
         self.btnSerialTest.setObjectName('btnHeader')
-        self.btnSerialTest.setFixedSize(90, 25)
         self.btnSerialTest.setVisible(False)
 
         self.labelCmdBeforeStart = QLabel('开始前执行命令')
+        self.labelCmdBeforeStart.setObjectName('labelCmdBeforeStart')
         self.lineEditCmdBeforeStart = QLineEdit()
         self.lineEditCmdBeforeStart.setObjectName('lineEditCmdBeforeStart')
         self.labelCmdAfterStop = QLabel('结束后执行命令')
+        self.labelCmdAfterStop.setObjectName('labelCmdAfterStop')
         self.lineEditCmdAfterStop = QLineEdit()
         self.lineEditCmdAfterStop.setReadOnly(True)
         self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
@@ -179,7 +178,7 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutSerialHeader.addWidget(self.btnSerialRefresh, 0, 1)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 0, 2)
 
-        self.groupBoxSerialHeader = QGroupBox('选择端口')
+        self.groupBoxSerialHeader = QGroupBox('选择串口端口')
         self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
         self.groupBoxSerialHeader.setLayout(self.gridLayoutSerialHeader)
         self.groupBoxSerialHeader.setFixedSize(420, 120)
@@ -196,35 +195,42 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutKafkaHeader = QGridLayout()
         self.gridLayoutKafkaHeader.setContentsMargins(10, 10, 10, 10)
 
-        self.labelSshHost = QLabel('Host')
+        self.labelSshHost = QLabel('主机名')
+        self.labelSshHost.setObjectName('labelSshHost')
         self.lineEditSshHost = QLineEdit()
-        self.labelSshPort = QLabel('Port')
+        self.lineEditSshHost.setObjectName('lineEditSshHost')
+        self.labelSshPort = QLabel('端口')
+        self.labelSshPort.setObjectName('labelSshPort')
         self.lineEditSshPort = QLineEdit()
-        self.labelSshUser = QLabel('User')
+        self.lineEditSshPort.setObjectName('lineEditSshPort')
+        self.labelSshUser = QLabel('用户名')
+        self.labelSshUser.setObjectName('labelSshUser')
         self.lineEditSshUser = QLineEdit()
-        self.labelSshPwd = QLabel('Pwd')
+        self.lineEditSshUser.setObjectName('lineEditSshUser')
+        self.labelSshPwd = QLabel('密码')
+        self.labelSshPwd.setObjectName('labelSshPwd')
         self.lineEditSshPwd = QLineEdit()
+        self.lineEditSshPwd.setObjectName('lineEditSshPwd')
         self.labelKafkaCluster = QLabel('Server')
         self.labelKafkaCluster.setObjectName('labelKafkaCluster')
-        self.labelKafkaCluster.setAlignment(Qt.AlignRight)
         self.lineEditKafkaCluster = QLineEdit()
         self.lineEditKafkaCluster.setObjectName('lineEditKafkaCluster')
-        self.lineEditKafkaCluster.setFixedSize(150, 25)
         self.labelKafkaTopic = QLabel('Topic')
         self.labelKafkaTopic.setObjectName('labelKafkaTopic')
-        self.labelKafkaTopic.setAlignment(Qt.AlignRight)
         self.comboBoxKafkaTopic = QComboBox()
         self.comboBoxKafkaTopic.setObjectName('comboBoxKafkaTopic')
-        self.labelKafkaFilter = QLabel('Filter')
+        self.labelKafkaFilter = QLabel('过滤字段')
         self.labelKafkaFilter.setObjectName('labelKafkaFilter')
-        self.labelKafkaFilter.setAlignment(Qt.AlignRight)
         self.lineEditKafkaFilter = QLineEdit()
-        self.checkBoxKafkaSshEnable = QCheckBox('启用SSH')
+        self.lineEditKafkaFilter.setObjectName('lineEditKafkaFilter')
+        self.checkBoxKafkaSshEnable = QCheckBox('启用SSH通道')
         self.checkBoxKafkaSshEnable.setObjectName('checkBoxKafkaSshEnable')
         self.btnKafkaStart = QPushButton('开始')
         self.btnKafkaStart.setObjectName('btnHeader')
         self.btnKafkaStop = QPushButton('停止')
         self.btnKafkaStop.setObjectName('btnHeader')
+        self.btnKafkaClear = QPushButton('清空')
+        self.btnKafkaClear.setObjectName('btnHeader')
 
         self.gridLayoutSshHeader.addWidget(self.labelSshHost, 0, 0)
         self.gridLayoutSshHeader.addWidget(self.lineEditSshHost, 0, 1)
@@ -243,13 +249,14 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutKafkaHeader.addWidget(self.checkBoxKafkaSshEnable, 1, 3)
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStart, 1, 4)
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStop, 1, 5)
+        self.gridLayoutKafkaHeader.addWidget(self.btnKafkaClear, 1, 6)
 
-        self.groupBoxSshHeader = QGroupBox('SSH')
+        self.groupBoxSshHeader = QGroupBox('SSH配置')
         self.groupBoxSshHeader.setObjectName('groupBoxHeader')
         self.groupBoxSshHeader.setLayout(self.gridLayoutSshHeader)
         self.groupBoxSshHeader.setVisible(False)
         self.groupBoxSshHeader.setFixedSize(420, 120)
-        self.groupBoxKafkaHeader = QGroupBox('Kafka')
+        self.groupBoxKafkaHeader = QGroupBox('Kafka配置')
         self.groupBoxKafkaHeader.setObjectName('groupBoxHeader')
         self.groupBoxKafkaHeader.setLayout(self.gridLayoutKafkaHeader)
         self.groupBoxKafkaHeader.setVisible(False)
@@ -270,8 +277,8 @@ class LogCheckUI(QTabWidget):
         self.btnManualClear.setObjectName('btnHeader')
 
         self.gridLayoutManualHeader.addWidget(self.textEditManual, 0, 0, 2, 1)
-        self.gridLayoutManualHeader.addWidget(self.btnManualCheck, 0, 1)
-        self.gridLayoutManualHeader.addWidget(self.btnManualClear, 0, 2)
+        self.gridLayoutManualHeader.addWidget(self.btnManualClear, 0, 1)
+        self.gridLayoutManualHeader.addWidget(self.btnManualCheck, 1, 1)
 
         self.groupBoxManualHeader = QGroupBox('输入日志数据')
         self.groupBoxManualHeader.setObjectName('groupBoxHeader')
@@ -414,7 +421,7 @@ class LogCheckUI(QTabWidget):
         self.radioBtnManualMode.toggled.connect(
             lambda: self.radioBtnModeToggled(self.radioBtnManualMode))
         self.comboBoxSerial.currentIndexChanged.connect(self.comboBoxSelected)
-        self.comboBoxKafkaTopic.cl
+        # self.comboBoxKafkaTopic.cl
         self.btnSerialRefresh.clicked.connect(
             lambda: self.btnRefreshClicked(self.btnSerialRefresh))
         self.btnSerialClear.clicked.connect(
@@ -425,9 +432,21 @@ class LogCheckUI(QTabWidget):
         self.btnSerialTest.clicked.connect(
             lambda: self.btnSerialTestClicked(self.btnSerialTest))
         self.lineEditCmdBeforeStart.textChanged.connect(
-            lambda: self.lineEditCmdChanged(self.lineEditCmdBeforeStart))
+            lambda: self.lineEditChanged(self.lineEditCmdBeforeStart))
         self.lineEditCmdAfterStop.textChanged.connect(
-            lambda: self.lineEditCmdChanged(self.lineEditCmdAfterStop))
+            lambda: self.lineEditChanged(self.lineEditCmdAfterStop))
+        self.lineEditSshHost.textChanged.connect(
+            lambda: self.lineEditChanged(self.lineEditSshHost))
+        self.lineEditSshPort.textChanged.connect(
+            lambda: self.lineEditChanged(self.lineEditSshPort))
+        self.lineEditSshUser.textChanged.connect(
+            lambda: self.lineEditChanged(self.lineEditSshUser))
+        self.lineEditSshPwd.textChanged.connect(
+            lambda: self.lineEditChanged(self.lineEditSshPwd))
+        self.lineEditKafkaCluster.textChanged.connect(
+            lambda: self.lineEditChanged(self.lineEditKafkaCluster))
+        self.lineEditKafkaFilter.textChanged.connect(
+            lambda: self.lineEditChanged(self.lineEditKafkaFilter))
         self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
         self.tableMid.cellClicked.connect(self.tableMidCellClicked)
         self.checkBoxKafkaSshEnable.stateChanged.connect(
@@ -487,18 +506,29 @@ class LogCheckUI(QTabWidget):
             CURRENT_SERIAL = re.findall(
                 r'COM[0-9]+', self.comboBoxSerial.currentText())[0]
 
-    def lineEditCmdChanged(self, i):
+    def lineEditChanged(self, i):
         """
         修改执行命令触发
         :param i: object
         :return: None
         """
         global CONFIG
-
-        if self.lineEditCmdBeforeStart.text():
-            CONFIG.start_cmd = self.lineEditCmdBeforeStart.text()
-        if self.lineEditCmdAfterStop.text():
-            CONFIG.stop_cmd = self.lineEditCmdAfterStop.text()
+        if i is self.lineEditCmdBeforeStart:
+            CONFIG.start_cmd = i.text()
+        if i is self.lineEditCmdAfterStop:
+            CONFIG.stop_cmd = i.text()
+        if i is self.lineEditSshHost:
+            CONFIG.ssh_host = i.text()
+        if i is self.lineEditSshPort:
+            CONFIG.ssh_port = i.text()
+        if i is self.lineEditSshUser:
+            CONFIG.ssh_user = i.text()
+        if i is self.lineEditSshPwd:
+            CONFIG.ssh_pwd = i.text()
+        if i is self.lineEditKafkaCluster:
+            CONFIG.kafka_server = i.text()
+        if i is self.lineEditKafkaFilter:
+            CONFIG.kafka_filter = i.text()
         CONFIG_LOAD.set_config(CONFIG)
 
     def btnRefreshClicked(self, btn):
@@ -860,84 +890,67 @@ if __name__ == "__main__":
         .QTableWidget {
             border:1px solid #8f8f91;
             margin-left:5px;
-            margin-right:5px;
+            margin-right:0px;
             margin-bottom:5px;
         }
-        .QLabel#labelKafkaCluster {
-            height:25px;
+        .QLabel#labelCmdAfterStop,
+        #labelCmdBeforeStart,
+        #labelKafkaCluster,
+        #labelKafkaTopic,
+        #labelKafkaFilter,
+        #labelSshHost,
+        #labelSshPort,
+        #labelSshUser,
+        #labelSshPwd {
             position:relative;
-            max-width:100px;
-        }
-        .QLabel#labelKafkaTopic {
+            margin-left:10px;
+            margin-right:0px;
             height:25px;
-            position:relative;
-            max-width:100px;
-        }
-        .QLabel#labelKafkaFilter {
-            height:25px;
-            position:relative;
-            max-width:80px;
-        }        
-        .QComboBox#comboBoxSerial {
+            max-width:150px;
+        }       
+        .QComboBox#comboBoxSerial,
+        #comboBoxKafkaTopic {
             border:1px solid #8f8f91;
-            width:150px;
-            height:25px;
+            border-radius:4px;
+            margin-left:5px;
+            margin-right:5px;
             position:relative;
-            max-width:200px;
-        }
-        .QComboBox#comboBoxKafkaTopic {
-            border:1px solid #8f8f91;
-            width:150px;
-            height:25px;
-            position:relative;
+            height:23px;
             max-width:200px;
         }
         .QCheckBox#checkBoxKafkaSshEnable {
             margin-left:10px;
         }
-        .QPushButton#btnHeader {
+        .QPushButton#btnHeader,
+        #btnFooter {
             border:1px solid #8f8f91;
+            border-radius:4px;
+            position:relative;
+            margin-left:5px;
+            margin-right:5px;
             width:90px;
             height:25px;
-            border-radius:4px;
-            position:relative;
-            margin-left:5px;
             max-width:80px;
         }
-        .QPushButton#btnFooter {
+        .QLineEdit#lineEditCmdBeforeStart,
+        #lineEditCmdAfterStop,
+        #lineEditSshHost,
+        #lineEditSshPort,
+        #lineEditSshUser,
+        #lineEditSshPwd,
+        #lineEditKafkaCluster,
+        #lineEditKafkaFilter
+        {
             border:1px solid #8f8f91;
-            width:70px;
+            border-radius:4px;
+            margin-left:5px;
+            margin-right:5px;
             height:25px;
-            border-radius:4px;
-            position:relative;
-            margin-left:5px;
-            max-width:80px;
-        }
-        .QLineEdit#lineEditCmdBeforeStart {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            margin-left:5px;
-            margin-right:5px;
-            width:200px;
-        }
-        .QLineEdit#lineEditCmdAfterStop {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            margin-left:5px;
-            margin-right:5px;
-            width:200px;
-        }
-        .QLineEdit#lineEditKafkaCluster {
-            border:1px solid #8f8f91;
-            //border-radius:4px;
-            margin-left:5px;
-            margin-right:5px;
-            width:10px;
-            height:25px;
+            width:380px;
         }
         .QTextEdit#textEditManual {
             border:1px solid #8f8f91;
-            border-radius:4px;
+            border-radius:1px;
             margin-left:5px;
             margin-right:5px;
             width:100px;
