@@ -11,7 +11,7 @@
         "ssh_enable": false,
         "topic": ""
     },
-    "mode": "manual",
+    "mode": "serial",
     "serial_config": {
         "start_cmd": "(busybox kill `ps -ef | grep tail | grep -v grep | awk '{print $2}'`;busybox tail -fn 0 /var/local/logservice/logfile/tmp_file_se* &)",
         "stop_cmd": ""

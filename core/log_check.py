@@ -9,13 +9,15 @@ import time
 import bisect
 from .package.mylogging import MyLogging as Logging
 
+LOGGER = Logging('core.log_check')
+
 
 class LogCheck:
     filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
 
     def __init__(self):
-        self.logger = Logging(__name__)
+        # self.logger = Logging(__name__)
         self.policy_all = self._load_policy()
 
     def _split_log(self, raw_str):
@@ -89,9 +91,9 @@ class LogCheck:
                     if ex in policy_module:
                         policy_module[event]['keys'].pop(ex)
                     else:
-                        self.logger.error('找不到限制字段%s！' % (ex,))
+                        LOGGER.error('找不到限制字段%s！' % (ex,))
                 policy_module[event]['keys'] = dict(policy_module[event]['keys'], **policy_common)
-            self.logger.info("policy: " + json.dumps(policy_module))
+            LOGGER.info("policy: " + json.dumps(policy_module))
             return policy_module
 
     def _compare_keys(self, log, conf):
@@ -107,7 +109,7 @@ class LogCheck:
 
         log = [i for i in log]
         conf = [i for i in conf]
-        self.logger.info("conf" + str(conf))
+        LOGGER.info("conf" + str(conf))
         conf.sort()
 
         for i in log:
@@ -173,8 +175,8 @@ class LogCheck:
             conf[title]['keys'][(lambda x:x.lower())(i)] = conf[title]['keys'].pop(i)
 
         mutual_key, log_key, conf_key = self._compare_keys(log, conf[title]['keys'])
-        self.logger.info('mutual key:' + str(mutual_key))
-        self.logger.info('conf_key:' + str(conf_key))
+        LOGGER.info('mutual key:' + str(mutual_key))
+        LOGGER.info('conf_key:' + str(conf_key))
         if len(log_key):
             for key in log_key:
                 res['undefined_key'][key] = {}
@@ -244,17 +246,17 @@ class LogCheck:
                 try:
                     data = json.loads(data)
                 except json.decoder.JSONDecodeError as e:
-                    self.logger.error("Error occurs while decoding JSON: " + str(e))
+                    LOGGER.error("Error occurs while decoding JSON: " + str(e))
                 else:
                     if "eventcode" not in data:
                         continue
                     try:
                         ret = self._compare_log(data, self.policy_all)
                     except Exception as e:
-                        self.logger.error(str(e))
+                        LOGGER.error(str(e))
                     listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
-            self.logger.info(json.dumps(listed_results))
+            LOGGER.info(json.dumps(listed_results))
 
             return listed_results
 

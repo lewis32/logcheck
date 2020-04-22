@@ -8,37 +8,39 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from core.log_check import *
 from core.package.myserial import *
-from core.package.myssh import MySsh as Ssh
+# from core.package.myssh import MySsh as Ssh
 from core.package.mykafka import MyKafka as Kafka
 from core.package.myconfig import LoadConfig
 from core.package.mylogging import MyLogging as Logging
+from core.package.mycombobox import MyComboBox
 
+
+LOGGER = Logging('start')
 CONFIG_LOAD = LoadConfig()
 CONFIG = CONFIG_LOAD.get_config()
-THREAD_START_FLAG = False
-SERIAL_LIST = []
-CURRENT_SERIAL = None
+MAP_ = {
+    'kafka': None,
+    'kafka_cur_topic': None,
+    'kafka_start_flag': False,
+    'serial_cur_com': None,
+    'serial_start_flag': False,
+}
 
 
-class WorkThread(QThread):
+class SerialThread(QThread):
     """
-    子线程，轮询验证结果返回
+    串口模式子线程，轮询验证结果返回
     """
+    global CONFIG, CONFIG_LOAD, MAP_, LOGGER
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
-    logger = Logging(__name__)
 
     def run(self):
-        global CONFIG, CURRENT_SERIAL, THREAD_START_FLAG
-
-        if not CURRENT_SERIAL:
+        if not MAP_['serial_cur_com']:
             return
 
         try:
-            self.serial = TVSerial(port=CURRENT_SERIAL, baudrate=115200, timeout=5)
-        except Exception as e:
-            self.terminal.emit(str(e))
-        else:
+            self.serial = TVSerial(port=MAP_['serial_cur_com'], baudrate=115200, timeout=5)
             self.serial.sendComand('\n\n')
             self.sleep(1)
             self.serial.sendComand(CONFIG.start_cmd)
@@ -48,44 +50,81 @@ class WorkThread(QThread):
             self.serial.s.flushOutput()
             self.serial.s.flushInput()
 
-            THREAD_START_FLAG = True
+            MAP_['serial_start_flag'] = True
+
+            self.lc = LogCheck()
+            while self.serial.isOpen():
+                if not MAP_['serial_start_flag']:
+                    self.terminal.emit('正常结束！')
+                    break
+
+                block = self.serial.s.read(size=10000).decode(
+                        'utf-8', errors='ignore')
+                if block and block.strip():
+                    LOGGER.info('Original log data: ' + block)
+                    res = self.lc.check_log(block)
+                    if res:
+                        self.add.emit(res)
+                        LOGGER.info('Check result: ' + str(res))
+        except Exception as e:
+            self.terminal.emit(str(e))
+
+
+class KafkaThread(QThread):
+    """
+    Kafka模式子线程，轮询验证结果返回
+    """
+    global CONFIG, CONFIG_LOAD, MAP_, LOGGER
+
+    add = pyqtSignal(list)
+    terminal = pyqtSignal(object)
+
+    def run(self):
+        if not MAP_['kafka_cur_topic']:
+            return
+
+        try:
+            MAP_['kafka'].subscribe_kafka(topics=MAP_['kafka_cur_topic'])
+            # self.kafka.consume_kafka(topics=MAP_['kafka_cur_topic'])
+        except Exception as e:
+            self.terminal.emit(str(e))
+        else:
+            MAP_['kafka_start_flag'] = True
 
             self.lc = LogCheck()
             while True:
-                if not THREAD_START_FLAG:
+                if not MAP_['kafka_start_flag']:
                     self.terminal.emit('正常结束！')
                     break
 
                 try:
-                    block = self.serial.s.read(size=10000).decode(
-                        'utf-8', errors='ignore')
+                    block = MAP_['kafka'].poll_kafka()
                 except Exception as e:
-                    self.logger.error("Error occurs while reading serial: "
+                    LOGGER.error("Error occurs while connecting kafka: "
                                       + str(e))
                 else:
                     if block and block.strip():
-                        self.logger.info('Original log data: ' + block)
+                        LOGGER.info('Original log data: ' + block)
                         res = self.lc.check_log(block)
                         if res:
                             self.add.emit(res)
-                        self.logger.info('Check result: ' + str(res))
+                        LOGGER.info('Check result: ' + str(res))
 
 
 class LogCheckUI(QTabWidget):
     """
     UI主线程
     """
+    global CONFIG, CONFIG_LOAD, MAP_, LOGGER
 
     def __init__(self):
         """
         初始化整体UI
         :return: None
         """
-        global CONFIG
-
         super().__init__()
-        self.logger = Logging(__name__)
-        self.workThread = WorkThread()
+        self.serialThread = SerialThread()
+        self.kafkaThread = KafkaThread()
         self.row = 0
 
         self.setWindowTitle('日志验证工具')
@@ -113,8 +152,6 @@ class LogCheckUI(QTabWidget):
         初始化主UI
         :return: None
         """
-        global CONFIG
-
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
 
@@ -136,7 +173,8 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutSerialCmdHeader.setContentsMargins(15, 15, 15, 15)
         self.gridLayoutSerialCmdHeader.setObjectName('hboxLayoutHeader')
 
-        self.comboBoxSerial = QComboBox()
+        # self.comboBoxSerial = QComboBox()
+        self.comboBoxSerial = MyComboBox()
         self.comboBoxSerial.setObjectName('comboBoxSerial')
         self.comboBoxSerial.setCurrentIndex(-1)
         self.btnSerialRefresh = QPushButton('刷新')
@@ -217,7 +255,7 @@ class LogCheckUI(QTabWidget):
         self.lineEditKafkaCluster.setObjectName('lineEditKafkaCluster')
         self.labelKafkaTopic = QLabel('Topic')
         self.labelKafkaTopic.setObjectName('labelKafkaTopic')
-        self.comboBoxKafkaTopic = QComboBox()
+        self.comboBoxKafkaTopic = MyComboBox()
         self.comboBoxKafkaTopic.setObjectName('comboBoxKafkaTopic')
         self.labelKafkaFilter = QLabel('过滤字段')
         self.labelKafkaFilter.setObjectName('labelKafkaFilter')
@@ -373,8 +411,6 @@ class LogCheckUI(QTabWidget):
         self.tabMainUI.setLayout(self.mainLayout)
 
     def loadConfig(self):
-        global CONFIG
-
         if CONFIG.mode == 'serial':
             self.radioBtnSerialMode.setChecked(True)
         if CONFIG.mode == 'kafka':
@@ -414,23 +450,30 @@ class LogCheckUI(QTabWidget):
         信号绑定槽函数
         :return: None
         """
-        self.radioBtnSerialMode.toggled.connect(
-            lambda: self.radioBtnModeToggled(self.radioBtnSerialMode))
-        self.radioBtnKafkaMode.toggled.connect(
-            lambda: self.radioBtnModeToggled(self.radioBtnKafkaMode))
-        self.radioBtnManualMode.toggled.connect(
-            lambda: self.radioBtnModeToggled(self.radioBtnManualMode))
-        self.comboBoxSerial.currentIndexChanged.connect(self.comboBoxSelected)
-        # self.comboBoxKafkaTopic.cl
         self.btnSerialRefresh.clicked.connect(
-            lambda: self.btnRefreshClicked(self.btnSerialRefresh))
+            lambda: self.btnSerialRefreshClicked(self.btnSerialRefresh))
         self.btnSerialClear.clicked.connect(
-            lambda: self.btnClearClicked(self.btnSerialClear))
+            lambda: self.btnSerialClearClicked(self.btnSerialClear))
         self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
         self.btnSerialStop.clicked.connect(
             lambda: self.btnSerialStopClicked(self.btnSerialStop))
         self.btnSerialTest.clicked.connect(
             lambda: self.btnSerialTestClicked(self.btnSerialTest))
+        self.btnKafkaStart.clicked.connect(
+            lambda: self.btnKafkaStartClicked(self.btnKafkaStart))
+        self.btnKafkaStop.clicked.connect(
+            lambda: self.btnKafkaStopClicked(self.btnKafkaStop))
+        self.btnManualCheck.clicked.connect(
+            lambda: self.btnManualCheckClicked(self.btnManualCheck))
+        self.btnManualClear.clicked.connect(
+            lambda: self.btnManualClearClicked(self.btnManualClear))
+        self.comboBoxSerial.currentIndexChanged.connect(self.comboBoxSerialSelected)
+        self.checkBoxKafkaSshEnable.stateChanged.connect(
+            lambda: self.checkBoxKafkaSshEnableChanged(self.checkBoxKafkaSshEnable))
+        self.comboBoxSerial.showPopup_.connect(self.comboBoxSerialClicked)
+        self.comboBoxKafkaTopic.showPopup_.connect(self.comboBoxKafkaTopicClicked)
+        self.kafkaThread.add.connect(self.checkResultReceived)
+        self.kafkaThread.terminal.connect(self.stopSignalReceived)
         self.lineEditCmdBeforeStart.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditCmdBeforeStart))
         self.lineEditCmdAfterStop.textChanged.connect(
@@ -447,91 +490,20 @@ class LogCheckUI(QTabWidget):
             lambda: self.lineEditChanged(self.lineEditKafkaCluster))
         self.lineEditKafkaFilter.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditKafkaFilter))
+        self.radioBtnSerialMode.toggled.connect(
+            lambda: self.radioBtnModeToggled(self.radioBtnSerialMode))
+        self.radioBtnKafkaMode.toggled.connect(
+            lambda: self.radioBtnModeToggled(self.radioBtnKafkaMode))
+        self.radioBtnManualMode.toggled.connect(
+            lambda: self.radioBtnModeToggled(self.radioBtnManualMode))
         self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
         self.tableMid.cellClicked.connect(self.tableMidCellClicked)
-        self.checkBoxKafkaSshEnable.stateChanged.connect(
-            lambda: self.checkBoxKafkaSshEnableChanged(self.checkBoxKafkaSshEnable))
-        self.btnManualCheck.clicked.connect(
-            lambda: self.btnManualCheckClicked(self.btnManualCheck))
-        self.btnManualClear.clicked.connect(
-            lambda: self.btnManualClearClicked(self.btnManualClear))
+        self.serialThread.add.connect(self.checkResultReceived)
+        # self.serialThread.terminal.connect(
+        #     lambda: self.stopSignalReceived(self.serialThread))
+        self.serialThread.terminal.connect(self.stopSignalReceived)
 
-        self.workThread.add.connect(self.checkResultReceived)
-        self.workThread.terminal.connect(self.stopSignalReceived)
-
-    def radioBtnModeToggled(self, i):
-        """
-        选择手动模式
-        :param i: object
-        :return: None
-        """
-        global CONFIG
-
-        if i.text() == '串口模式':
-            self.groupBoxSerialHeader.setVisible(True)
-            self.groupBoxSerialCmdHeader.setVisible(True)
-            self.groupBoxSshHeader.setVisible(False)
-            self.groupBoxKafkaHeader.setVisible(False)
-            self.groupBoxManualHeader.setVisible(False)
-            CONFIG.mode = 'serial'
-            CONFIG_LOAD.set_config(CONFIG)
-        if i.text() == 'Kafka模式':
-            self.groupBoxSerialHeader.setVisible(False)
-            self.groupBoxSerialCmdHeader.setVisible(False)
-            self.groupBoxSshHeader.setVisible(True)
-            self.groupBoxKafkaHeader.setVisible(True)
-            self.groupBoxManualHeader.setVisible(False)
-            CONFIG.mode = 'kafka'
-            CONFIG_LOAD.set_config(CONFIG)
-        if i.text() == '手动模式':
-            self.groupBoxSerialHeader.setVisible(False)
-            self.groupBoxSerialCmdHeader.setVisible(False)
-            self.groupBoxSshHeader.setVisible(False)
-            self.groupBoxKafkaHeader.setVisible(False)
-            self.groupBoxManualHeader.setVisible(True)
-            CONFIG.mode = 'manual'
-            CONFIG_LOAD.set_config(CONFIG)
-
-    def comboBoxSelected(self, i):
-        """
-        下拉框选择端口触发
-        :param i: object
-        :return: None
-        """
-        global CURRENT_SERIAL
-
-        self.logger.info("Text in combobox: " + self.comboBoxSerial.currentText())
-
-        if self.comboBoxSerial.currentText():
-            CURRENT_SERIAL = re.findall(
-                r'COM[0-9]+', self.comboBoxSerial.currentText())[0]
-
-    def lineEditChanged(self, i):
-        """
-        修改执行命令触发
-        :param i: object
-        :return: None
-        """
-        global CONFIG
-        if i is self.lineEditCmdBeforeStart:
-            CONFIG.start_cmd = i.text()
-        if i is self.lineEditCmdAfterStop:
-            CONFIG.stop_cmd = i.text()
-        if i is self.lineEditSshHost:
-            CONFIG.ssh_host = i.text()
-        if i is self.lineEditSshPort:
-            CONFIG.ssh_port = i.text()
-        if i is self.lineEditSshUser:
-            CONFIG.ssh_user = i.text()
-        if i is self.lineEditSshPwd:
-            CONFIG.ssh_pwd = i.text()
-        if i is self.lineEditKafkaCluster:
-            CONFIG.kafka_server = i.text()
-        if i is self.lineEditKafkaFilter:
-            CONFIG.kafka_filter = i.text()
-        CONFIG_LOAD.set_config(CONFIG)
-
-    def btnRefreshClicked(self, btn):
+    def btnSerialRefreshClicked(self, btn):
         """
         点击刷新按钮触发
         :param btn: object
@@ -541,7 +513,7 @@ class LogCheckUI(QTabWidget):
         try:
             portList = getPortList()
         except Exception as e:
-            self.logger.error("Error occurs while get port list: " + str(e))
+            LOGGER.error("Error occurs while get port list: " + str(e))
             QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
         else:
             if portList:
@@ -549,9 +521,9 @@ class LogCheckUI(QTabWidget):
                     try:
                         self.comboBoxSerial.addItem(i[0])
                     except Exception as e:
-                        self.logger.error(str(e))
+                        LOGGER.error(str(e))
 
-    def btnClearClicked(self, btn):
+    def btnSerialClearClicked(self, btn):
         """
         点击清空按钮触发
         :param btn: object
@@ -569,9 +541,7 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         try:
-            global THREAD_START_FLAG
-
-            if not CURRENT_SERIAL:
+            if not MAP_['serial_cur_com']:
                 QMessageBox.information(self, '提示', '请先选择端口！',
                     QMessageBox.Ok)
                 return
@@ -580,7 +550,7 @@ class LogCheckUI(QTabWidget):
             self.tableLeft.clearContents()
             self.tableMid.clearContents()
             self.tableRight.clearContents()
-            self.workThread.start()
+            self.serialThread.start()
 
             self.comboBoxSerial.setEnabled(False)
             self.btnSerialRefresh.setEnabled(False)
@@ -604,35 +574,122 @@ class LogCheckUI(QTabWidget):
         :param btn: object
         :return: None
         """
-        global CONFIG, THREAD_START_FLAG
+        try:
+            if not MAP_['serial_start_flag']:
+                QMessageBox.information(
+                    self, '提示', '串口异常，重启后尝试！', QMessageBox.Ok)
+                return
+            self.serialThread.serial.stopReadSerial()
+            # TODO
+            # if self.lineEditCmdAfterStop.text()
+            # and self.lineEditCmdAfterStop.text().strip():
+            #     self.serialThread.serial.sendComand(
+            # self.lineEditCmdAfterStop.text())
+            #     cmd_list = re.split(r'\\n', stopCmd)
+            #     LOGGER.info("Command List: " + str(cmd_list))
+            #
+            #     for cmd in cmd_list:
+            #         self.serialThread.serial.sendComand('\n\n')
+            #         self.serialThread.sleep(1)
+            #         self.serialThread.serial.sendComand(str(cmd))
+            #         LOGGER.info("Execute command: " + str(cmd))
+            self.serialThread.serial.close()
 
-        if not THREAD_START_FLAG:
-            QMessageBox.information(
-                self, '提示', '串口异常，重启后尝试！', QMessageBox.Ok)
-            return
-        self.workThread.serial.stopReadSerial()
-        # TODO
-        # if self.lineEditCmdAfterStop.text()
-        # and self.lineEditCmdAfterStop.text().strip():
-        #     self.workThread.serial.sendComand(
-        # self.lineEditCmdAfterStop.text())
-        #     cmd_list = re.split(r'\\n', stopCmd)
-        #     self.logger.info("Command List: " + str(cmd_list))
-        #
-        #     for cmd in cmd_list:
-        #         self.workThread.serial.sendComand('\n\n')
-        #         self.workThread.sleep(1)
-        #         self.workThread.serial.sendComand(str(cmd))
-        #         self.logger.info("Execute command: " + str(cmd))
-        self.workThread.serial.close()
+            self.comboBoxSerial.setEnabled(True)
+            self.btnSerialRefresh.setEnabled(True)
+            self.lineEditCmdBeforeStart.setEnabled(True)
+            self.lineEditCmdAfterStop.setEnabled(True)
+            self.btnSerialStart.setEnabled(True)
+            self.btnSerialStop.setEnabled(False)
+            MAP_['serial_start_flag'] = False
+        except Exception as e:
+            LOGGER.error(str(e))
 
-        self.comboBoxSerial.setEnabled(True)
-        self.btnSerialRefresh.setEnabled(True)
-        self.lineEditCmdBeforeStart.setEnabled(True)
-        self.lineEditCmdAfterStop.setEnabled(True)
-        self.btnSerialStart.setEnabled(True)
-        self.btnSerialStop.setEnabled(False)
-        THREAD_START_FLAG = False
+    def btnSerialTestClicked(self, btn):
+            """
+            点击自动模式的模拟调试按钮
+            :param btn: object
+            :return: None
+            """
+            data = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
+    ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
+            LOGGER.info('Mock log data: ' + data)
+            self.test = LogCheck()
+            res = self.test.check_log(data)
+            if res:
+                self.row = 0
+                self.checkResultReceived(res)
+            LOGGER.info('Mock Check result: ' + str(res))
+
+    def btnKafkaStartClicked(self, btn):
+        """
+        点击Kafka开始按钮
+        :param btn: object
+        :return: None
+        """
+        if self.comboBoxKafkaTopic.currentText():
+            try:
+                # self.kafka.consume_kafka(topics=self.comboBoxKafkaTopic.currentText())
+                self.kafkaThread.start()
+            except Exception as e:
+                print(str(e))
+
+    def btnKafkaStopClicked(self, btn):
+        """
+        点击Kafka结束按钮
+        :param btn: object
+        :return: None
+        """
+        if MAP_['kafka_start_flag']:
+            try:
+                self.kafka.stop_kafka()
+            except Exception as e:
+                print(str(e))
+
+    def btnManualCheckClicked(self, btn):
+        """
+        点击手动模式的验证按钮
+        :param btn: object
+        :return: None
+        """
+        try:
+            data_tmp = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
+            ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
+            print(self.textEditManual.toPlainText())
+            data = self.textEditManual.toPlainText() if self.textEditManual.toPlainText().strip() \
+                else data_tmp
+            LOGGER.info('Mock log data: ' + data)
+            test = LogCheck()
+            res = test.check_log(data)
+            if res:
+                self.row = 0
+                self.checkResultReceived(res)
+            LOGGER.info('Mock Check result: ' + str(res))
+        except Exception as e:
+            print(e)
+
+    def btnManualClearClicked(self, btn):
+        """
+        点击手动模式的清空按钮
+        :param btn: object
+        :return: None
+        """
+        self.textEditManual.clear()
+        self.tableLeft.clearContents()
+        self.tableMid.clearContents()
+        self.tableRight.clearContents()
+        self.row = 0
+
+    def checkBoxKafkaSshEnableChanged(self, i):
+        """
+        SSH启用状态修改
+        :param i: object
+        :return: None
+        """
+        if not self.checkBoxKafkaSshEnable.checkState():
+            self.groupBoxSshHeader.setEnabled(False)
+        else:
+            self.groupBoxSshHeader.setEnabled(True)
 
     def checkResultReceived(self, res):
         """
@@ -693,6 +750,136 @@ class LogCheckUI(QTabWidget):
             cnt += 1
             self.row += 1
 
+    def comboBoxSerialSelected(self, i):
+        """
+        下拉框选择端口触发
+        :param i: MyComboBox
+        :return: None
+        """
+        LOGGER.info("Text in combobox: " + self.comboBoxSerial.currentText())
+
+        if self.comboBoxSerial.currentText():
+            MAP_['serial_cur_com'] = re.findall(
+                r'COM[0-9]+', self.comboBoxSerial.currentText())[0]
+
+    def comboBoxKafkaTopicClicked(self, i):
+        """
+        选择Kafka-Topic触发
+        :param i: MyComboBox
+        :return: None
+        """
+        MAP_['kafka_cur_topic'] = self.comboBoxKafkaTopic.currentText()
+
+    def comboBoxSerialClicked(self):
+        """
+        点击下拉框
+        :return: None
+        """
+        self.comboBoxSerial.clear()
+        try:
+            portList = getPortList()
+        except Exception as e:
+            LOGGER.error("Error occurs while get port list: " + str(e))
+            QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
+        else:
+            if portList:
+                for i in portList:
+                    try:
+                        self.comboBoxSerial.addItem(i[0])
+                    except Exception as e:
+                        LOGGER.error(str(e))
+
+    def comboBoxKafkaTopicClicked(self):
+        """
+        点击查询topics
+        :return:
+        """
+        try:
+            kafka_server = {
+                'host': CONFIG.kafka_server.split(':')[0],
+                'port': CONFIG.kafka_server.split(':')[1],
+            }
+            MAP_['kafka'] = Kafka(kafka_config=kafka_server)
+            MAP_['kafka'].start_kafka()
+            self.kafka_topics = MAP_['kafka'].topics_kafka()
+            print(self.kafka_topics)
+            if self.kafka_topics:
+                for i in self.kafka_topics:
+                    self.comboBoxKafkaTopic.addItem(str(i))
+        except Exception as e:
+            print(str(e))
+
+    def lineEditChanged(self, i):
+        """
+        修改执行命令触发
+        :param i: object
+        :return: None
+        """
+        if i is self.lineEditCmdBeforeStart:
+            CONFIG.start_cmd = i.text()
+        if i is self.lineEditCmdAfterStop:
+            CONFIG.stop_cmd = i.text()
+        if i is self.lineEditSshHost:
+            CONFIG.ssh_host = i.text()
+        if i is self.lineEditSshPort:
+            CONFIG.ssh_port = i.text()
+        if i is self.lineEditSshUser:
+            CONFIG.ssh_user = i.text()
+        if i is self.lineEditSshPwd:
+            CONFIG.ssh_pwd = i.text()
+        if i is self.lineEditKafkaCluster:
+            CONFIG.kafka_server = i.text()
+        if i is self.lineEditKafkaFilter:
+            CONFIG.kafka_filter = i.text()
+        CONFIG_LOAD.set_config(CONFIG)
+
+    def radioBtnModeToggled(self, i):
+        """
+        选择手动模式
+        :param i: object
+        :return: None
+        """
+        if i.text() == '串口模式':
+            self.groupBoxSerialHeader.setVisible(True)
+            self.groupBoxSerialCmdHeader.setVisible(True)
+            self.groupBoxSshHeader.setVisible(False)
+            self.groupBoxKafkaHeader.setVisible(False)
+            self.groupBoxManualHeader.setVisible(False)
+            CONFIG.mode = 'serial'
+            CONFIG_LOAD.set_config(CONFIG)
+        if i.text() == 'Kafka模式':
+            self.groupBoxSerialHeader.setVisible(False)
+            self.groupBoxSerialCmdHeader.setVisible(False)
+            self.groupBoxSshHeader.setVisible(True)
+            self.groupBoxKafkaHeader.setVisible(True)
+            self.groupBoxManualHeader.setVisible(False)
+            CONFIG.mode = 'kafka'
+            CONFIG_LOAD.set_config(CONFIG)
+        if i.text() == '手动模式':
+            self.groupBoxSerialHeader.setVisible(False)
+            self.groupBoxSerialCmdHeader.setVisible(False)
+            self.groupBoxSshHeader.setVisible(False)
+            self.groupBoxKafkaHeader.setVisible(False)
+            self.groupBoxManualHeader.setVisible(True)
+            CONFIG.mode = 'manual'
+            CONFIG_LOAD.set_config(CONFIG)
+
+    def stopSignalReceived(self, text):
+        """
+        子线程结束触发提示
+        :param i: object
+        :param text: str
+        :return:
+        """
+        self.comboBoxSerial.setEnabled(True)
+        self.btnSerialRefresh.setEnabled(True)
+        self.lineEditCmdBeforeStart.setEnabled(True)
+        self.lineEditCmdAfterStop.setEnabled(True)
+        self.btnSerialStart.setEnabled(True)
+        self.btnSerialStop.setEnabled(False)
+        MAP_['serial_start_flag'] = False
+        QMessageBox.information(self, '提示', text, QMessageBox.Ok)
+
     def tableLeftCellClicked(self, row):
         """
         点击基本结果每行数据触发
@@ -749,7 +936,7 @@ class LogCheckUI(QTabWidget):
                 self.tableMid.sortByColumn(0, Qt.AscendingOrder)
 
         except Exception as e:
-            self.logger.error(str(e))
+            LOGGER.error(str(e))
 
     def tableMidCellClicked(self, row):
         """
@@ -770,118 +957,6 @@ class LogCheckUI(QTabWidget):
                 self.tableRight.setItem(n, 2, QTableWidgetItem(str(extra_data[k])))
                 n += 1
 
-    def stopSignalReceived(self, text):
-        """
-        子线程结束触发提示
-        :param text: str
-        :return:
-        """
-        global THREAD_START_FLAG
-
-        self.comboBoxSerial.setEnabled(True)
-        self.btnSerialRefresh.setEnabled(True)
-        self.lineEditCmdBeforeStart.setEnabled(True)
-        self.lineEditCmdAfterStop.setEnabled(True)
-        self.btnSerialStart.setEnabled(True)
-        self.btnSerialStop.setEnabled(False)
-        THREAD_START_FLAG = False
-        QMessageBox.information(self, '提示', text, QMessageBox.Ok)
-
-    def btnSerialTestClicked(self, i):
-        """
-        点击自动模式的模拟调试按钮
-        :param i: object
-        :return: None
-        """
-        data = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
-,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
-        self.logger.info('Mock log data: ' + data)
-        self.test = LogCheck()
-        res = self.test.check_log(data)
-        if res:
-            self.row = 0
-            self.checkResultReceived(res)
-        self.logger.info('Mock Check result: ' + str(res))
-
-    def btnManualCheckClicked(self, i):
-        """
-        点击手动模式的验证按钮
-        :param i: object
-        :return: None
-        """
-        try:
-            data_tmp = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
-            ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
-            print(self.textEditManual.toPlainText())
-            data = self.textEditManual.toPlainText() if self.textEditManual.toPlainText().strip() \
-                else data_tmp
-            self.logger.info('Mock log data: ' + data)
-            test = LogCheck()
-            res = test.check_log(data)
-            if res:
-                self.row = 0
-                self.checkResultReceived(res)
-            self.logger.info('Mock Check result: ' + str(res))
-        except Exception as e:
-            print(e)
-
-    def btnManualClearClicked(self, i):
-        """
-        点击手动模式的清空按钮
-        :param i: object
-        :return: None
-        """
-        self.textEditManual.clear()
-        self.tableLeft.clearContents()
-        self.tableMid.clearContents()
-        self.tableRight.clearContents()
-        self.row = 0
-
-    def btnKafkaSshConnectClicked(self, i):
-        """
-        点击SSH连接按钮
-        :param i: object
-        :return: None
-        """
-        global ssh_host, ssh_port, ssh_user, ssh_pwd
-
-        try:
-            ssh_host = self.lineEditSshHost.text()
-            ssh_port = self.lineEditSshPort.text()
-            ssh_user = self.lineEditSshUser.text()
-            ssh_pwd = self.lineEditSshPwd.text()
-
-            self.session = Ssh(ssh_host, int(ssh_port), ssh_user, ssh_pwd, '192.169.1.181', 9092)
-            self.session.start()
-
-        except Exception as e:
-            self.logger.error(str(e))
-            QMessageBox.information(self, '提示', str(e),
-                                    QMessageBox.Ok)
-
-    def checkBoxKafkaSshEnableChanged(self, i):
-        """
-        SSH启用状态修改
-        :param i: object
-        :return: None
-        """
-        if not self.checkBoxKafkaSshEnable.checkState():
-            self.groupBoxSshHeader.setEnabled(False)
-        else:
-            self.groupBoxSshHeader.setEnabled(True)
-
-    def comboBoxKafkaTopicClicked(self, i):
-        """
-        点击查询Kafka Topic
-        :param i:
-        :return: None
-        """
-        self.kafka = Kafka()
-        self.kafka.start_kafka()
-        self.kafka_topics = self.kafka.topics_kafka()
-        if self.kafka_topics:
-            for i in self.kafka_topics:
-                self.comboBoxKafkaTopic.addItem(str(i))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -908,7 +983,7 @@ if __name__ == "__main__":
             height:25px;
             max-width:150px;
         }       
-        .QComboBox#comboBoxSerial,
+        .MyComboBox#comboBoxSerial,
         #comboBoxKafkaTopic {
             border:1px solid #8f8f91;
             border-radius:4px;
