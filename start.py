@@ -3,6 +3,7 @@
 # pylint: disable-msg=invalid-name,global-statement,typo
 
 import sys
+import socket
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -20,9 +21,9 @@ CONFIG_LOAD = LoadConfig()
 CONFIG = CONFIG_LOAD.get_config()
 MAP_ = {
     'kafka': None,
-    'kafka_cur_topic': None,
+    'kafka_cur_topic': '',
     'kafka_start_flag': False,
-    'serial_cur_com': None,
+    'serial_cur_com': '',
     'serial_start_flag': False,
 }
 
@@ -80,35 +81,33 @@ class KafkaThread(QThread):
     terminal = pyqtSignal(object)
 
     def run(self):
-        if not MAP_['kafka_cur_topic']:
-            return
-
         try:
-            MAP_['kafka'].subscribe_kafka(topics=MAP_['kafka_cur_topic'])
-            # self.kafka.consume_kafka(topics=MAP_['kafka_cur_topic'])
-        except Exception as e:
-            self.terminal.emit(str(e))
-        else:
+            if not MAP_['kafka_cur_topic']:
+                return
+            kafka_server = {
+                'host': CONFIG.kafka_server.split(':')[0],
+                'port': CONFIG.kafka_server.split(':')[1],
+                'group_id': CONFIG.kafka_group_id
+            }
+            kafka = Kafka(kafka_config=kafka_server)
+            kafka.init_kafka()
+            kafka.subscribe_kafka(topics=MAP_['kafka_cur_topic'])
             MAP_['kafka_start_flag'] = True
-
             self.lc = LogCheck()
             while True:
                 if not MAP_['kafka_start_flag']:
                     self.terminal.emit('正常结束！')
                     break
-
-                try:
-                    block = MAP_['kafka'].poll_kafka()
-                except Exception as e:
-                    LOGGER.error("Error occurs while connecting kafka: "
-                                      + str(e))
                 else:
+                    block = kafka.poll_kafka()
                     if block and block.strip():
                         LOGGER.info('Original log data: ' + block)
                         res = self.lc.check_log(block)
                         if res:
                             self.add.emit(res)
                         LOGGER.info('Check result: ' + str(res))
+        except Exception as e:
+            self.terminal.emit(str(e))
 
 
 class LogCheckUI(QTabWidget):
@@ -463,6 +462,8 @@ class LogCheckUI(QTabWidget):
             lambda: self.btnKafkaStartClicked(self.btnKafkaStart))
         self.btnKafkaStop.clicked.connect(
             lambda: self.btnKafkaStopClicked(self.btnKafkaStop))
+        self.btnKafkaClear.clicked.connect(
+            lambda: self.btnSerialClearClicked(self.btnKafkaClear))
         self.btnManualCheck.clicked.connect(
             lambda: self.btnManualCheckClicked(self.btnManualCheck))
         self.btnManualClear.clicked.connect(
@@ -627,12 +628,29 @@ class LogCheckUI(QTabWidget):
         :param btn: object
         :return: None
         """
-        if self.comboBoxKafkaTopic.currentText():
-            try:
-                # self.kafka.consume_kafka(topics=self.comboBoxKafkaTopic.currentText())
-                self.kafkaThread.start()
-            except Exception as e:
-                print(str(e))
+        try:
+            if not self.comboBoxKafkaTopic.currentText():
+                QMessageBox.information(self, '提示', '请先选择端口！',
+                                        QMessageBox.Ok)
+                return
+
+            self.row = 0
+            self.tableLeft.clearContents()
+            self.tableMid.clearContents()
+            self.tableRight.clearContents()
+
+            if CONFIG.ssh_enable:
+                self.groupBoxSshHeader.setEnabled(False)
+            self.lineEditKafkaCluster.setEnabled(False)
+            self.lineEditKafkaFilter.setEnabled(False)
+            self.comboBoxKafkaTopic.setEnabled(False)
+            self.checkBoxKafkaSshEnable.setEnabled(False)
+            self.btnKafkaStart.setEnabled(False)
+            self.btnKafkaStop.setEnabled(True)
+            self.kafkaThread.start()
+            MAP_['kafka_start_flag'] = True
+        except Exception as e:
+            print(str(e))
 
     def btnKafkaStopClicked(self, btn):
         """
@@ -640,11 +658,20 @@ class LogCheckUI(QTabWidget):
         :param btn: object
         :return: None
         """
-        if MAP_['kafka_start_flag']:
-            try:
-                self.kafka.stop_kafka()
-            except Exception as e:
-                print(str(e))
+        try:
+            # self.kafka.stop_kafka()
+            MAP_['kafka'].stop_kafka()
+            if CONFIG.ssh_enable:
+                self.groupBoxSshHeader.setEnabled(True)
+            self.lineEditKafkaCluster.setEnabled(True)
+            self.lineEditKafkaFilter.setEnabled(True)
+            self.comboBoxKafkaTopic.setEnabled(True)
+            self.checkBoxKafkaSshEnable.setEnabled(True)
+            self.btnKafkaStart.setEnabled(True)
+            self.btnKafkaStop.setEnabled(False)
+            MAP_['kafka_start_flag'] = False
+        except Exception as e:
+            print(str(e))
 
     def btnManualCheckClicked(self, btn):
         """
@@ -688,8 +715,11 @@ class LogCheckUI(QTabWidget):
         """
         if not self.checkBoxKafkaSshEnable.checkState():
             self.groupBoxSshHeader.setEnabled(False)
+            CONFIG.ssh_enable = False
         else:
             self.groupBoxSshHeader.setEnabled(True)
+            CONFIG.ssh_enable = True
+        CONFIG_LOAD.set_config(CONFIG)
 
     def checkResultReceived(self, res):
         """
@@ -762,13 +792,13 @@ class LogCheckUI(QTabWidget):
             MAP_['serial_cur_com'] = re.findall(
                 r'COM[0-9]+', self.comboBoxSerial.currentText())[0]
 
-    def comboBoxKafkaTopicClicked(self, i):
-        """
-        选择Kafka-Topic触发
-        :param i: MyComboBox
-        :return: None
-        """
-        MAP_['kafka_cur_topic'] = self.comboBoxKafkaTopic.currentText()
+    # def comboBoxKafkaTopicClicked(self, i):
+    #     """
+    #     选择Kafka-Topic触发
+    #     :param i: MyComboBox
+    #     :return: None
+    #     """
+    #     MAP_['kafka_cur_topic'] = self.comboBoxKafkaTopic.currentText()
 
     def comboBoxSerialClicked(self):
         """
@@ -795,17 +825,23 @@ class LogCheckUI(QTabWidget):
         :return:
         """
         try:
+            if not CONFIG.kafka_group_id:
+                CONFIG.kafka_group_id = socket.gethostname()
+                CONFIG_LOAD.set_config(CONFIG)
             kafka_server = {
                 'host': CONFIG.kafka_server.split(':')[0],
                 'port': CONFIG.kafka_server.split(':')[1],
+                'group_id': CONFIG.kafka_group_id
             }
             MAP_['kafka'] = Kafka(kafka_config=kafka_server)
-            MAP_['kafka'].start_kafka()
+            MAP_['kafka'].init_kafka()
             self.kafka_topics = MAP_['kafka'].topics_kafka()
             print(self.kafka_topics)
             if self.kafka_topics:
                 for i in self.kafka_topics:
                     self.comboBoxKafkaTopic.addItem(str(i))
+            self.comboBoxKafkaTopic.setCurrentText('json.exposure')
+            MAP_['kafka_cur_topic'] = 'json.exposure'
         except Exception as e:
             print(str(e))
 
@@ -866,8 +902,7 @@ class LogCheckUI(QTabWidget):
 
     def stopSignalReceived(self, text):
         """
-        子线程结束触发提示
-        :param i: object
+        Serial子线程结束触发提示
         :param text: str
         :return:
         """
@@ -878,6 +913,23 @@ class LogCheckUI(QTabWidget):
         self.btnSerialStart.setEnabled(True)
         self.btnSerialStop.setEnabled(False)
         MAP_['serial_start_flag'] = False
+        QMessageBox.information(self, '提示', text, QMessageBox.Ok)
+
+    def stopKafkaSignalReceived(self, text):
+        """
+        Kafka子线程结束触发提示
+        :param text: str
+        :return:
+        """
+        if CONFIG.ssh_enable:
+            self.groupBoxSshHeader.setEnabled(True)
+        self.lineEditKafkaCluster.setEnabled(True)
+        self.lineEditKafkaFilter.setEnabled(True)
+        self.comboBoxKafkaTopic.setEnabled(True)
+        self.checkBoxKafkaSshEnable.setEnabled(True)
+        self.btnKafkaStart.setEnabled(True)
+        self.btnKafkaStop.setEnabled(False)
+        MAP_['kafka_start_flag'] = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
     def tableLeftCellClicked(self, row):

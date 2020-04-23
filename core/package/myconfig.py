@@ -8,6 +8,7 @@ class Config:
         self.start_cmd = dict_['serial_config']['start_cmd']
         self.kafka_server = dict_['kafka_config']['server']
         self.kafka_topic = dict_['kafka_config']['topic']
+        self.kafka_group_id = dict_['kafka_config']['group_id']
         self.kafka_filter = dict_['kafka_config']['filter']
         self.ssh_enable = dict_['kafka_config']['ssh_enable']
         self.ssh_host = dict_['kafka_config']['ssh_config']['host']
@@ -25,6 +26,7 @@ class Config:
             'kafka_config': {
                 'server': self.kafka_server,
                 'topic': self.kafka_topic,
+                'group_id': self.kafka_group_id,
                 'filter': self.kafka_filter,
                 'ssh_enable': self.ssh_enable,
                 'ssh_config': {

@@ -1,6 +1,7 @@
 {
     "kafka_config": {
         "filter": "eventcode",
+        "group_id": "liuchangchun",
         "server": "10.18.220.142:9092",
         "ssh_config": {
             "host": "52.38.247.195",

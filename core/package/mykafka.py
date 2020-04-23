@@ -1,7 +1,6 @@
 from sshtunnel import SSHTunnelForwarder as ssh
 from kafka import KafkaConsumer as kc
 from core.package.mylogging import MyLogging as Logging
-import random
 
 LOGGER = Logging(__name__)
 
@@ -30,17 +29,17 @@ class MyKafka:
         except Exception as e:
             LOGGER.error(str(e))
 
-    def start_kafka(self):
+    def init_kafka(self):
         try:
             self._start_ssh()
 
             config = {
                 'bootstrap_servers': '127.0.0.1:'
                                      + str(self.server.local_bind_port),
-                'group_id': str(random.random())
+                'group_id': self.kafka_config['group_id']
             } if self.ssh_config else {
                 'bootstrap_servers': self.kafka_config['host'] + ':' + self.kafka_config['port'],
-                'group_id': str(random.random())
+                'group_id': self.kafka_config['group_id']
             }
 
             self.consumer = kc(**config)
@@ -55,7 +54,12 @@ class MyKafka:
 
     def poll_kafka(self):
         try:
-            self.consumer.poll(timeout_ms=1000)
+            data = self.consumer.poll(timeout_ms=1000)
+            # for i in data:
+            #     data_ = data[i][0].value.decode('utf-8')
+            #     return data_
+            data_ = data.values()[0].value.decode('utf-8')
+            return data_
         except Exception as e:
             LOGGER.error(str(e))
 
