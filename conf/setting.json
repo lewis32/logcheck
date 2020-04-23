@@ -1,8 +1,11 @@
 {
     "kafka_config": {
         "filter": "eventcode",
-        "group_id": "liuchangchun",
-        "server": "10.18.220.142:9092",
+        "group_id": "DESKTOP-D6HOTCD",
+        "server": {
+            "china": "1111111111",
+            "usa": "2222222222"
+        },
         "ssh_config": {
             "host": "52.38.247.195",
             "port": "22",
@@ -12,7 +15,7 @@
         "ssh_enable": false,
         "topic": ""
     },
-    "mode": "serial",
+    "mode": "kafka",
     "serial_config": {
         "start_cmd": "(busybox kill `ps -ef | grep tail | grep -v grep | awk '{print $2}'`;busybox tail -fn 0 /var/local/logservice/logfile/tmp_file_se* &)",
         "stop_cmd": ""

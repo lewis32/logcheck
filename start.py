@@ -4,22 +4,22 @@
 
 import sys
 import socket
+# import logging
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from core.log_check import *
 from core.package.myserial import *
-# from core.package.myssh import MySsh as Ssh
 from core.package.mykafka import MyKafka as Kafka
 from core.package.myconfig import LoadConfig
-from core.package.mylogging import MyLogging as Logging
 from core.package.mycombobox import MyComboBox
 
 
-LOGGER = Logging('start')
-CONFIG_LOAD = LoadConfig()
-CONFIG = CONFIG_LOAD.get_config()
-MAP_ = {
+logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- %(message)s')
+log = logging.getLogger('start')
+config_func = LoadConfig()
+config = config_func.get_config()
+dict_ = {
     'kafka': None,
     'kafka_cur_topic': '',
     'kafka_start_flag': False,
@@ -32,41 +32,41 @@ class SerialThread(QThread):
     """
     串口模式子线程，轮询验证结果返回
     """
-    global CONFIG, CONFIG_LOAD, MAP_, LOGGER
+    # global CONFIG, CONFIG_LOAD, MAP_, log
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
 
     def run(self):
-        if not MAP_['serial_cur_com']:
+        if not dict_['serial_cur_com']:
             return
 
         try:
-            self.serial = TVSerial(port=MAP_['serial_cur_com'], baudrate=115200, timeout=5)
+            self.serial = TVSerial(port=dict_['serial_cur_com'], baudrate=115200, timeout=5)
             self.serial.sendComand('\n\n')
             self.sleep(1)
-            self.serial.sendComand(CONFIG.start_cmd)
+            self.serial.sendComand(config.start_cmd)
             self.serial.sendComand('\n\n')
             self.sleep(1)
 
             self.serial.s.flushOutput()
             self.serial.s.flushInput()
 
-            MAP_['serial_start_flag'] = True
+            dict_['serial_start_flag'] = True
 
             self.lc = LogCheck()
             while self.serial.isOpen():
-                if not MAP_['serial_start_flag']:
+                if not dict_['serial_start_flag']:
                     self.terminal.emit('正常结束！')
                     break
 
                 block = self.serial.s.read(size=10000).decode(
                         'utf-8', errors='ignore')
                 if block and block.strip():
-                    LOGGER.info('Original log data: ' + block)
+                    log.info('Original log data: ' + block)
                     res = self.lc.check_log(block)
                     if res:
                         self.add.emit(res)
-                        LOGGER.info('Check result: ' + str(res))
+                        log.info('Check result: ' + str(res))
         except Exception as e:
             self.terminal.emit(str(e))
 
@@ -75,37 +75,37 @@ class KafkaThread(QThread):
     """
     Kafka模式子线程，轮询验证结果返回
     """
-    global CONFIG, CONFIG_LOAD, MAP_, LOGGER
+    global config, config_func, dict_, log
 
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
 
     def run(self):
         try:
-            if not MAP_['kafka_cur_topic']:
+            if not dict_['kafka_cur_topic']:
                 return
             kafka_server = {
-                'host': CONFIG.kafka_server.split(':')[0],
-                'port': CONFIG.kafka_server.split(':')[1],
-                'group_id': CONFIG.kafka_group_id
+                'host': config.kafka_server.split(':')[0],
+                'port': config.kafka_server.split(':')[1],
+                'group_id': config.kafka_group_id
             }
             kafka = Kafka(kafka_config=kafka_server)
             kafka.init_kafka()
-            kafka.subscribe_kafka(topics=MAP_['kafka_cur_topic'])
-            MAP_['kafka_start_flag'] = True
+            kafka.subscribe_kafka(topics=dict_['kafka_cur_topic'])
+            dict_['kafka_start_flag'] = True
             self.lc = LogCheck()
             while True:
-                if not MAP_['kafka_start_flag']:
+                if not dict_['kafka_start_flag']:
                     self.terminal.emit('正常结束！')
                     break
                 else:
                     block = kafka.poll_kafka()
                     if block and block.strip():
-                        LOGGER.info('Original log data: ' + block)
+                        log.info('Original log data: ' + block)
                         res = self.lc.check_log(block)
                         if res:
                             self.add.emit(res)
-                        LOGGER.info('Check result: ' + str(res))
+                        log.info('Check result: ' + str(res))
         except Exception as e:
             self.terminal.emit(str(e))
 
@@ -114,7 +114,7 @@ class LogCheckUI(QTabWidget):
     """
     UI主线程
     """
-    global CONFIG, CONFIG_LOAD, MAP_, LOGGER
+    global config, config_func, dict_, log
 
     def __init__(self):
         """
@@ -126,7 +126,7 @@ class LogCheckUI(QTabWidget):
         self.kafkaThread = KafkaThread()
         self.row = 0
 
-        self.setWindowTitle('日志验证工具')
+        self.setWindowTitle('日志验证工具（v1.3）')
         self.resize(1200, 700)
         self.setFixedSize(self.width(), self.height())
 
@@ -191,10 +191,11 @@ class LogCheckUI(QTabWidget):
         self.labelCmdAfterStop = QLabel('结束后执行命令')
         self.labelCmdAfterStop.setObjectName('labelCmdAfterStop')
         self.lineEditCmdAfterStop = QLineEdit()
-        self.lineEditCmdAfterStop.setReadOnly(True)
         self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
-        self.lineEditCmdBeforeStart.setText(CONFIG.start_cmd)
-        self.lineEditCmdAfterStop.setText(CONFIG.stop_cmd)
+        self.lineEditCmdBeforeStart.setText(config.start_cmd)
+        self.lineEditCmdAfterStop.setText(config.stop_cmd)
+        self.labelCmdAfterStop.setEnabled(False)
+        self.lineEditCmdAfterStop.setEnabled(False)
 
         self.btnSerialStart = QPushButton('开始')
         self.btnSerialStart.setObjectName('btnFooter')
@@ -250,8 +251,10 @@ class LogCheckUI(QTabWidget):
         self.lineEditSshPwd.setObjectName('lineEditSshPwd')
         self.labelKafkaCluster = QLabel('Server')
         self.labelKafkaCluster.setObjectName('labelKafkaCluster')
-        self.lineEditKafkaCluster = QLineEdit()
-        self.lineEditKafkaCluster.setObjectName('lineEditKafkaCluster')
+        # self.lineEditKafkaCluster = QLineEdit()
+        # self.lineEditKafkaCluster.setObjectName('lineEditKafkaCluster')
+        self.comboBoxKafkaCluster = MyComboBox()
+        self.comboBoxKafkaCluster.setObjectName('comboBoxKafkaCluster')
         self.labelKafkaTopic = QLabel('Topic')
         self.labelKafkaTopic.setObjectName('labelKafkaTopic')
         self.comboBoxKafkaTopic = MyComboBox()
@@ -278,7 +281,7 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutSshHeader.addWidget(self.labelSshPwd, 1, 2)
         self.gridLayoutSshHeader.addWidget(self.lineEditSshPwd, 1, 3)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaCluster, 0, 0)
-        self.gridLayoutKafkaHeader.addWidget(self.lineEditKafkaCluster, 0, 1)
+        self.gridLayoutKafkaHeader.addWidget(self.comboBoxKafkaCluster, 0, 1)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaFilter, 0, 2)
         self.gridLayoutKafkaHeader.addWidget(self.lineEditKafkaFilter, 0, 3, 1, 4)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaTopic, 1, 0)
@@ -410,24 +413,24 @@ class LogCheckUI(QTabWidget):
         self.tabMainUI.setLayout(self.mainLayout)
 
     def loadConfig(self):
-        if CONFIG.mode == 'serial':
+        if config.mode == 'serial':
             self.radioBtnSerialMode.setChecked(True)
-        if CONFIG.mode == 'kafka':
+        if config.mode == 'kafka':
             self.radioBtnKafkaMode.setChecked(True)
-        if CONFIG.mode == 'manual':
+        if config.mode == 'manual':
             self.radioBtnManualMode.setChecked(True)
 
-        self.lineEditCmdBeforeStart.setText(CONFIG.start_cmd)
-        self.lineEditCmdAfterStop.setText(CONFIG.stop_cmd)
+        self.lineEditCmdBeforeStart.setText(config.start_cmd)
+        self.lineEditCmdAfterStop.setText(config.stop_cmd)
 
-        self.lineEditSshHost.setText(CONFIG.ssh_host)
-        self.lineEditSshPort.setText(CONFIG.ssh_port)
-        self.lineEditSshUser.setText(CONFIG.ssh_user)
-        self.lineEditSshPwd.setText(CONFIG.ssh_pwd)
-        self.groupBoxSshHeader.setEnabled(True if CONFIG.ssh_enable else False)
-        self.checkBoxKafkaSshEnable.setCheckState(2 if CONFIG.ssh_enable else 0)
-        self.lineEditKafkaCluster.setText(CONFIG.kafka_server)
-        self.lineEditKafkaFilter.setText(CONFIG.kafka_filter)
+        self.lineEditSshHost.setText(config.ssh_host)
+        self.lineEditSshPort.setText(config.ssh_port)
+        self.lineEditSshUser.setText(config.ssh_user)
+        self.lineEditSshPwd.setText(config.ssh_pwd)
+        self.groupBoxSshHeader.setEnabled(True if config.ssh_enable else False)
+        self.checkBoxKafkaSshEnable.setCheckState(2 if config.ssh_enable else 0)
+
+        self.lineEditKafkaFilter.setText(config.kafka_filter)
 
     def initHintUI(self):
         """
@@ -473,6 +476,7 @@ class LogCheckUI(QTabWidget):
             lambda: self.checkBoxKafkaSshEnableChanged(self.checkBoxKafkaSshEnable))
         self.comboBoxSerial.showPopup_.connect(self.comboBoxSerialClicked)
         self.comboBoxKafkaTopic.showPopup_.connect(self.comboBoxKafkaTopicClicked)
+        self.comboBoxKafkaCluster.showPopup_.connect(self.comboBoxKafkaClusterClicked)
         self.kafkaThread.add.connect(self.checkResultReceived)
         self.kafkaThread.terminal.connect(self.stopSignalReceived)
         self.lineEditCmdBeforeStart.textChanged.connect(
@@ -487,8 +491,8 @@ class LogCheckUI(QTabWidget):
             lambda: self.lineEditChanged(self.lineEditSshUser))
         self.lineEditSshPwd.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditSshPwd))
-        self.lineEditKafkaCluster.textChanged.connect(
-            lambda: self.lineEditChanged(self.lineEditKafkaCluster))
+        # self.lineEditKafkaCluster.textChanged.connect(
+        #     lambda: self.lineEditChanged(self.lineEditKafkaCluster))
         self.lineEditKafkaFilter.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditKafkaFilter))
         self.radioBtnSerialMode.toggled.connect(
@@ -514,7 +518,7 @@ class LogCheckUI(QTabWidget):
         try:
             portList = getPortList()
         except Exception as e:
-            LOGGER.error("Error occurs while get port list: " + str(e))
+            log.error("Error occurs while get port list: " + str(e))
             QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
         else:
             if portList:
@@ -522,7 +526,7 @@ class LogCheckUI(QTabWidget):
                     try:
                         self.comboBoxSerial.addItem(i[0])
                     except Exception as e:
-                        LOGGER.error(str(e))
+                        log.error(str(e))
 
     def btnSerialClearClicked(self, btn):
         """
@@ -542,7 +546,7 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         try:
-            if not MAP_['serial_cur_com']:
+            if not dict_['serial_cur_com']:
                 QMessageBox.information(self, '提示', '请先选择端口！',
                     QMessageBox.Ok)
                 return
@@ -567,7 +571,7 @@ class LogCheckUI(QTabWidget):
             timer.start(5000)
             timer.start(5000)
         except Exception as e:
-            print(str(e))
+            log.error(str(e))
 
     def btnSerialStopClicked(self, btn):
         """
@@ -576,7 +580,7 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         try:
-            if not MAP_['serial_start_flag']:
+            if not dict_['serial_start_flag']:
                 QMessageBox.information(
                     self, '提示', '串口异常，重启后尝试！', QMessageBox.Ok)
                 return
@@ -602,9 +606,9 @@ class LogCheckUI(QTabWidget):
             self.lineEditCmdAfterStop.setEnabled(True)
             self.btnSerialStart.setEnabled(True)
             self.btnSerialStop.setEnabled(False)
-            MAP_['serial_start_flag'] = False
+            dict_['serial_start_flag'] = False
         except Exception as e:
-            LOGGER.error(str(e))
+            log.error(str(e))
 
     def btnSerialTestClicked(self, btn):
             """
@@ -614,13 +618,13 @@ class LogCheckUI(QTabWidget):
             """
             data = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
     ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
-            LOGGER.info('Mock log data: ' + data)
+            log.info('Mock log data: ' + data)
             self.test = LogCheck()
             res = self.test.check_log(data)
             if res:
                 self.row = 0
                 self.checkResultReceived(res)
-            LOGGER.info('Mock Check result: ' + str(res))
+            log.info('Mock Check result: ' + str(res))
 
     def btnKafkaStartClicked(self, btn):
         """
@@ -639,18 +643,18 @@ class LogCheckUI(QTabWidget):
             self.tableMid.clearContents()
             self.tableRight.clearContents()
 
-            if CONFIG.ssh_enable:
+            if config.ssh_enable:
                 self.groupBoxSshHeader.setEnabled(False)
-            self.lineEditKafkaCluster.setEnabled(False)
+            self.comboBoxKafkaCluster.setEnabled(False)
             self.lineEditKafkaFilter.setEnabled(False)
             self.comboBoxKafkaTopic.setEnabled(False)
             self.checkBoxKafkaSshEnable.setEnabled(False)
             self.btnKafkaStart.setEnabled(False)
             self.btnKafkaStop.setEnabled(True)
             self.kafkaThread.start()
-            MAP_['kafka_start_flag'] = True
+            dict_['kafka_start_flag'] = True
         except Exception as e:
-            print(str(e))
+            log.error(str(e))
 
     def btnKafkaStopClicked(self, btn):
         """
@@ -660,18 +664,18 @@ class LogCheckUI(QTabWidget):
         """
         try:
             # self.kafka.stop_kafka()
-            MAP_['kafka'].stop_kafka()
-            if CONFIG.ssh_enable:
+            dict_['kafka'].stop_kafka()
+            if config.ssh_enable:
                 self.groupBoxSshHeader.setEnabled(True)
-            self.lineEditKafkaCluster.setEnabled(True)
+            self.comboBoxKafkaCluster.setEnabled(True)
             self.lineEditKafkaFilter.setEnabled(True)
             self.comboBoxKafkaTopic.setEnabled(True)
             self.checkBoxKafkaSshEnable.setEnabled(True)
             self.btnKafkaStart.setEnabled(True)
             self.btnKafkaStop.setEnabled(False)
-            MAP_['kafka_start_flag'] = False
+            dict_['kafka_start_flag'] = False
         except Exception as e:
-            print(str(e))
+            log.error(str(e))
 
     def btnManualCheckClicked(self, btn):
         """
@@ -682,18 +686,17 @@ class LogCheckUI(QTabWidget):
         try:
             data_tmp = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
             ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
-            print(self.textEditManual.toPlainText())
             data = self.textEditManual.toPlainText() if self.textEditManual.toPlainText().strip() \
                 else data_tmp
-            LOGGER.info('Mock log data: ' + data)
+            log.info('Mock log data: ' + data)
             test = LogCheck()
             res = test.check_log(data)
             if res:
                 self.row = 0
                 self.checkResultReceived(res)
-            LOGGER.info('Mock Check result: ' + str(res))
+            log.info('Mock Check result: ' + str(res))
         except Exception as e:
-            print(e)
+            log.error(str(e))
 
     def btnManualClearClicked(self, btn):
         """
@@ -715,11 +718,11 @@ class LogCheckUI(QTabWidget):
         """
         if not self.checkBoxKafkaSshEnable.checkState():
             self.groupBoxSshHeader.setEnabled(False)
-            CONFIG.ssh_enable = False
+            config.ssh_enable = False
         else:
             self.groupBoxSshHeader.setEnabled(True)
-            CONFIG.ssh_enable = True
-        CONFIG_LOAD.set_config(CONFIG)
+            config.ssh_enable = True
+        config_func.set_config(config)
 
     def checkResultReceived(self, res):
         """
@@ -786,10 +789,10 @@ class LogCheckUI(QTabWidget):
         :param i: MyComboBox
         :return: None
         """
-        LOGGER.info("Text in combobox: " + self.comboBoxSerial.currentText())
+        log.info("Text in combobox: " + self.comboBoxSerial.currentText())
 
         if self.comboBoxSerial.currentText():
-            MAP_['serial_cur_com'] = re.findall(
+            dict_['serial_cur_com'] = re.findall(
                 r'COM[0-9]+', self.comboBoxSerial.currentText())[0]
 
     # def comboBoxKafkaTopicClicked(self, i):
@@ -809,7 +812,7 @@ class LogCheckUI(QTabWidget):
         try:
             portList = getPortList()
         except Exception as e:
-            LOGGER.error("Error occurs while get port list: " + str(e))
+            log.error("Error occurs while get port list: " + str(e))
             QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
         else:
             if portList:
@@ -817,33 +820,57 @@ class LogCheckUI(QTabWidget):
                     try:
                         self.comboBoxSerial.addItem(i[0])
                     except Exception as e:
-                        LOGGER.error(str(e))
+                        log.error(str(e))
 
     def comboBoxKafkaTopicClicked(self):
         """
-        点击查询topics
+        点击kafka topic下拉框
         :return:
         """
         try:
-            if not CONFIG.kafka_group_id:
-                CONFIG.kafka_group_id = socket.gethostname()
-                CONFIG_LOAD.set_config(CONFIG)
+            if not config.kafka_group_id:
+                config.kafka_group_id = socket.gethostname()
+                config_func.set_config(config)
             kafka_server = {
-                'host': CONFIG.kafka_server.split(':')[0],
-                'port': CONFIG.kafka_server.split(':')[1],
-                'group_id': CONFIG.kafka_group_id
+                'host': config.kafka_server.split(':')[0],
+                'port': config.kafka_server.split(':')[1],
+                'group_id': config.kafka_group_id
             }
-            MAP_['kafka'] = Kafka(kafka_config=kafka_server)
-            MAP_['kafka'].init_kafka()
-            self.kafka_topics = MAP_['kafka'].topics_kafka()
-            print(self.kafka_topics)
+            dict_['kafka'] = Kafka(kafka_config=kafka_server)
+            dict_['kafka'].init_kafka()
+            self.kafka_topics = dict_['kafka'].topics_kafka()
+            log.info(str(self.kafka_topics))
             if self.kafka_topics:
                 for i in self.kafka_topics:
                     self.comboBoxKafkaTopic.addItem(str(i))
-            self.comboBoxKafkaTopic.setCurrentText('json.exposure')
-            MAP_['kafka_cur_topic'] = 'json.exposure'
         except Exception as e:
-            print(str(e))
+            log.error(str(e))
+
+    def comboBoxKafkaTopicSelected(self, i):
+        """
+        选择kafka topic
+        :param i: object
+        :return: None
+        """
+        self.comboBoxKafkaTopic.setCurrentText('json.exposure')
+        dict_['kafka_cur_topic'] = 'json.exposure'
+
+    def comboBoxKafkaClusterClicked(self):
+        """
+        点击kafka bootstrap server下拉框
+        :return: None
+        """
+        self.comboBoxKafkaCluster.clear()
+        for i in config.kafka_server:
+            self.comboBoxKafkaCluster.addItem(i)
+
+
+    def comboBoxKafkaClusterSelected(self, i):
+        """
+        选择kafka bootstrap server
+        :param i: object
+        :return: None
+        """
 
     def lineEditChanged(self, i):
         """
@@ -852,22 +879,22 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         if i is self.lineEditCmdBeforeStart:
-            CONFIG.start_cmd = i.text()
+            config.start_cmd = i.text()
         if i is self.lineEditCmdAfterStop:
-            CONFIG.stop_cmd = i.text()
+            config.stop_cmd = i.text()
         if i is self.lineEditSshHost:
-            CONFIG.ssh_host = i.text()
+            config.ssh_host = i.text()
         if i is self.lineEditSshPort:
-            CONFIG.ssh_port = i.text()
+            config.ssh_port = i.text()
         if i is self.lineEditSshUser:
-            CONFIG.ssh_user = i.text()
+            config.ssh_user = i.text()
         if i is self.lineEditSshPwd:
-            CONFIG.ssh_pwd = i.text()
-        if i is self.lineEditKafkaCluster:
-            CONFIG.kafka_server = i.text()
+            config.ssh_pwd = i.text()
+        # if i is self.lineEditKafkaCluster:
+        #     CONFIG.kafka_server = i.text()
         if i is self.lineEditKafkaFilter:
-            CONFIG.kafka_filter = i.text()
-        CONFIG_LOAD.set_config(CONFIG)
+            config.kafka_filter = i.text()
+        config_func.set_config(config)
 
     def radioBtnModeToggled(self, i):
         """
@@ -881,24 +908,24 @@ class LogCheckUI(QTabWidget):
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(False)
-            CONFIG.mode = 'serial'
-            CONFIG_LOAD.set_config(CONFIG)
+            config.mode = 'serial'
+            config_func.set_config(config)
         if i.text() == 'Kafka模式':
             self.groupBoxSerialHeader.setVisible(False)
             self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(True)
             self.groupBoxKafkaHeader.setVisible(True)
             self.groupBoxManualHeader.setVisible(False)
-            CONFIG.mode = 'kafka'
-            CONFIG_LOAD.set_config(CONFIG)
+            config.mode = 'kafka'
+            config_func.set_config(config)
         if i.text() == '手动模式':
             self.groupBoxSerialHeader.setVisible(False)
             self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(True)
-            CONFIG.mode = 'manual'
-            CONFIG_LOAD.set_config(CONFIG)
+            config.mode = 'manual'
+            config_func.set_config(config)
 
     def stopSignalReceived(self, text):
         """
@@ -912,7 +939,7 @@ class LogCheckUI(QTabWidget):
         self.lineEditCmdAfterStop.setEnabled(True)
         self.btnSerialStart.setEnabled(True)
         self.btnSerialStop.setEnabled(False)
-        MAP_['serial_start_flag'] = False
+        dict_['serial_start_flag'] = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
     def stopKafkaSignalReceived(self, text):
@@ -921,15 +948,15 @@ class LogCheckUI(QTabWidget):
         :param text: str
         :return:
         """
-        if CONFIG.ssh_enable:
+        if config.ssh_enable:
             self.groupBoxSshHeader.setEnabled(True)
-        self.lineEditKafkaCluster.setEnabled(True)
+        self.comboBoxKafkaCluster.setEnabled(True)
         self.lineEditKafkaFilter.setEnabled(True)
         self.comboBoxKafkaTopic.setEnabled(True)
         self.checkBoxKafkaSshEnable.setEnabled(True)
         self.btnKafkaStart.setEnabled(True)
         self.btnKafkaStop.setEnabled(False)
-        MAP_['kafka_start_flag'] = False
+        dict_['kafka_start_flag'] = False
         QMessageBox.information(self, '提示', text, QMessageBox.Ok)
 
     def tableLeftCellClicked(self, row):
@@ -988,7 +1015,7 @@ class LogCheckUI(QTabWidget):
                 self.tableMid.sortByColumn(0, Qt.AscendingOrder)
 
         except Exception as e:
-            LOGGER.error(str(e))
+            log.error(str(e))
 
     def tableMidCellClicked(self, row):
         """
@@ -1065,7 +1092,6 @@ if __name__ == "__main__":
         #lineEditSshPort,
         #lineEditSshUser,
         #lineEditSshPwd,
-        #lineEditKafkaCluster,
         #lineEditKafkaFilter
         {
             border:1px solid #8f8f91;

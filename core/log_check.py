@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 import os
 import re
 import json
 import time
 import bisect
-from .package.mylogging import MyLogging as Logging
+import logging
 
-LOGGER = Logging('core.log_check')
+log = logging.getLogger(__name__)
 
 
 class LogCheck:
@@ -91,9 +90,9 @@ class LogCheck:
                     if ex in policy_module:
                         policy_module[event]['keys'].pop(ex)
                     else:
-                        LOGGER.error('找不到限制字段%s！' % (ex,))
+                        log.error('找不到限制字段%s！' % (ex,))
                 policy_module[event]['keys'] = dict(policy_module[event]['keys'], **policy_common)
-            LOGGER.info("policy: " + json.dumps(policy_module))
+            log.info("policy: " + json.dumps(policy_module))
             return policy_module
 
     def _compare_keys(self, log, conf):
@@ -109,7 +108,7 @@ class LogCheck:
 
         log = [i for i in log]
         conf = [i for i in conf]
-        LOGGER.info("conf" + str(conf))
+        log.info("conf" + str(conf))
         conf.sort()
 
         for i in log:
@@ -175,8 +174,8 @@ class LogCheck:
             conf[title]['keys'][(lambda x:x.lower())(i)] = conf[title]['keys'].pop(i)
 
         mutual_key, log_key, conf_key = self._compare_keys(log, conf[title]['keys'])
-        LOGGER.info('mutual key:' + str(mutual_key))
-        LOGGER.info('conf_key:' + str(conf_key))
+        log.info('mutual key:' + str(mutual_key))
+        log.info('conf_key:' + str(conf_key))
         if len(log_key):
             for key in log_key:
                 res['undefined_key'][key] = {}
@@ -246,17 +245,17 @@ class LogCheck:
                 try:
                     data = json.loads(data)
                 except json.decoder.JSONDecodeError as e:
-                    LOGGER.error("Error occurs while decoding JSON: " + str(e))
+                    log.error("Error occurs while decoding JSON: " + str(e))
                 else:
                     if "eventcode" not in data:
                         continue
                     try:
                         ret = self._compare_log(data, self.policy_all)
                     except Exception as e:
-                        LOGGER.error(str(e))
+                        log.error(str(e))
                     listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
-            LOGGER.info(json.dumps(listed_results))
+            log.info(json.dumps(listed_results))
 
             return listed_results
 

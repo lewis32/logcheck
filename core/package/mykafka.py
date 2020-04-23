@@ -1,8 +1,8 @@
 from sshtunnel import SSHTunnelForwarder as ssh
 from kafka import KafkaConsumer as kc
-from core.package.mylogging import MyLogging as Logging
+import logging
 
-LOGGER = Logging(__name__)
+log = logging.getLogger(__name__)
 
 
 class MyKafka:
@@ -21,13 +21,13 @@ class MyKafka:
                 )
                 self.server.start()
             except Exception as e:
-                LOGGER.error(str(e))
+                log.error(str(e))
 
     def _stop_ssh(self):
         try:
             self.server.stop()
         except Exception as e:
-            LOGGER.error(str(e))
+            log.error(str(e))
 
     def init_kafka(self):
         try:
@@ -44,13 +44,13 @@ class MyKafka:
 
             self.consumer = kc(**config)
         except Exception as e:
-            LOGGER.error(str(e))
+            log.error(str(e))
 
     def subscribe_kafka(self, topics=None):
         try:
             self.consumer.subscribe(topics=topics)
         except Exception as e:
-            LOGGER.error(str(e))
+            log.error(str(e))
 
     def poll_kafka(self):
         try:
@@ -61,7 +61,7 @@ class MyKafka:
             data_ = data.values()[0].value.decode('utf-8')
             return data_
         except Exception as e:
-            LOGGER.error(str(e))
+            log.error(str(e))
 
     def stop_kafka(self):
         try:
@@ -70,7 +70,7 @@ class MyKafka:
             if self.ssh_config:
                 self.server.stop()
         except Exception as e:
-            LOGGER.error(str(e))
+            log.error(str(e))
 
     def topics_kafka(self):
         return self.consumer.topics()
