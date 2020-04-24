@@ -1,4 +1,7 @@
+import logging
 from sshtunnel import SSHTunnelForwarder as ssh
+
+log = logging.getLogger(__name__)
 
 
 class MySsh:

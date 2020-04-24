@@ -1,5 +1,8 @@
 import os
 import json
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Config:
@@ -50,13 +53,16 @@ class LoadConfig:
         )
 
     def get_config(self):
-        with open(self._config_path, 'r+') as f:
+        with open(self._config_path, 'r+', encoding='utf-8') as f:
             obj = json.load(f, cls=ConfigDecode)
+            log.info("get config file...")
             return obj
 
     def set_config(self, obj):
-        with open(self._config_path, 'w+') as f:
-            json.dump(obj, f, cls=ConfigEncode, indent=4, sort_keys=True)
+        with open(self._config_path, 'w+', encoding='utf-8') as f:
+            json.dump(obj, f, cls=ConfigEncode, ensure_ascii=False, indent=4,
+                      sort_keys=True)
+            log.info("set config file...")
 
 
 class ConfigDecode(json.JSONDecoder):

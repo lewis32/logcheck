@@ -95,10 +95,10 @@ class LogCheck:
             log.info("policy: " + json.dumps(policy_module))
             return policy_module
 
-    def _compare_keys(self, log, conf):
+    def _compare_keys(self, data, conf):
         """
         查找日志中重复、多余和缺失的字段
-        :param log: dict
+        :param data: dict
         :param conf: dict
         :return: list, list, list
         """
@@ -106,12 +106,12 @@ class LogCheck:
         mutual_key = []
         mutual_key_lower = []
 
-        log = [i for i in log]
+        data = [i for i in data]
         conf = [i for i in conf]
         log.info("conf" + str(conf))
         conf.sort()
 
-        for i in log:
+        for i in data:
             pos = bisect.bisect_left(conf, (lambda x: x.lower())(i))
             if pos < len(conf) and conf[pos] == (lambda x: x.lower())(i):
                 mutual_key.append(i)
@@ -119,15 +119,15 @@ class LogCheck:
 
         mutual_key = list(set(mutual_key))
         mutual_key_lower = list(set(mutual_key_lower))
-        log_key = list(set(log).difference(set(mutual_key)))
+        data_key = list(set(data).difference(set(mutual_key)))
         conf_key = list(set(conf).difference(set(mutual_key_lower)))
 
-        return mutual_key, log_key, conf_key
+        return mutual_key, data_key, conf_key
 
-    def _compare_log(self, log, conf):
+    def _compare_log(self, data, conf):
         """
         根据配置文件的正则对日志数据进行对比
-        :param log: dict
+        :param data: dict
         :param conf: dict
         :return: dict
         """
@@ -142,28 +142,28 @@ class LogCheck:
             'result': 0
         }
 
-        # count = len(log)
+        # count = len(data)
         # n = 1
         title = ['null', 'null', 'null']
 
-        for key in log:
+        for key in data:
             lower_key = (lambda x: x.lower())(key)
             if lower_key == 'srceventcode':
-                title[0] = log[key]
-                res['src_event_code'] = log[key]
+                title[0] = data[key]
+                res['src_event_code'] = data[key]
             if lower_key == 'eventcode':
-                title[1] = log[key]
-                res['event_code'] = log[key]
+                title[1] = data[key]
+                res['event_code'] = data[key]
             if lower_key == 'version':
-                title[2] = log[key]
-                # res['version'] = log[key]
+                title[2] = data[key]
+                # res['version'] = data[key]
         title = '_'.join(title)
 
         if title not in conf:
             # 找不到对应事件，直接返回-1
-            for key in log:
+            for key in data:
                 res['data'][key] = {}
-                res['data'][key]['value'] = log[key]
+                res['data'][key]['value'] = data[key]
             res['result'] = -1
             return res
 
@@ -173,15 +173,15 @@ class LogCheck:
         for i in conf[title]['keys']:
             conf[title]['keys'][(lambda x:x.lower())(i)] = conf[title]['keys'].pop(i)
 
-        mutual_key, log_key, conf_key = self._compare_keys(log, conf[title]['keys'])
+        mutual_key, data_key, conf_key = self._compare_keys(data, conf[title]['keys'])
         log.info('mutual key:' + str(mutual_key))
         log.info('conf_key:' + str(conf_key))
-        if len(log_key):
-            for key in log_key:
+        if len(data_key):
+            for key in data_key:
                 res['undefined_key'][key] = {}
-                res['undefined_key'][key]['value'] = log[key]
+                res['undefined_key'][key]['value'] = data[key]
                 res['data'][key] = {}
-                res['data'][key]['value'] = log[key]
+                res['data'][key]['value'] = data[key]
         if len(conf_key):
             for key in conf_key:
                 res['missing_key'][key] = {}
@@ -192,14 +192,14 @@ class LogCheck:
         for i in mutual_key:
             mutual_dict[i] = conf[title]['keys'][(lambda x: x.lower())(i)]
             res['data'][i] = {}
-            res['data'][i]['value'] = log[i]
+            res['data'][i]['value'] = data[i]
             res['data'][i]['key_alias'] = conf[title]['keys'][(lambda x: x.lower())(i)]['key_alias']
-            # if not re.match(eval(mutual_dict[i]['regex']), str(log[i])):
-            if not re.match(mutual_dict[i]['regex'], str(log[i])):
+            # if not re.match(eval(mutual_dict[i]['regex']), str(data[i])):
+            if not re.match(mutual_dict[i]['regex'], str(data[i])):
                 invalid_mutual_dict[i] = {}
-                invalid_mutual_dict[i]['value'] = log[i]
+                invalid_mutual_dict[i]['value'] = data[i]
                 invalid_mutual_dict[i]['key_alias'] = conf[title]['keys'][key]['key_alias']
-                # invalid_mutual_dict[i] = log[i]
+                # invalid_mutual_dict[i] = data[i]
 
         if len(invalid_mutual_dict):
             res['invalid_key'] = dict(**res['invalid_key'], **invalid_mutual_dict)
