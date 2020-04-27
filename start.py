@@ -5,6 +5,7 @@
 import sys
 import socket
 # import logging
+# from core.package.mylogging import Log
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -119,8 +120,6 @@ class LogCheckUI(QTabWidget):
     """
     UI主线程
     """
-    global config, config_func, dict_, log
-
     def __init__(self):
         """
         初始化整体UI
@@ -156,13 +155,13 @@ class LogCheckUI(QTabWidget):
         初始化主UI
         :return: None
         """
-        self.mainLayout = QVBoxLayout(self)
+        self.mainLayout = QVBoxLayout()
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
 
         # 创建串口模式header
         self.hboxLayoutSerialHeader = QHBoxLayout()
         self.hboxLayoutModeSelectHeader = QHBoxLayout()
-        self.hboxLayoutModeSelectHeader.setContentsMargins(10, 0, 850, 8)
+        self.hboxLayoutModeSelectHeader.setContentsMargins(10, 0, 850, 0)
         self.radioBtnSerialMode = QRadioButton('串口模式')
         self.radioBtnKafkaMode = QRadioButton('Kafka模式')
         self.radioBtnManualMode = QRadioButton('手动模式')
@@ -171,11 +170,11 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutModeSelectHeader.addWidget(self.radioBtnManualMode)
 
         self.gridLayoutSerialHeader = QGridLayout()
-        self.gridLayoutSerialHeader.setContentsMargins(10, 10, 10, 10)
+        self.gridLayoutSerialHeader.setContentsMargins(10, 10, 350, 10)
         self.gridLayoutSerialHeader.setObjectName('hboxLayoutHeader')
-        self.gridLayoutSerialCmdHeader = QGridLayout()
-        self.gridLayoutSerialCmdHeader.setContentsMargins(15, 15, 15, 15)
-        self.gridLayoutSerialCmdHeader.setObjectName('hboxLayoutHeader')
+        # self.gridLayoutSerialCmdHeader = QGridLayout()
+        # self.gridLayoutSerialCmdHeader.setContentsMargins(15, 15, 15, 15)
+        # self.gridLayoutSerialCmdHeader.setObjectName('hboxLayoutHeader')
 
         self.labelSerialCom = QLabel('端口')
         self.comboBoxSerialCom = MyComboBox()
@@ -187,9 +186,10 @@ class LogCheckUI(QTabWidget):
         self.btnSerialTest.setObjectName('btnHeader')
         self.btnSerialTest.setVisible(False)
 
-        self.labelCmdBeforeStart = QLabel('开始前执行命令')
-        self.labelCmdBeforeStart.setObjectName('labelCmdBeforeStart')
+        self.labelSerialCmd = QLabel('执行Shell命令')
+        self.labelSerialCmd.setObjectName('labelSerialCmd')
         self.comboBoxSerialCmd = MyComboBox()
+        self.comboBoxSerialCmd.setObjectName('comboBoxSerialCmd')
         # self.lineEditCmdBeforeStart = QLineEdit()
         # self.lineEditCmdBeforeStart.setObjectName('lineEditCmdBeforeStart')
         # self.labelCmdAfterStop = QLabel('结束后执行命令')
@@ -211,17 +211,18 @@ class LogCheckUI(QTabWidget):
 
         self.gridLayoutSerialHeader.addWidget(self.labelSerialCom, 0, 0)
         self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCom, 0, 1)
-        self.gridLayoutSerialCmdHeader.addWidget(self.labelCmdBeforeStart, 1, 0)
-        self.gridLayoutSerialCmdHeader.addWidget(self.comboBoxSerialCmd, 1, 1)
-        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStart, 1, 2)
-        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStop, 1, 3)
+        self.gridLayoutSerialHeader.addWidget(self.labelSerialCmd, 1, 0)
+        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCmd, 1, 1)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialStart, 1, 2)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialStop, 1, 3)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 4)
         # self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 0)
 
-        self.groupBoxSerialHeader = QGroupBox('选择串口端口')
+        self.groupBoxSerialHeader = QGroupBox('串口配置')
         self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
         self.groupBoxSerialHeader.setLayout(self.gridLayoutSerialHeader)
-        self.groupBoxSerialHeader.setFixedSize(420, 120)
+        # self.groupBoxSerialHeader.setVisible(False)
+        self.groupBoxSerialHeader.setFixedSize(850, 120)
         # self.hboxLayoutSerialHeader.addWidget(self.groupBoxSerialHeader)
 
         # 创建Kafka模式header
@@ -290,12 +291,12 @@ class LogCheckUI(QTabWidget):
         self.groupBoxSshHeader = QGroupBox('SSH配置')
         self.groupBoxSshHeader.setObjectName('groupBoxHeader')
         self.groupBoxSshHeader.setLayout(self.gridLayoutSshHeader)
-        self.groupBoxSshHeader.setVisible(False)
+        # self.groupBoxSshHeader.setVisible(False)
         self.groupBoxSshHeader.setFixedSize(420, 120)
         self.groupBoxKafkaHeader = QGroupBox('Kafka配置')
         self.groupBoxKafkaHeader.setObjectName('groupBoxHeader')
         self.groupBoxKafkaHeader.setLayout(self.gridLayoutKafkaHeader)
-        self.groupBoxKafkaHeader.setVisible(False)
+        # self.groupBoxKafkaHeader.setVisible(False)
         self.groupBoxKafkaHeader.setFixedSize(730, 120)
 
         self.hboxLayoutKafkaHeader.addWidget(self.groupBoxSshHeader)
@@ -319,7 +320,7 @@ class LogCheckUI(QTabWidget):
         self.groupBoxManualHeader = QGroupBox('输入日志数据')
         self.groupBoxManualHeader.setObjectName('groupBoxHeader')
         self.groupBoxManualHeader.setLayout(self.gridLayoutManualHeader)
-        self.groupBoxManualHeader.setVisible(False)
+        # self.groupBoxManualHeader.setVisible(False)
         self.groupBoxManualHeader.setFixedSize(850, 120)
 
         # 创建显示结果数据body
@@ -425,7 +426,7 @@ class LogCheckUI(QTabWidget):
         self.lineEditSshUser.setText(config.ssh_user)
         self.lineEditSshPwd.setText(config.ssh_pwd)
         self.groupBoxSshHeader.setEnabled(True if config.ssh_enable else False)
-        self.checkBoxKafkaSshEnable.setCheckState(2 if config.ssh_enable else 0)
+        # self.checkBoxKafkaSshEnable.setCheckState(Qt.CheckState(2) if config.ssh_enable else Qt.CheckState(0))
 
         self.lineEditKafkaFilter.setText(config.kafka_filter)
 
@@ -456,8 +457,8 @@ class LogCheckUI(QTabWidget):
         self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
         self.btnSerialStop.clicked.connect(
             lambda: self.btnSerialStopClicked(self.btnSerialStop))
-        self.btnSerialTest.clicked.connect(
-            lambda: self.btnSerialTestClicked(self.btnSerialTest))
+        # self.btnSerialTest.clicked.connect(
+        #     lambda: self.btnSerialTestClicked(self.btnSerialTest))
         self.btnKafkaStart.clicked.connect(
             lambda: self.btnKafkaStartClicked(self.btnKafkaStart))
         self.btnKafkaStop.clicked.connect(
@@ -557,8 +558,8 @@ class LogCheckUI(QTabWidget):
 
             self.comboBoxSerialCom.setEnabled(False)
             self.btnSerialRefresh.setEnabled(False)
-            self.lineEditCmdBeforeStart.setEnabled(False)
-            self.lineEditCmdAfterStop.setEnabled(False)
+            # self.lineEditCmdBeforeStart.setEnabled(False)
+            # self.lineEditCmdAfterStop.setEnabled(False)
             self.btnSerialStart.setEnabled(False)
             self.btnSerialStop.setEnabled(False)
 
@@ -600,9 +601,9 @@ class LogCheckUI(QTabWidget):
             self.serialThread.serial.close()
 
             self.comboBoxSerialCom.setEnabled(True)
-            self.btnSerialRefresh.setEnabled(True)
-            self.lineEditCmdBeforeStart.setEnabled(True)
-            self.lineEditCmdAfterStop.setEnabled(True)
+            # self.btnSerialRefresh.setEnabled(True)
+            # self.lineEditCmdBeforeStart.setEnabled(True)
+            # self.lineEditCmdAfterStop.setEnabled(True)
             self.btnSerialStart.setEnabled(True)
             self.btnSerialStop.setEnabled(False)
             dict_['serial_start_flag'] = False
@@ -886,10 +887,10 @@ class LogCheckUI(QTabWidget):
         :param i: object
         :return: None
         """
-        if i is self.lineEditCmdBeforeStart:
-            config.start_cmd = i.text()
-        if i is self.lineEditCmdAfterStop:
-            config.stop_cmd = i.text()
+        # if i is self.lineEditCmdBeforeStart:
+        #     config.start_cmd = i.text()
+        # if i is self.lineEditCmdAfterStop:
+        #     config.stop_cmd = i.text()
         if i is self.lineEditSshHost:
             config.ssh_host = i.text()
         if i is self.lineEditSshPort:
@@ -912,7 +913,6 @@ class LogCheckUI(QTabWidget):
         """
         if i.text() == '串口模式':
             self.groupBoxSerialHeader.setVisible(True)
-            self.groupBoxSerialCmdHeader.setVisible(True)
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(False)
@@ -920,7 +920,6 @@ class LogCheckUI(QTabWidget):
             config_func.set_config(config)
         if i.text() == 'Kafka模式':
             self.groupBoxSerialHeader.setVisible(False)
-            self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(True)
             self.groupBoxKafkaHeader.setVisible(True)
             self.groupBoxManualHeader.setVisible(False)
@@ -928,7 +927,6 @@ class LogCheckUI(QTabWidget):
             config_func.set_config(config)
         if i.text() == '手动模式':
             self.groupBoxSerialHeader.setVisible(False)
-            self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(True)
@@ -942,9 +940,9 @@ class LogCheckUI(QTabWidget):
         :return:
         """
         self.comboBoxSerialCom.setEnabled(True)
-        self.btnSerialRefresh.setEnabled(True)
-        self.lineEditCmdBeforeStart.setEnabled(True)
-        self.lineEditCmdAfterStop.setEnabled(True)
+        # self.btnSerialRefresh.setEnabled(True)
+        # self.lineEditCmdBeforeStart.setEnabled(True)
+        # self.lineEditCmdAfterStop.setEnabled(True)
         self.btnSerialStart.setEnabled(True)
         self.btnSerialStop.setEnabled(False)
         dict_['serial_start_flag'] = False
@@ -1073,6 +1071,7 @@ if __name__ == "__main__":
             max-width:150px;
         }       
         .MyComboBox#comboBoxSerial,
+        #comboBoxSerialCmd,
         #comboBoxKafkaCluster {
             border:1px solid #8f8f91;
             border-radius:4px;
