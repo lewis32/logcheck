@@ -33,7 +33,6 @@ class SerialThread(QThread):
     """
     串口模式子线程，轮询验证结果返回
     """
-    # global CONFIG, CONFIG_LOAD, MAP_, log
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
 
@@ -76,8 +75,6 @@ class KafkaThread(QThread):
     """
     Kafka模式子线程，轮询验证结果返回
     """
-    global config, config_func, dict_, log
-
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
 
@@ -180,12 +177,10 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutSerialCmdHeader.setContentsMargins(15, 15, 15, 15)
         self.gridLayoutSerialCmdHeader.setObjectName('hboxLayoutHeader')
 
-        # self.comboBoxSerial = QComboBox()
-        self.comboBoxSerial = MyComboBox()
-        self.comboBoxSerial.setObjectName('comboBoxSerial')
-        self.comboBoxSerial.setCurrentIndex(-1)
-        self.btnSerialRefresh = QPushButton('刷新')
-        self.btnSerialRefresh.setObjectName('btnHeader')
+        self.labelSerialCom = QLabel('端口')
+        self.comboBoxSerialCom = MyComboBox()
+        self.comboBoxSerialCom.setObjectName('comboBoxSerial')
+        self.comboBoxSerialCom.setCurrentIndex(-1)
         self.btnSerialClear = QPushButton('清空')
         self.btnSerialClear.setObjectName('btnHeader')
         self.btnSerialTest = QPushButton('模拟调试')
@@ -194,16 +189,17 @@ class LogCheckUI(QTabWidget):
 
         self.labelCmdBeforeStart = QLabel('开始前执行命令')
         self.labelCmdBeforeStart.setObjectName('labelCmdBeforeStart')
-        self.lineEditCmdBeforeStart = QLineEdit()
-        self.lineEditCmdBeforeStart.setObjectName('lineEditCmdBeforeStart')
-        self.labelCmdAfterStop = QLabel('结束后执行命令')
-        self.labelCmdAfterStop.setObjectName('labelCmdAfterStop')
-        self.lineEditCmdAfterStop = QLineEdit()
-        self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
-        self.lineEditCmdBeforeStart.setText(config.start_cmd)
-        self.lineEditCmdAfterStop.setText(config.stop_cmd)
-        self.labelCmdAfterStop.setEnabled(False)
-        self.lineEditCmdAfterStop.setEnabled(False)
+        self.comboBoxSerialCmd = MyComboBox()
+        # self.lineEditCmdBeforeStart = QLineEdit()
+        # self.lineEditCmdBeforeStart.setObjectName('lineEditCmdBeforeStart')
+        # self.labelCmdAfterStop = QLabel('结束后执行命令')
+        # self.labelCmdAfterStop.setObjectName('labelCmdAfterStop')
+        # self.lineEditCmdAfterStop = QLineEdit()
+        # self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
+        # self.lineEditCmdBeforeStart.setText(config.start_cmd)
+        # self.lineEditCmdAfterStop.setText(config.stop_cmd)
+        # self.labelCmdAfterStop.setEnabled(False)
+        # self.lineEditCmdAfterStop.setEnabled(False)
 
         self.btnSerialStart = QPushButton('开始')
         self.btnSerialStart.setObjectName('btnFooter')
@@ -213,26 +209,20 @@ class LogCheckUI(QTabWidget):
         self.btnSerialStop.setFont(self.font)
         self.btnSerialStop.setEnabled(False)
 
-        self.gridLayoutSerialCmdHeader.addWidget(self.labelCmdBeforeStart, 0, 0)
-        self.gridLayoutSerialCmdHeader.addWidget(self.lineEditCmdBeforeStart, 0, 1)
-        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStart, 0, 2)
-        self.gridLayoutSerialCmdHeader.addWidget(self.labelCmdAfterStop, 1, 0)
-        self.gridLayoutSerialCmdHeader.addWidget(self.lineEditCmdAfterStop, 1, 1)
-        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStop, 1, 2)
-        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerial, 0, 0)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 0)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialRefresh, 0, 1)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 0, 2)
+        self.gridLayoutSerialHeader.addWidget(self.labelSerialCom, 0, 0)
+        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCom, 0, 1)
+        self.gridLayoutSerialCmdHeader.addWidget(self.labelCmdBeforeStart, 1, 0)
+        self.gridLayoutSerialCmdHeader.addWidget(self.comboBoxSerialCmd, 1, 1)
+        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStart, 1, 2)
+        self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStop, 1, 3)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 4)
+        # self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 0)
 
         self.groupBoxSerialHeader = QGroupBox('选择串口端口')
         self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
         self.groupBoxSerialHeader.setLayout(self.gridLayoutSerialHeader)
         self.groupBoxSerialHeader.setFixedSize(420, 120)
-        self.groupBoxSerialCmdHeader = QGroupBox(r'输入命令')
-        self.groupBoxSerialCmdHeader.setLayout(self.gridLayoutSerialCmdHeader)
-        self.groupBoxSerialCmdHeader.setFixedSize(730, 120)
-        self.hboxLayoutSerialHeader.addWidget(self.groupBoxSerialHeader)
-        self.hboxLayoutSerialHeader.addWidget(self.groupBoxSerialCmdHeader)
+        # self.hboxLayoutSerialHeader.addWidget(self.groupBoxSerialHeader)
 
         # 创建Kafka模式header
         self.hboxLayoutKafkaHeader = QHBoxLayout()
@@ -412,7 +402,8 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutBody.setStretchFactor(self.groupBoxTableRight, 5)
 
         self.mainLayout.addLayout(self.hboxLayoutModeSelectHeader)
-        self.mainLayout.addLayout(self.hboxLayoutSerialHeader)
+        self.mainLayout.addWidget(self.groupBoxSerialHeader)
+        # self.mainLayout.addLayout(self.hboxLayoutSerialHeader)
         self.mainLayout.addLayout(self.hboxLayoutKafkaHeader)
         self.mainLayout.addWidget(self.groupBoxManualHeader)
         self.mainLayout.addLayout(self.hboxLayoutBody)
@@ -426,8 +417,8 @@ class LogCheckUI(QTabWidget):
         if config.mode == 'manual':
             self.radioBtnManualMode.setChecked(True)
 
-        self.lineEditCmdBeforeStart.setText(config.start_cmd)
-        self.lineEditCmdAfterStop.setText(config.stop_cmd)
+        # self.lineEditCmdBeforeStart.setText(config.start_cmd)
+        # self.lineEditCmdAfterStop.setText(config.stop_cmd)
 
         self.lineEditSshHost.setText(config.ssh_host)
         self.lineEditSshPort.setText(config.ssh_port)
@@ -458,8 +449,8 @@ class LogCheckUI(QTabWidget):
         信号绑定槽函数
         :return: None
         """
-        self.btnSerialRefresh.clicked.connect(
-            lambda: self.btnSerialRefreshClicked(self.btnSerialRefresh))
+        # self.btnSerialRefresh.clicked.connect(
+        #     lambda: self.btnSerialRefreshClicked(self.btnSerialRefresh))
         self.btnSerialClear.clicked.connect(
             lambda: self.btnSerialClearClicked(self.btnSerialClear))
         self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
@@ -477,8 +468,8 @@ class LogCheckUI(QTabWidget):
             lambda: self.btnManualCheckClicked(self.btnManualCheck))
         self.btnManualClear.clicked.connect(
             lambda: self.btnManualClearClicked(self.btnManualClear))
-        self.comboBoxSerial.currentIndexChanged.connect(self.comboBoxSerialSelected)
-        self.comboBoxSerial.showPopup_.connect(self.comboBoxSerialClicked)
+        self.comboBoxSerialCom.currentIndexChanged.connect(self.comboBoxSerialSelected)
+        self.comboBoxSerialCom.showPopup_.connect(self.comboBoxSerialClicked)
         self.comboBoxKafkaCluster.showPopup_.connect(self.comboBoxKafkaClusterClicked)
         self.comboBoxKafkaCluster.currentIndexChanged.connect(self.comboBoxKafkaClusterSelected)
         self.checkBoxKafkaSshEnable.stateChanged.connect(
@@ -487,10 +478,10 @@ class LogCheckUI(QTabWidget):
         self.comboBoxKafkaTopic.currentIndexChanged.connect(self.comboBoxKafkaTopicSelected)
         self.kafkaThread.add.connect(self.checkResultReceived)
         self.kafkaThread.terminal.connect(self.stopSignalReceived)
-        self.lineEditCmdBeforeStart.textChanged.connect(
-            lambda: self.lineEditChanged(self.lineEditCmdBeforeStart))
-        self.lineEditCmdAfterStop.textChanged.connect(
-            lambda: self.lineEditChanged(self.lineEditCmdAfterStop))
+        # self.lineEditCmdBeforeStart.textChanged.connect(
+        #     lambda: self.lineEditChanged(self.lineEditCmdBeforeStart))
+        # self.lineEditCmdAfterStop.textChanged.connect(
+        #     lambda: self.lineEditChanged(self.lineEditCmdAfterStop))
         self.lineEditSshHost.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditSshHost))
         self.lineEditSshPort.textChanged.connect(
@@ -520,7 +511,7 @@ class LogCheckUI(QTabWidget):
         :param btn: object
         :return: None
         """
-        self.comboBoxSerial.clear()
+        self.comboBoxSerialCom.clear()
         try:
             portList = getPortList()
         except Exception as e:
@@ -530,7 +521,7 @@ class LogCheckUI(QTabWidget):
             if portList:
                 for i in portList:
                     try:
-                        self.comboBoxSerial.addItem(i[0])
+                        self.comboBoxSerialCom.addItem(i[0])
                     except Exception as e:
                         log.error(str(e))
 
@@ -564,7 +555,7 @@ class LogCheckUI(QTabWidget):
             self.tableRight.clearContents()
             self.serialThread.start()
 
-            self.comboBoxSerial.setEnabled(False)
+            self.comboBoxSerialCom.setEnabled(False)
             self.btnSerialRefresh.setEnabled(False)
             self.lineEditCmdBeforeStart.setEnabled(False)
             self.lineEditCmdAfterStop.setEnabled(False)
@@ -608,7 +599,7 @@ class LogCheckUI(QTabWidget):
             #         LOGGER.info("Execute command: " + str(cmd))
             self.serialThread.serial.close()
 
-            self.comboBoxSerial.setEnabled(True)
+            self.comboBoxSerialCom.setEnabled(True)
             self.btnSerialRefresh.setEnabled(True)
             self.lineEditCmdBeforeStart.setEnabled(True)
             self.lineEditCmdAfterStop.setEnabled(True)
@@ -798,18 +789,18 @@ class LogCheckUI(QTabWidget):
         :param i: MyComboBox
         :return: None
         """
-        log.info("Text in combobox: " + self.comboBoxSerial.currentText())
+        log.info("Text in combobox: " + self.comboBoxSerialCom.currentText())
 
-        if self.comboBoxSerial.currentText():
+        if self.comboBoxSerialCom.currentText():
             dict_['serial_cur_com'] = re.findall(
-                r'COM[0-9]+', self.comboBoxSerial.currentText())[0]
+                r'COM[0-9]+', self.comboBoxSerialCom.currentText())[0]
 
     def comboBoxSerialClicked(self):
         """
         点击下拉框
         :return: None
         """
-        self.comboBoxSerial.clear()
+        self.comboBoxSerialCom.clear()
         try:
             portList = getPortList()
         except Exception as e:
@@ -819,7 +810,7 @@ class LogCheckUI(QTabWidget):
             if portList:
                 for i in portList:
                     try:
-                        self.comboBoxSerial.addItem(i[0])
+                        self.comboBoxSerialCom.addItem(i[0])
                     except Exception as e:
                         log.error(str(e))
 
@@ -950,7 +941,7 @@ class LogCheckUI(QTabWidget):
         :param text: str
         :return:
         """
-        self.comboBoxSerial.setEnabled(True)
+        self.comboBoxSerialCom.setEnabled(True)
         self.btnSerialRefresh.setEnabled(True)
         self.lineEditCmdBeforeStart.setEnabled(True)
         self.lineEditCmdAfterStop.setEnabled(True)
