@@ -12,17 +12,13 @@ from core.log_check import *
 from core.package.myserial import *
 from core.package.mykafka import MyKafka as Kafka
 from core.package.myconfig import LoadConfig
-from core.package.myconfigparser import *
 from core.package.mycombobox import MyComboBox
 
 
 logging.basicConfig(level=logging.INFO,
                     format='[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s',)
 log = logging.getLogger('start')
-filepath = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 config = LoadConfig.get_config()
-config2 = MyConfigParser(os.path.join(filepath, 'conf', 'setting_bak.ini'))
-print(config2.get('kafka_cn', 'ssh_port'))
 dict_ = {
     'kafka_cur_server': None,
     'kafka_cur_topic': '',
