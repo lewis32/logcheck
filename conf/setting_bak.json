@@ -1,0 +1,48 @@
+{
+  "kafka": {
+    "configs": {
+      "国内":{
+        "filter": "eventcode",
+        "group_id": "liuchangchun",
+        "server": "10.18.220.142:9092",
+        "ssh_config": {
+          "host": "52.38.247.195",
+          "port": "22",
+          "pwd": "AWS@nus!S1t#!#",
+          "user": "root"
+        },
+        "ssh_enable": false,
+        "topic": ""
+      },
+      "海外":{
+        "filter": "eventcode",
+        "group_id": "liuchangchun",
+        "server": "192.169.1.181:9092",
+        "ssh_config": {
+          "host": "52.38.247.195",
+          "port": "22",
+          "pwd": "AWS@nus!S1t#!#",
+          "user": "root"
+        },
+        "ssh_enable": false,
+        "topic": ""
+      }
+    },
+    "current": "国内"
+  },
+  "mode": "kafka",
+  "serial": {
+    "port": "COM4",
+    "current": "6886U4",
+    "configs": {
+      "6886U4": {
+        "start_cmd": "(busybox kill `ps -ef | grep tail | grep -v grep | awk '{print $2}'`;busybox tail -fn 0 /var/local/logservice/logfile/tmp_file_se* &)",
+        "stop_cmd": ""
+    },
+      "9602U4": {
+        "start_cmd": "(busybox kill `ps -ef | grep tail | grep -v grep | awk '{print $2}'`;busybox tail -fn 0 /var/local/logservice/logfile/tmp_file_se* &)",
+        "stop_cmd": ""
+    }
+    }
+  }
+}
