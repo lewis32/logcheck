@@ -1,13 +1,11 @@
 #!/usr/bin/env Python
 # coding=utf-8
 import datetime
-import logging
 import threading
 import time
-# import sys
-# import os
 import serial
 from serial.tools import list_ports
+from .mylogging import MyLogging as Logging
 
 
 def getPortList():
@@ -35,7 +33,7 @@ class TVSerial:
     #     return cls._instance
 
     def __init__(self, port='COM3', baudrate=115200, timeout=5):
-        self.logger = logging.getLogger(__name__)
+        self.logger = Logging.getLogger(__name__)
         self.s = serial.Serial(port, baudrate, timeout=timeout)
         self.s.flushInput()
         self.s.flushOutput()

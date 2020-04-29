@@ -6,9 +6,9 @@ import re
 import json
 import time
 import bisect
-import logging
+from .package.mylogging import MyLogging as Logging
 
-log = logging.getLogger(__name__)
+log = Logging.getLogger(__name__)
 
 
 class LogCheck:

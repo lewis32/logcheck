@@ -1,7 +1,7 @@
 import json
-import logging
+from .mylogging import MyLogging as Logging
 
-log = logging.getLogger(__name__)
+log = Logging.getLogger(__name__)
 
 
 class MyJsonParser:
