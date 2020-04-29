@@ -4,25 +4,22 @@
 
 import sys
 import socket
-# import logging
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from core.log_check import *
 from core.package.myserial import *
 from core.package.mykafka import MyKafka as Kafka
-from core.package.myconfig import LoadConfig
-from core.package.myconfigparser import *
+from core.package.mylogging import MyLogging as Logging
+from configparser import *
 from core.package.mycombobox import MyComboBox
 
+path = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
+log = Logging.getLogger('start')
+config_path = os.path.join(path, 'conf', 'setting_bak.ini')
+config = ConfigParser()
+config.read(config_path)
 
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s',)
-log = logging.getLogger('start')
-filepath = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
-config = LoadConfig.get_config()
-config2 = MyConfigParser(os.path.join(filepath, 'conf', 'setting_bak.ini'))
-print(config2.get('kafka_cn', 'ssh_port'))
 dict_ = {
     'kafka_cur_server': None,
     'kafka_cur_topic': '',
@@ -47,7 +44,8 @@ class SerialThread(QThread):
             self.serial = TVSerial(port=dict_['serial_cur_com'], baudrate=115200, timeout=5)
             self.serial.sendComand('\n\n')
             self.sleep(1)
-            self.serial.sendComand(config.start_cmd)
+            # self.serial.sendComand(config.start_cmd)
+            self.serial.sendComand(config.get(config.get('DEFAULT', 'serial'), 'start_cmd'))
             self.serial.sendComand('\n\n')
             self.sleep(1)
 
@@ -86,16 +84,28 @@ class KafkaThread(QThread):
             if not dict_['kafka_cur_topic']:
                 return
 
+            # kafka_server = {
+            #     'server': dict_['kafka_cur_server'],
+            #     'group_id': config.kafka_group_id
+            # }
+            # ssh_config = {
+            #     'host': config.ssh_host,
+            #     'port': config.ssh_port,
+            #     'user': config.ssh_user,
+            #     'pwd': config.ssh_pwd
+            # } if config.ssh_enable else None
+
             kafka_server = {
                 'server': dict_['kafka_cur_server'],
-                'group_id': config.kafka_group_id
+                'group_id': config.get(config.get('DEFAULT', 'kafka'), 'group_id')
             }
             ssh_config = {
-                'host': config.ssh_host,
-                'port': config.ssh_port,
-                'user': config.ssh_user,
-                'pwd': config.ssh_pwd
-            } if config.ssh_enable else None
+                'host': config.get(config.get('DEFAULT', 'kafka'), 'ssh_host'),
+                'port': config.get(config.get('DEFAULT', 'kafka'), 'ssh_port'),
+                'user': config.get(config.get('DEFAULT', 'kafka'), 'ssh_user'),
+                'pwd': config.get(config.get('DEFAULT', 'kafka'), 'ssh_pwd')
+            } if config.get(config.get('DEFAULT', 'kafka'), 'ssh_enable') else None
+
             kafka = Kafka(kafka_config=kafka_server, ssh_config=ssh_config)
             kafka.init_kafka()
             kafka.subscribe_kafka(topics=[dict_['kafka_cur_topic']])
@@ -418,24 +428,32 @@ class LogCheckUI(QTabWidget):
         self.tabMainUI.setLayout(self.mainLayout)
 
     def loadConfig(self):
-        if config.mode == 'serial':
+        # if config.mode == 'serial':
+        if config.get('DEFAULT', 'mode') == 'serial':
             self.radioBtnSerialMode.setChecked(True)
-        if config.mode == 'kafka':
+        # if config.mode == 'kafka':
+        if config.get('DEFAULT', 'mode') == 'kafka':
             self.radioBtnKafkaMode.setChecked(True)
-        if config.mode == 'manual':
+        # if config.mode == 'manual':
+        if config.get('DEFAULT', 'mode') == 'manual':
             self.radioBtnManualMode.setChecked(True)
 
-        # self.lineEditCmdBeforeStart.setText(config.start_cmd)
-        # self.lineEditCmdAfterStop.setText(config.stop_cmd)
+        # self.lineEditSshHost.setText(config.ssh_host)
+        # self.lineEditSshPort.setText(config.ssh_port)
+        # self.lineEditSshUser.setText(config.ssh_user)
+        # self.lineEditSshPwd.setText(config.ssh_pwd)
+        # self.groupBoxSshHeader.setEnabled(True if config.ssh_enable else False)
+        # self.checkBoxKafkaSshEnable.setCheckState(2 if config.ssh_enable else 0)
+        # self.lineEditKafkaFilter.setText(config.kafka_filter)
 
-        self.lineEditSshHost.setText(config.ssh_host)
-        self.lineEditSshPort.setText(config.ssh_port)
-        self.lineEditSshUser.setText(config.ssh_user)
-        self.lineEditSshPwd.setText(config.ssh_pwd)
-        self.groupBoxSshHeader.setEnabled(True if config.ssh_enable else False)
-        self.checkBoxKafkaSshEnable.setCheckState(2 if config.ssh_enable else 0)
-
-        self.lineEditKafkaFilter.setText(config.kafka_filter)
+        self.lineEditSshHost.setText(config.get(config.get('DEFAULT', 'kafka'), 'ssh_host'))
+        self.lineEditSshPort.setText(config.get(config.get('DEFAULT', 'kafka'), 'ssh_port'))
+        self.lineEditSshUser.setText(config.get(config.get('DEFAULT', 'kafka'), 'ssh_user'))
+        self.lineEditSshPwd.setText(config.get(config.get('DEFAULT', 'kafka'), 'ssh_pwd'))
+        self.groupBoxSshHeader.setEnabled(True if config.get(config.get('DEFAULT', 'kafka'), 'ssh_enable') else False)
+        self.checkBoxKafkaSshEnable.setCheckState(
+            2 if config.get(config.get('DEFAULT', 'kafka'), 'ssh_enable') else 0)
+        self.lineEditKafkaFilter.setText(config.get(config.get('DEFAULT', 'kafka'), 'filter'))
 
     def initHintUI(self):
         """
@@ -651,7 +669,8 @@ class LogCheckUI(QTabWidget):
             self.tableMid.clearContents()
             self.tableRight.clearContents()
 
-            if config.ssh_enable:
+            # if config.ssh_enable:
+            if config.get(config.get('DEFAULT', 'kafka'), 'ssh_enable'):
                 self.groupBoxSshHeader.setEnabled(False)
             self.comboBoxKafkaCluster.setEnabled(False)
             self.lineEditKafkaFilter.setEnabled(False)
@@ -673,7 +692,8 @@ class LogCheckUI(QTabWidget):
         try:
             # self.kafka.stop_kafka()
             self.kafka.stop_kafka()
-            if config.ssh_enable:
+            # if config.ssh_enable:
+            if config.get(config.get('DEFAULT', 'kafka'), 'ssh_enable'):
                 self.groupBoxSshHeader.setEnabled(True)
             self.comboBoxKafkaCluster.setEnabled(True)
             self.lineEditKafkaFilter.setEnabled(True)
@@ -726,12 +746,15 @@ class LogCheckUI(QTabWidget):
         """
         if not self.checkBoxKafkaSshEnable.checkState():
             self.groupBoxSshHeader.setEnabled(False)
-            config.ssh_enable = False
+            # config.ssh_enable = False
+            config.set(config.get('DEFAULT', 'kafka'), 'ssh_enable', 'false')
         else:
             self.groupBoxSshHeader.setEnabled(True)
-            config.ssh_enable = True
-        # config_func.set_config(config)
-        LoadConfig.set_config(config)
+            # config.ssh_enable = True
+            config.set(config.get('DEFAULT', 'kafka'), 'ssh_enable', 'false')
+        # LoadConfig.set_config(config)
+        with open(os.path.join(path, 'conf', 'setting_bak.ini'), 'w') as f:
+            config.write(f)
 
     def checkResultReceived(self, res):
         """
@@ -830,20 +853,36 @@ class LogCheckUI(QTabWidget):
         """
         try:
             self.comboBoxKafkaTopic.clear()
-            if not config.kafka_group_id:
-                config.kafka_group_id = socket.gethostname()
-                # config_func.set_config(config)
-                LoadConfig.set_config(config)
+            # if not config.kafka_group_id:
+            #     config.kafka_group_id = socket.gethostname()
+            #     # config_func.set_config(config)
+            #     LoadConfig.set_config(config)
+            # kafka_config = {
+            #     'server': dict_['kafka_cur_server'],
+            #     'group_id': config.kafka_group_id
+            # }
+            # ssh_config = {
+            #     'host': config.ssh_host,
+            #     'port': config.ssh_port,
+            #     'user': config.ssh_user,
+            #     'pwd': config.ssh_pwd
+            # } if config.ssh_enable else None
+
+            if not config.get(config.get('DEFAULT', 'kafka'), 'group_id'):
+                config.set(config.get('DEFAULT', 'kafka'), 'group_id', socket.gethostname())
+                with open(os.path.join(path, 'conf', 'setting_bak.ini'), 'w') as f:
+                    config.write(f)
             kafka_config = {
                 'server': dict_['kafka_cur_server'],
-                'group_id': config.kafka_group_id
+                'group_id': config.get(config.get('DEFAULT', 'kafka'), 'group_id')
             }
             ssh_config = {
-                'host': config.ssh_host,
-                'port': config.ssh_port,
-                'user': config.ssh_user,
-                'pwd': config.ssh_pwd
-            } if config.ssh_enable else None
+                'host': config.get(config.get('DEFAULT', 'kafka'), 'ssh_host'),
+                'port': config.get(config.get('DEFAULT', 'kafka'), 'ssh_port'),
+                'user': config.get(config.get('DEFAULT', 'kafka'), 'ssh_user'),
+                'pwd': config.get(config.get('DEFAULT', 'kafka'), 'ssh_pwd')
+            } if config.get(config.get('DEFAULT', 'kafka'), 'ssh_enable') else None
+
             self.kafka = Kafka(kafka_config=kafka_config, ssh_config=ssh_config)
             self.kafka.init_kafka()
             self.kafka_topics = list(self.kafka.topics_kafka())
@@ -874,7 +913,8 @@ class LogCheckUI(QTabWidget):
         self.comboBoxKafkaCluster.clear()
         try:
             # self.comboBoxKafkaCluster.clear()
-            for i in config.kafka_server:
+            # for i in config.kafka_server:
+            for i in config.get(config.get('DEFAULT', 'kafka'), 'server'):
                 self.comboBoxKafkaCluster.addItem(i)
         except Exception as e:
             log.error(str(e))
@@ -886,7 +926,8 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         try:
-            dict_['kafka_cur_server'] = config.kafka_server[self.comboBoxKafkaCluster.currentText()]
+            # dict_['kafka_cur_server'] = config.kafka_server[self.comboBoxKafkaCluster.currentText()]
+            dict_['kafka_cur_server'] = config.get(config.get('DEFAULT', 'kafka'), 'server')
         except Exception as e:
             log.error(str(e))
 
@@ -896,24 +937,26 @@ class LogCheckUI(QTabWidget):
         :param i: object
         :return: None
         """
-        # if i is self.lineEditCmdBeforeStart:
-        #     config.start_cmd = i.text()
-        # if i is self.lineEditCmdAfterStop:
-        #     config.stop_cmd = i.text()
         if i is self.lineEditSshHost:
-            config.ssh_host = i.text()
+            # config.ssh_host = i.text()
+            config.set(config.get('DEFAULT', 'kafka'), 'ssh_host', i.text())
         if i is self.lineEditSshPort:
-            config.ssh_port = i.text()
+            # config.ssh_port = i.text()
+            config.set(config.get('DEFAULT', 'kafka'), 'ssh_port', i.text())
         if i is self.lineEditSshUser:
-            config.ssh_user = i.text()
+            # config.ssh_user = i.text()
+            config.set(config.get('DEFAULT', 'kafka'), 'ssh_user', i.text())
         if i is self.lineEditSshPwd:
-            config.ssh_pwd = i.text()
+            # config.ssh_pwd = i.text()
+            config.set(config.get('DEFAULT', 'kafka'), 'ssh_pwd', i.text())
         # if i is self.lineEditKafkaCluster:
         #     CONFIG.kafka_server = i.text()
         if i is self.lineEditKafkaFilter:
-            config.kafka_filter = i.text()
-        # config_func.set_config(config)
-        LoadConfig.set_config(config)
+            # config.kafka_filter = i.text()
+            config.set(config.get('DEFAULT', 'kafka'), 'filter', i.text())
+        # LoadConfig.set_config(config)
+        with open(os.path.join(path, 'conf', 'setting_bak.ini'), 'w') as f:
+            config.write(f)
 
     def radioBtnModeToggled(self, i):
         """
@@ -927,27 +970,29 @@ class LogCheckUI(QTabWidget):
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(False)
-            config.mode = 'serial'
-            # config_func.set_config(config)
-            LoadConfig.set_config(config)
+            # config.mode = 'serial'
+            config.set('DEFAULT', 'mode', 'serial')
+
         if i.text() == 'Kafka模式':
             self.groupBoxSerialHeader.setVisible(False)
             # self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(True)
             self.groupBoxKafkaHeader.setVisible(True)
             self.groupBoxManualHeader.setVisible(False)
-            config.mode = 'kafka'
-            # config_func.set_config(config)
-            LoadConfig.set_config(config)
+            # config.mode = 'kafka'
+            config.set('DEFAULT', 'mode', 'kafka')
+
         if i.text() == '手动模式':
             self.groupBoxSerialHeader.setVisible(False)
             # self.groupBoxSerialCmdHeader.setVisible(False)
             self.groupBoxSshHeader.setVisible(False)
             self.groupBoxKafkaHeader.setVisible(False)
             self.groupBoxManualHeader.setVisible(True)
-            config.mode = 'manual'
-            # config_func.set_config(config)
-            LoadConfig.set_config(config)
+            # config.mode = 'manual'
+            config.set('DEFAULT', 'mode', 'manual')
+        # LoadConfig.set_config(config)
+        with open(os.path.join(path, 'conf', 'setting_bak.ini'), 'w') as f:
+            config.write(f)
 
     def stopSignalReceived(self, text):
         """
@@ -971,7 +1016,8 @@ class LogCheckUI(QTabWidget):
         :param text: str
         :return:
         """
-        if config.ssh_enable:
+        # if config.ssh_enable:
+        if config.get(config.get('DEFAULT', 'kafka'), 'ssh_enable'):
             self.groupBoxSshHeader.setEnabled(True)
         self.comboBoxKafkaCluster.setEnabled(True)
         self.lineEditKafkaFilter.setEnabled(True)
@@ -1064,93 +1110,9 @@ class LogCheckUI(QTabWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = LogCheckUI()
-    qssstyle = '''
-        .QTableWidget {
-            border:1px solid #8f8f91;
-            margin-left:5px;
-            margin-right:0px;
-            margin-bottom:5px;
-        }
-        .QLabel#labelSerialCom,
-        #labelSerialCmd,
-        #labelKafkaCluster,
-        #labelKafkaTopic,
-        #labelKafkaFilter,
-        #labelSshHost,
-        #labelSshPort,
-        #labelSshUser,
-        #labelSshPwd {
-            position:relative;
-            margin-left:10px;
-            margin-right:0px;
-            height:25px;
-            max-width:150px;
-        }       
-        .MyComboBox#comboBoxSerial,
-        #comboBoxSerialCmd,
-        #comboBoxKafkaCluster {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            margin-left:0px;
-            margin-right:0px;
-            padding-left:10px;
-            padding-right:10px;
-            position:relative;
-            height:25px;
-            width:100px;
-            max-width:200px;
-        }
-        .MyComboBox#comboBoxKafkaTopic {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            margin-left:0px;
-            margin-right:0px;
-            padding-left:10px;
-            padding-right:10px;
-            position:relative;
-            height:25px;
-            width:200px;
-            max-width:200px;
-        }
-        .QCheckBox#checkBoxKafkaSshEnable {
-            margin-left:10px;
-        }
-        .QPushButton#btnHeader,
-        #btnFooter {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            position:relative;
-            margin-left:5px;
-            margin-right:5px;
-            width:90px;
-            height:25px;
-            max-width:80px;
-        }
-        .QLineEdit#lineEditCmdBeforeStart,
-        #lineEditCmdAfterStop,
-        #lineEditSshHost,
-        #lineEditSshPort,
-        #lineEditSshUser,
-        #lineEditSshPwd,
-        #lineEditKafkaFilter
-        {
-            border:1px solid #8f8f91;
-            border-radius:4px;
-            margin-left:5px;
-            margin-right:5px;
-            padding-left:10px;
-            padding-right:10px;
-            height:25px;
-            width:380px;
-        }
-        .QTextEdit#textEditManual {
-            border:1px solid #8f8f91;
-            border-radius:1px;
-            margin-left:5px;
-            margin-right:5px;
-            width:100px;
-        }
-    '''
-    main.setStyleSheet(qssstyle)
+    qss_path = os.path.join(path, 'style.qss')
+    with open(qss_path, 'r') as f:
+        qssStyle = f.read()
+    main.setStyleSheet(qssStyle)
     main.show()
     sys.exit(app.exec_())

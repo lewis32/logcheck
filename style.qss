@@ -1,0 +1,85 @@
+.QTableWidget {
+    border:1px solid #8f8f91;
+    margin-left:5px;
+    margin-right:0px;
+    margin-bottom:5px;
+}
+.QLabel#labelSerialCom,
+#labelSerialCmd,
+#labelKafkaCluster,
+#labelKafkaTopic,
+#labelKafkaFilter,
+#labelSshHost,
+#labelSshPort,
+#labelSshUser,
+#labelSshPwd {
+    position:relative;
+    margin-left:10px;
+    margin-right:0px;
+    height:25px;
+    max-width:150px;
+}
+.MyComboBox#comboBoxSerial,
+#comboBoxSerialCmd,
+#comboBoxKafkaCluster {
+    border:1px solid #8f8f91;
+    border-radius:4px;
+    margin-left:0px;
+    margin-right:0px;
+    padding-left:10px;
+    padding-right:10px;
+    position:relative;
+    height:25px;
+    width:100px;
+    max-width:200px;
+}
+.MyComboBox#comboBoxKafkaTopic {
+    border:1px solid #8f8f91;
+    border-radius:4px;
+    margin-left:0px;
+    margin-right:0px;
+    padding-left:10px;
+    padding-right:10px;
+    position:relative;
+    height:25px;
+    width:200px;
+    max-width:200px;
+}
+.QCheckBox#checkBoxKafkaSshEnable {
+    margin-left:10px;
+}
+.QPushButton#btnHeader,
+#btnFooter {
+    border:1px solid #8f8f91;
+    border-radius:4px;
+    position:relative;
+    margin-left:5px;
+    margin-right:5px;
+    width:90px;
+    height:25px;
+    max-width:80px;
+}
+.QLineEdit#lineEditCmdBeforeStart,
+#lineEditCmdAfterStop,
+#lineEditSshHost,
+#lineEditSshPort,
+#lineEditSshUser,
+#lineEditSshPwd,
+#lineEditKafkaFilter
+{
+    border:1px solid #8f8f91;
+    border-radius:4px;
+    margin-left:5px;
+    margin-right:5px;
+    padding-left:10px;
+    padding-right:10px;
+    height:25px;
+    width:380px;
+}
+.QTextEdit#textEditManual {
+    border:1px solid #8f8f91;
+    border-radius:1px;
+    margin-left:5px;
+    margin-right:5px;
+    width:100px;
+}
