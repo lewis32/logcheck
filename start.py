@@ -39,15 +39,16 @@ class SerialThread(QThread):
     terminal = pyqtSignal(object)
 
     def run(self):
-        if not dict_['serial_cur_com']:
-            return
-
         try:
-            self.serial = TVSerial(port=dict_['serial_cur_com'], baudrate=115200, timeout=5)
+            if not dict_['serial_cur_com']:
+                return
+
+            self.serial = TVSerial(
+                port=dict_['serial_cur_com'], baudrate=115200, timeout=5)
             self.serial.sendComand('\n\n')
             self.sleep(1)
-            # self.serial.sendComand(config.start_cmd)
-            self.serial.sendComand(config.get(dict_['serial_cur_cmd'], 'start_cmd'))
+            self.serial.sendComand(
+                config.get(dict_['serial_cur_cmd'], 'start_cmd'))
             self.serial.sendComand('\n\n')
             self.sleep(1)
 
@@ -86,17 +87,6 @@ class KafkaThread(QThread):
             if not dict_['kafka_cur_topic']:
                 return
 
-            # kafka_server = {
-            #     'server': dict_['kafka_cur_server'],
-            #     'group_id': config.kafka_group_id
-            # }
-            # ssh_config = {
-            #     'host': config.ssh_host,
-            #     'port': config.ssh_port,
-            #     'user': config.ssh_user,
-            #     'pwd': config.ssh_pwd
-            # } if config.ssh_enable else None
-
             kafka_server = {
                 'server': dict_['kafka_cur_server'],
                 'group_id': config.get(dict_['kafka_cur_alias'], 'group_id')
@@ -106,7 +96,8 @@ class KafkaThread(QThread):
                 'port': config.get(dict_['kafka_cur_alias'], 'ssh_port'),
                 'user': config.get(dict_['kafka_cur_alias'], 'ssh_user'),
                 'pwd': config.get(dict_['kafka_cur_alias'], 'ssh_pwd')
-            } if config.getboolean(dict_['kafka_cur_alias'], 'ssh_enable') else None
+            } if config.getboolean(
+                dict_['kafka_cur_alias'], 'ssh_enable') else None
 
             kafka = Kafka(kafka_config=kafka_server, ssh_config=ssh_config)
             kafka.init_kafka()
@@ -144,7 +135,6 @@ class LogCheckUI(TabWidget):
     """
     UI主线程
     """
-
     def __init__(self):
         """
         初始化整体UI
@@ -433,43 +423,54 @@ class LogCheckUI(TabWidget):
 
         self.mainLayout.addLayout(self.hboxLayoutModeSelectHeader)
         self.mainLayout.addWidget(self.groupBoxSerialHeader)
-        # self.mainLayout.addLayout(self.hboxLayoutSerialHeader)
         self.mainLayout.addLayout(self.hboxLayoutKafkaHeader)
         self.mainLayout.addWidget(self.groupBoxManualHeader)
         self.mainLayout.addLayout(self.hboxLayoutBody)
         self.tabMainUI.setLayout(self.mainLayout)
 
     def loadConfig(self):
-        # if config.mode == 'serial':
-        if config.get('DEFAULT', 'mode') == 'serial':
-            self.radioBtnSerialMode.setChecked(True)
-        # if config.mode == 'kafka':
-        if config.get('DEFAULT', 'mode') == 'kafka':
-            self.radioBtnKafkaMode.setChecked(True)
-        # if config.mode == 'manual':
-        if config.get('DEFAULT', 'mode') == 'manual':
-            self.radioBtnManualMode.setChecked(True)
+        try:
+            if config.get('DEFAULT', 'mode') == 'serial':
+                self.radioBtnSerialMode.setChecked(True)
+            if config.get('DEFAULT', 'mode') == 'kafka':
+                self.radioBtnKafkaMode.setChecked(True)
+            if config.get('DEFAULT', 'mode') == 'manual':
+                self.radioBtnManualMode.setChecked(True)
 
-        dict_['kafka_cur_alias'] = config.get('DEFAULT', 'kafka')
-        dict_['kafka_cur_server'] = config.get(dict_['kafka_cur_alias'], 'server')
-        dict_['kafka_cur_topic'] = config.get(dict_['kafka_cur_alias'], 'topic')
+            dict_['kafka_cur_alias'] = \
+                config.get('DEFAULT', 'kafka')
+            dict_['kafka_cur_server'] = \
+                config.get(dict_['kafka_cur_alias'], 'server')
+            dict_['kafka_cur_topic'] = \
+                config.get(dict_['kafka_cur_alias'], 'topic')
 
-        self.comboBoxKafkaCluster.addItem(dict_['kafka_cur_alias'])
-        self.comboBoxKafkaTopic.addItem(dict_['kafka_cur_topic'])
-        self.lineEditSshHost.setText(config.get(dict_['kafka_cur_alias'], 'ssh_host'))
-        self.lineEditSshPort.setText(config.get(dict_['kafka_cur_alias'], 'ssh_port'))
-        self.lineEditSshUser.setText(config.get(dict_['kafka_cur_alias'], 'ssh_user'))
-        self.lineEditSshPwd.setText(config.get(dict_['kafka_cur_alias'], 'ssh_pwd'))
-        self.groupBoxSshHeader.setEnabled(True if config.getboolean(dict_['kafka_cur_alias'], 'ssh_enable') else False)
-        self.checkBoxKafkaSshEnable.setCheckState(
-            2 if config.getboolean(dict_['kafka_cur_alias'], 'ssh_enable') else 0)
-        self.lineEditKafkaFilter.setText(config.get(dict_['kafka_cur_alias'], 'filter'))
+            self.comboBoxKafkaCluster.addItem(dict_['kafka_cur_alias'])
+            self.comboBoxKafkaTopic.addItem(dict_['kafka_cur_topic'])
+            self.lineEditSshHost.setText(
+                config.get(dict_['kafka_cur_alias'], 'ssh_host'))
+            self.lineEditSshPort.setText(
+                config.get(dict_['kafka_cur_alias'], 'ssh_port'))
+            self.lineEditSshUser.setText(
+                config.get(dict_['kafka_cur_alias'], 'ssh_user'))
+            self.lineEditSshPwd.setText(
+                config.get(dict_['kafka_cur_alias'], 'ssh_pwd'))
+            self.groupBoxSshHeader.setEnabled(
+                True if config.getboolean(
+                    dict_['kafka_cur_alias'], 'ssh_enable') else False)
+            self.checkBoxKafkaSshEnable.setCheckState(
+                Qt.CheckState(2) if config.getboolean(
+                    dict_['kafka_cur_alias'], 'ssh_enable') else Qt.CheckState(0))
+            self.lineEditKafkaFilter.setText(
+                config.get(dict_['kafka_cur_alias'], 'filter'))
 
-        dict_['serial_cur_cmd'] = config.get('DEFAULT', 'serial')
-        dict_['serial_cur_com'] = config.get(dict_['serial_cur_cmd'], 'com')
+            dict_['serial_cur_cmd'] = config.get('DEFAULT', 'serial')
+            dict_['serial_cur_com'] = \
+                config.get(dict_['serial_cur_cmd'], 'com')
 
-        self.comboBoxSerialCom.addItem(dict_['serial_cur_com'])
-        self.comboBoxSerialCmd.addItem(dict_['serial_cur_cmd'])
+            self.comboBoxSerialCom.addItem(dict_['serial_cur_com'])
+            self.comboBoxSerialCmd.addItem(dict_['serial_cur_cmd'])
+        except Exception as e:
+            log.error(str(e))
 
     def initHintUI(self):
         """
@@ -491,8 +492,6 @@ class LogCheckUI(TabWidget):
         信号绑定槽函数
         :return: None
         """
-        # self.btnSerialRefresh.clicked.connect(
-        #     lambda: self.btnSerialRefreshClicked(self.btnSerialRefresh))
         self.btnSerialClear.clicked.connect(
             lambda: self.btnSerialClearClicked(self.btnSerialClear))
         self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
@@ -531,10 +530,6 @@ class LogCheckUI(TabWidget):
             self.comboBoxKafkaTopicSelected)
         self.kafkaThread.add.connect(self.checkResultReceived)
         self.kafkaThread.terminal.connect(self.stopSignalReceived)
-        # self.lineEditCmdBeforeStart.textChanged.connect(
-        #     lambda: self.lineEditChanged(self.lineEditCmdBeforeStart))
-        # self.lineEditCmdAfterStop.textChanged.connect(
-        #     lambda: self.lineEditChanged(self.lineEditCmdAfterStop))
         self.lineEditSshHost.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditSshHost))
         self.lineEditSshPort.textChanged.connect(
@@ -558,26 +553,6 @@ class LogCheckUI(TabWidget):
         #     lambda: self.stopSignalReceived(self.serialThread))
         self.serialThread.terminal.connect(self.stopSignalReceived)
 
-    # def btnSerialRefreshClicked(self, btn):
-    #     """
-    #     点击刷新按钮触发
-    #     :param btn: object
-    #     :return: None
-    #     """
-    #     self.comboBoxSerialCom.clear()
-    #     try:
-    #         portList = getPortList()
-    #     except Exception as e:
-    #         log.error("Error occurs while get port list: " + str(e))
-    #         QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
-    #     else:
-    #         if portList:
-    #             for i in portList:
-    #                 try:
-    #                     self.comboBoxSerialCom.addItem(i[0])
-    #                 except Exception as e:
-    #                     log.error(str(e))
-
     def btnSerialClearClicked(self, btn):
         """
         点击清空按钮触发
@@ -598,8 +573,8 @@ class LogCheckUI(TabWidget):
         try:
             if not dict_['serial_cur_com']:
                 log.error("未选择串口端口")
-                QMessageBox.information(self, '提示', '请先选择端口！',
-                    QMessageBox.Ok)
+                QMessageBox.information(
+                    self, '提示', '请先选择端口！', QMessageBox.Ok)
                 return
 
             self.row = 0
@@ -609,9 +584,6 @@ class LogCheckUI(TabWidget):
             self.serialThread.start()
 
             self.comboBoxSerialCom.setEnabled(False)
-            # self.btnSerialRefresh.setEnabled(False)
-            # self.lineEditCmdBeforeStart.setEnabled(False)
-            # self.lineEditCmdAfterStop.setEnabled(False)
             self.btnSerialStart.setEnabled(False)
             self.btnSerialStop.setEnabled(False)
 
@@ -653,9 +625,6 @@ class LogCheckUI(TabWidget):
             self.serialThread.serial.close()
 
             self.comboBoxSerialCom.setEnabled(True)
-            # self.btnSerialRefresh.setEnabled(True)
-            # self.lineEditCmdBeforeStart.setEnabled(True)
-            # self.lineEditCmdAfterStop.setEnabled(True)
             self.btnSerialStart.setEnabled(True)
             self.btnSerialStop.setEnabled(False)
             dict_['serial_start_flag'] = False
@@ -686,9 +655,9 @@ class LogCheckUI(TabWidget):
         """
         try:
             if not self.comboBoxKafkaTopic.currentText():
-                log.error('未选择Topic')
-                QMessageBox.information(self, '提示', '请先选择Topic！',
-                                        QMessageBox.Ok)
+                log.info('未选择Topic')
+                QMessageBox.information(
+                    self, '提示', '请先选择Topic！', QMessageBox.Ok)
                 return
 
             self.row = 0
@@ -696,7 +665,6 @@ class LogCheckUI(TabWidget):
             self.tableMid.clearContents()
             self.tableRight.clearContents()
 
-            # if config.ssh_enable:
             if config.get(dict_['kafka_cur_alias'], 'ssh_enable'):
                 self.groupBoxSshHeader.setEnabled(False)
             self.comboBoxKafkaCluster.setEnabled(False)
@@ -741,8 +709,8 @@ class LogCheckUI(TabWidget):
         try:
             data_tmp = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
             ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
-            data = self.textEditManual.toPlainText() if self.textEditManual.toPlainText().strip() \
-                else data_tmp
+            data = self.textEditManual.toPlainText() \
+                if self.textEditManual.toPlainText().strip() else data_tmp
             log.info('Mock log data: ' + data)
             test = LogCheck()
             res = test.check_log(data)
@@ -791,53 +759,51 @@ class LogCheckUI(TabWidget):
         if not res:
             return
 
-        for i in res:
-            self.tableLeft.setRowCount(self.row + 1)
-            self.tableLeft.setItem(self.row, 0, QTableWidgetItem(
-                str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
-            self.tableLeft.setItem(self.row, 1, QTableWidgetItem(
-                str(i['event_code']) if i['event_code'] else 'N/A'))
-            self.tableLeft.setItem(self.row, 2, QTableWidgetItem(
-                str(i['event_alias']) if i['event_alias'] else 'N/A'))
+        try:
+            for i in res:
+                self.tableLeft.setRowCount(self.row + 1)
+                self.tableLeft.setItem(self.row, 0, QTableWidgetItem(
+                    str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
+                self.tableLeft.setItem(self.row, 1, QTableWidgetItem(
+                    str(i['event_code']) if i['event_code'] else 'N/A'))
+                self.tableLeft.setItem(self.row, 2, QTableWidgetItem(
+                    str(i['event_alias']) if i['event_alias'] else 'N/A'))
 
-            if i['result'] == -1:
-                self.tableLeft.setItem(self.row, 3, QTableWidgetItem('N/A'))
-                # 灰色表示从配置文件中找不到对应的事件
-                self.tableLeft.item(self.row, 3).setBackground(
-                    QBrush(QColor(211, 211, 211)))
-                self.setToolTip('配置文件中没有对应的eventcode！')
-            if i['result'] == 0:
-                self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Pass'))
-                # 绿色表示全部字段均正常
-                self.tableLeft.item(self.row, 3).setBackground(
-                    QBrush(QColor(0, 128, 0)))
-                # fontLight = QFont()
-                # fontLight.setStyle()
-                # self.tableLeft.item(self.row, 2).setFont(QFont(QFont="White"))
-                self.setToolTip('所有字段均正常，Ctrl+C可复制内容')
-            if i['result'] == 1:
-                self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Fail'))
-                # 红色表示部分字段缺失或值错误
-                self.tableLeft.item(self.row, 3).setBackground(
-                    QBrush(QColor(255, 0, 0)))
-                self.setToolTip('部分字段缺失或错误，Ctrl+C可复制内容')
-            if i['result'] == 2:
-                self.tableLeft.setItem(self.row, 3,
-                                       QTableWidgetItem('Warn'))
-                # 黄色表示包含未定义字段
-                self.tableLeft.item(self.row, 3).setBackground(
-                    QBrush(QColor(255, 255, 0)))
-                self.setToolTip('部分字段不在定义内，Ctrl+C可复制内容')
+                if i['result'] == -1:
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('N/A'))
+                    # 灰色表示从配置文件中找不到对应的事件
+                    self.tableLeft.item(self.row, 3).setBackground(
+                        QBrush(QColor(211, 211, 211)))
+                    self.setToolTip('配置文件中没有对应的eventcode！')
+                if i['result'] == 0:
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Pass'))
+                    # 绿色表示全部字段均正常
+                    self.tableLeft.item(self.row, 3).setBackground(
+                        QBrush(QColor(0, 128, 0)))
+                    self.setToolTip('所有字段均正常，Ctrl+C可复制内容')
+                if i['result'] == 1:
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Fail'))
+                    # 红色表示部分字段缺失或值错误
+                    self.tableLeft.item(self.row, 3).setBackground(
+                        QBrush(QColor(255, 0, 0)))
+                    self.setToolTip('部分字段缺失或错误，Ctrl+C可复制内容')
+                if i['result'] == 2:
+                    self.tableLeft.setItem(self.row, 3,
+                                           QTableWidgetItem('Warn'))
+                    # 黄色表示包含未定义字段
+                    self.tableLeft.item(self.row, 3).setBackground(
+                        QBrush(QColor(255, 255, 0)))
+                    self.setToolTip('部分字段不在定义内，Ctrl+C可复制内容')
 
-            # self.table1.setItem(self.row, 2, QTableWidgetItem(
-            #     'Fail' if i['result'] else 'Pass'))
-            self.tableLeft.setItem(self.row, 4, QTableWidgetItem(
-                json.dumps(i['data'])))
-            self.tableLeft.setItem(self.row, 5, QTableWidgetItem(
-                json.dumps(i)))
+                self.tableLeft.setItem(self.row, 4, QTableWidgetItem(
+                    json.dumps(i['data'])))
+                self.tableLeft.setItem(self.row, 5, QTableWidgetItem(
+                    json.dumps(i)))
 
-            cnt += 1
-            self.row += 1
+                cnt += 1
+                self.row += 1
+        except Exception as e:
+            log.error(sr(e))
 
     def comboBoxSerialComSelected(self, i):
         """
@@ -845,13 +811,15 @@ class LogCheckUI(TabWidget):
         :param i: MyComboBox
         :return: None
         """
-        log.info("Text in combobox: " + self.comboBoxSerialCom.currentText())
-
-        if self.comboBoxSerialCom.currentText():
-            dict_['serial_cur_com'] = re.findall(
-                r'COM[0-9]+', self.comboBoxSerialCom.currentText())[0]
-            if dict_['serial_cur_cmd']:
-                config.set(dict_['serial_cur_cmd'], 'com', dict_['serial_cur_com'])
+        try:
+            if self.comboBoxSerialCom.currentText():
+                dict_['serial_cur_com'] = re.findall(
+                    r'COM[0-9]+', self.comboBoxSerialCom.currentText())[0]
+                if dict_['serial_cur_cmd']:
+                    config.set(dict_['serial_cur_cmd'],
+                               'com', dict_['serial_cur_com'])
+        except Exception as e:
+            log.error(str(e))
 
     def comboBoxSerialComClicked(self):
         """
@@ -874,9 +842,12 @@ class LogCheckUI(TabWidget):
         :param i: MyComboBox
         :return: None
         """
-        if self.comboBoxSerialCmd.currentText():
-            dict_['serial_cur_cmd'] = self.comboBoxSerialCmd.currentText()
-            config.set('DEFAULT', 'serial', dict_['serial_cur_cmd'])
+        try:
+            if self.comboBoxSerialCmd.currentText():
+                dict_['serial_cur_cmd'] = self.comboBoxSerialCmd.currentText()
+                config.set('DEFAULT', 'serial', dict_['serial_cur_cmd'])
+        except Exception as e:
+            log.error(str(e))
 
     def comboBoxSerialCmdClicked(self):
         """
@@ -956,9 +927,10 @@ class LogCheckUI(TabWidget):
         """
         try:
             dict_['kafka_cur_alias'] = self.comboBoxKafkaCluster.currentText()
-            config.set('DEFAULT', 'kafka', dict_['kafka_cur_alias'])
             dict_['kafka_cur_server'] = config.get(
                 dict_['kafka_cur_alias'], 'server')
+            config.set('DEFAULT', 'kafka', dict_['kafka_cur_alias'])
+
             self.lineEditSshHost.setText(
                 config.get(dict_['kafka_cur_alias'], 'ssh_host'))
             self.lineEditSshPort.setText(
@@ -971,8 +943,7 @@ class LogCheckUI(TabWidget):
                 True if config.getboolean(dict_['kafka_cur_alias'],
                                           'ssh_enable') else False)
             self.checkBoxKafkaSshEnable.setCheckState(
-                2 if config.getboolean(dict_['kafka_cur_alias'],
-                                       'ssh_enable') else 0)
+                Qt.CheckState(2) if config.getboolean(dict_['kafka_cur_alias'], 'ssh_enable') else Qt.CheckState(0))
             self.lineEditKafkaFilter.setText(
                 config.get(dict_['kafka_cur_alias'], 'filter'))
         except Exception as e:
@@ -984,24 +955,19 @@ class LogCheckUI(TabWidget):
         :param i: object
         :return: None
         """
-        if i is self.lineEditSshHost:
-            # config.ssh_host = i.text()
-            config.set(dict_['kafka_cur_alias'], 'ssh_host', i.text())
-        if i is self.lineEditSshPort:
-            # config.ssh_port = i.text()
-            config.set(dict_['kafka_cur_alias'], 'ssh_port', i.text())
-        if i is self.lineEditSshUser:
-            # config.ssh_user = i.text()
-            config.set(dict_['kafka_cur_alias'], 'ssh_user', i.text())
-        if i is self.lineEditSshPwd:
-            # config.ssh_pwd = i.text()
-            config.set(dict_['kafka_cur_alias'], 'ssh_pwd', i.text())
-        # if i is self.lineEditKafkaCluster:
-        #     CONFIG.kafka_server = i.text()
-        if i is self.lineEditKafkaFilter:
-            # config.kafka_filter = i.text()
-            config.set(dict_['kafka_cur_alias'], 'filter', i.text())
-        # LoadConfig.set_config(config)
+        try:
+            if i is self.lineEditSshHost:
+                config.set(dict_['kafka_cur_alias'], 'ssh_host', i.text())
+            if i is self.lineEditSshPort:
+                config.set(dict_['kafka_cur_alias'], 'ssh_port', i.text())
+            if i is self.lineEditSshUser:
+                config.set(dict_['kafka_cur_alias'], 'ssh_user', i.text())
+            if i is self.lineEditSshPwd:
+                config.set(dict_['kafka_cur_alias'], 'ssh_pwd', i.text())
+            if i is self.lineEditKafkaFilter:
+                config.set(dict_['kafka_cur_alias'], 'filter', i.text())
+        except Exception as e:
+            log.error(str(e))
 
     def radioBtnModeToggled(self, i):
         """
@@ -1009,32 +975,29 @@ class LogCheckUI(TabWidget):
         :param i: object
         :return: None
         """
-        if i.text() == '串口模式':
-            self.groupBoxSerialHeader.setVisible(True)
-            # self.groupBoxSerialCmdHeader.setVisible(True)
-            self.groupBoxSshHeader.setVisible(False)
-            self.groupBoxKafkaHeader.setVisible(False)
-            self.groupBoxManualHeader.setVisible(False)
-            # config.mode = 'serial'
-            config.set('DEFAULT', 'mode', 'serial')
+        try:
+            if i.text() == '串口模式':
+                self.groupBoxSerialHeader.setVisible(True)
+                self.groupBoxSshHeader.setVisible(False)
+                self.groupBoxKafkaHeader.setVisible(False)
+                self.groupBoxManualHeader.setVisible(False)
+                config.set('DEFAULT', 'mode', 'serial')
 
-        if i.text() == 'Kafka模式':
-            self.groupBoxSerialHeader.setVisible(False)
-            # self.groupBoxSerialCmdHeader.setVisible(False)
-            self.groupBoxSshHeader.setVisible(True)
-            self.groupBoxKafkaHeader.setVisible(True)
-            self.groupBoxManualHeader.setVisible(False)
-            # config.mode = 'kafka'
-            config.set('DEFAULT', 'mode', 'kafka')
+            if i.text() == 'Kafka模式':
+                self.groupBoxSerialHeader.setVisible(False)
+                self.groupBoxSshHeader.setVisible(True)
+                self.groupBoxKafkaHeader.setVisible(True)
+                self.groupBoxManualHeader.setVisible(False)
+                config.set('DEFAULT', 'mode', 'kafka')
 
-        if i.text() == '手动模式':
-            self.groupBoxSerialHeader.setVisible(False)
-            # self.groupBoxSerialCmdHeader.setVisible(False)
-            self.groupBoxSshHeader.setVisible(False)
-            self.groupBoxKafkaHeader.setVisible(False)
-            self.groupBoxManualHeader.setVisible(True)
-            # config.mode = 'manual'
-            config.set('DEFAULT', 'mode', 'manual')
+            if i.text() == '手动模式':
+                self.groupBoxSerialHeader.setVisible(False)
+                self.groupBoxSshHeader.setVisible(False)
+                self.groupBoxKafkaHeader.setVisible(False)
+                self.groupBoxManualHeader.setVisible(True)
+                config.set('DEFAULT', 'mode', 'manual')
+        except Exception as e:
+            log.error(str(e))
 
     def stopSignalReceived(self, text):
         """
@@ -1042,15 +1005,19 @@ class LogCheckUI(TabWidget):
         :param text: str
         :return:
         """
-        self.comboBoxSerialCom.setEnabled(True)
-        # self.btnSerialRefresh.setEnabled(True)
-        # self.lineEditCmdBeforeStart.setEnabled(True)
-        # self.lineEditCmdAfterStop.setEnabled(True)
-        self.btnSerialStart.setEnabled(True)
-        self.btnSerialStop.setEnabled(False)
-        dict_['serial_start_flag'] = False
-        log.info(text)
-        QMessageBox.information(self, '提示', text, QMessageBox.Ok)
+        try:
+            self.comboBoxSerialCom.setEnabled(True)
+            # self.btnSerialRefresh.setEnabled(True)
+            # self.lineEditCmdBeforeStart.setEnabled(True)
+            # self.lineEditCmdAfterStop.setEnabled(True)
+            self.btnSerialStart.setEnabled(True)
+            self.btnSerialStop.setEnabled(False)
+            dict_['serial_start_flag'] = False
+
+            log.info(text)
+            QMessageBox.information(self, '提示', text, QMessageBox.Ok)
+        except Exception as e:
+            log.error(str(e))
 
     def stopKafkaSignalReceived(self, text):
         """
@@ -1058,18 +1025,21 @@ class LogCheckUI(TabWidget):
         :param text: str
         :return:
         """
-        # if config.ssh_enable:
-        if config.get(dict_['kafka_cur_alias'], 'ssh_enable'):
-            self.groupBoxSshHeader.setEnabled(True)
-        self.comboBoxKafkaCluster.setEnabled(True)
-        self.lineEditKafkaFilter.setEnabled(True)
-        self.comboBoxKafkaTopic.setEnabled(True)
-        self.checkBoxKafkaSshEnable.setEnabled(True)
-        self.btnKafkaStart.setEnabled(True)
-        self.btnKafkaStop.setEnabled(False)
-        dict_['kafka_start_flag'] = False
-        log.info(text)
-        QMessageBox.information(self, '提示', text, QMessageBox.Ok)
+        try:
+            if config.get(dict_['kafka_cur_alias'], 'ssh_enable'):
+                self.groupBoxSshHeader.setEnabled(True)
+            self.comboBoxKafkaCluster.setEnabled(True)
+            self.lineEditKafkaFilter.setEnabled(True)
+            self.comboBoxKafkaTopic.setEnabled(True)
+            self.checkBoxKafkaSshEnable.setEnabled(True)
+            self.btnKafkaStart.setEnabled(True)
+            self.btnKafkaStop.setEnabled(False)
+            dict_['kafka_start_flag'] = False
+
+            log.info(text)
+            QMessageBox.information(self, '提示', text, QMessageBox.Ok)
+        except Exception as e:
+            log.error(str(e))
 
     def tableLeftCellClicked(self, row):
         """
@@ -1125,7 +1095,6 @@ class LogCheckUI(TabWidget):
                 # QStandardItem()
                 self.tableMid.setSortingEnabled(True)
                 self.tableMid.sortByColumn(0, Qt.AscendingOrder)
-
         except Exception as e:
             log.error(str(e))
 
@@ -1135,18 +1104,21 @@ class LogCheckUI(TabWidget):
         :param row: int
         :return: None
         """
-        self.tableRight.clearContents()
-        tmp = self.tableMid.item(row, 2).text()
-        pattern = r'^{.*}$'
-        if re.match(pattern, tmp):
-            extra_data = json.loads(tmp)
-            n = 0
-            for k in extra_data:
-                self.tableRight.setRowCount(n + 1)
-                self.tableRight.setItem(n, 0, QTableWidgetItem(str(k)))
-                self.tableRight.setItem(n, 1, QTableWidgetItem())
-                self.tableRight.setItem(n, 2, QTableWidgetItem(str(extra_data[k])))
-                n += 1
+        try:
+            self.tableRight.clearContents()
+            tmp = self.tableMid.item(row, 2).text()
+            pattern = r'^{.*}$'
+            if re.match(pattern, tmp):
+                extra_data = json.loads(tmp)
+                n = 0
+                for k in extra_data:
+                    self.tableRight.setRowCount(n + 1)
+                    self.tableRight.setItem(n, 0, QTableWidgetItem(str(k)))
+                    self.tableRight.setItem(n, 1, QTableWidgetItem())
+                    self.tableRight.setItem(n, 2, QTableWidgetItem(str(extra_data[k])))
+                    n += 1
+        except Exception as e:
+            log.error(str(e))
 
 
 if __name__ == "__main__":
