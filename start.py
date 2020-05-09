@@ -24,6 +24,7 @@ dict_ = {
     'kafka_cur_alias': '',
     'kafka_cur_server': '',
     'kafka_cur_topic': '',
+    'kafka_cur_filter': '',
     'kafka_start_flag': False,
     'serial_cur_com': '',
     'serial_cur_cmd': '',
@@ -82,6 +83,14 @@ class KafkaThread(QThread):
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
 
+    def __init__(self):
+        super(KafkaThread, self).__init__()
+        self.working = True
+
+    def __del__(self):
+        self.working = False
+        self.wait()
+
     def run(self):
         try:
             if not dict_['kafka_cur_topic']:
@@ -99,24 +108,25 @@ class KafkaThread(QThread):
             } if config.getboolean(
                 dict_['kafka_cur_alias'], 'ssh_enable') else None
 
-            kafka = Kafka(kafka_config=kafka_server, ssh_config=ssh_config)
-            kafka.init_kafka()
-            kafka.subscribe_kafka(topics=[dict_['kafka_cur_topic']])
-            dict_['kafka_start_flag'] = True
+            self.kafka = Kafka(kafka_config=kafka_server, ssh_config=ssh_config)
+            self.kafka.init_kafka()
+            self.kafka.subscribe_kafka(topics=[dict_['kafka_cur_topic']])
+            # dict_['kafka_start_flag'] = True
             self.lc = LogCheck()
-            while True:
-                if not dict_['kafka_start_flag']:
-                    self.terminal.emit('正常结束！')
-                    break
-                else:
-                    block = kafka.poll_kafka()
-                    if block and block.strip():
-                        log.info('Original log data: ' + block)
-                        res = self.lc.check_log(block)
-                        if res:
-                            self.add.emit(res)
-                        log.info('Check result: ' + str(res))
-                    time.sleep(5)
+            log.info(self.currentThreadId())
+            while self.working:
+                # if not dict_['kafka_start_flag']:
+                #     self.terminal.emit('正常结束！')
+                #     break
+                # else:
+                block = self.kafka.poll_kafka()
+                if block and block.strip():
+                    log.info('Original log data: ' + block)
+                    res = self.lc.check_log(block, dict_['kafka_cur_filter'])
+                    if res:
+                        self.add.emit(res)
+                    log.info('Check result: ' + str(res))
+                time.sleep(5)
         except Exception as e:
             self.terminal.emit(str(e))
 
@@ -145,7 +155,7 @@ class LogCheckUI(TabWidget):
         self.kafkaThread = KafkaThread()
         self.row = 0
 
-        self.setWindowTitle('日志验证工具（v1.3）')
+        self.setWindowTitle('日志验证工具 v1.3')
         self.resize(1200, 700)
         self.setFixedSize(self.width(), self.height())
 
@@ -443,8 +453,10 @@ class LogCheckUI(TabWidget):
                 config.get(dict_['kafka_cur_alias'], 'server')
             dict_['kafka_cur_topic'] = \
                 config.get(dict_['kafka_cur_alias'], 'topic')
+            dict_['kafka_cur_filter'] = \
+                config.get(dict_['kafka_cur_alias'], 'filter')
 
-            self.comboBoxKafkaCluster.addItem(dict_['kafka_cur_alias'])
+            self.comboBoxKafkaCluster.addItem(re.match(r'kafka_(.+)', dict_['kafka_cur_alias']).group(1))
             self.comboBoxKafkaTopic.addItem(dict_['kafka_cur_topic'])
             self.lineEditSshHost.setText(
                 config.get(dict_['kafka_cur_alias'], 'ssh_host'))
@@ -468,7 +480,7 @@ class LogCheckUI(TabWidget):
                 config.get(dict_['serial_cur_cmd'], 'com')
 
             self.comboBoxSerialCom.addItem(dict_['serial_cur_com'])
-            self.comboBoxSerialCmd.addItem(dict_['serial_cur_cmd'])
+            self.comboBoxSerialCmd.addItem(re.match(r'serial_(.+)', dict_['serial_cur_cmd']).group(1))
         except Exception as e:
             log.error(str(e))
 
@@ -480,15 +492,22 @@ class LogCheckUI(TabWidget):
         self.hintLayout = QVBoxLayout()
         self.hintLayout.setContentsMargins(20, 20, 20, 20)
 
-        self.groupBoxHint1 = QGroupBox('提示1')
-        self.groupBoxHint2 = QGroupBox('提示2')
+        readme_path = os.path.join(path, 'README.txt')
+        self.textEditReadme = QTextEdit()
+        self.textEditReadme.setObjectName('textEditReadme')
+        self.textEditReadme.setReadOnly(True)
+        try:
+            with open(readme_path, encoding='utf-8') as f:
+                self.textEditReadme.setPlainText(f.read())
+        except Exception as e:
+            log.error(str(e))
 
-        self.hintLayout.addWidget(self.groupBoxHint1)
-        self.hintLayout.addWidget(self.groupBoxHint2)
+        self.hintLayout.addWidget(self.textEditReadme)
         self.tabHintUI.setLayout(self.hintLayout)
 
     def bind(self):
         """
+        信号绑定槽函数
         信号绑定槽函数
         :return: None
         """
@@ -673,8 +692,8 @@ class LogCheckUI(TabWidget):
             self.checkBoxKafkaSshEnable.setEnabled(False)
             self.btnKafkaStart.setEnabled(False)
             self.btnKafkaStop.setEnabled(True)
+            self.kafkaThread.working = True
             self.kafkaThread.start()
-            dict_['kafka_start_flag'] = True
         except Exception as e:
             log.error(str(e))
 
@@ -685,9 +704,8 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
-            # self.kafka.stop_kafka()
-            self.kafka.stop_kafka()
-            # if config.ssh_enable:
+            self.kafkaThread.kafka.stop_kafka()
+            self.kafkaThread.__del__()
             if config.get(dict_['kafka_cur_alias'], 'ssh_enable'):
                 self.groupBoxSshHeader.setEnabled(True)
             self.comboBoxKafkaCluster.setEnabled(True)
@@ -696,7 +714,7 @@ class LogCheckUI(TabWidget):
             self.checkBoxKafkaSshEnable.setEnabled(True)
             self.btnKafkaStart.setEnabled(True)
             self.btnKafkaStop.setEnabled(False)
-            dict_['kafka_start_flag'] = False
+            # dict_['kafka_start_flag'] = False
         except Exception as e:
             log.error(str(e))
 
@@ -741,12 +759,10 @@ class LogCheckUI(TabWidget):
         """
         if not self.checkBoxKafkaSshEnable.checkState():
             self.groupBoxSshHeader.setEnabled(False)
-            # config.ssh_enable = False
             config.set(dict_['kafka_cur_alias'], 'ssh_enable', 'false')
         else:
             self.groupBoxSshHeader.setEnabled(True)
-            # config.ssh_enable = True
-            config.set(dict_['kafka_cur_alias'], 'ssh_enable', 'false')
+            config.set(dict_['kafka_cur_alias'], 'ssh_enable', 'true')
 
     def checkResultReceived(self, res):
         """
@@ -812,12 +828,13 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
-            if self.comboBoxSerialCom.currentText():
-                dict_['serial_cur_com'] = re.findall(
-                    r'COM[0-9]+', self.comboBoxSerialCom.currentText())[0]
-                if dict_['serial_cur_cmd']:
-                    config.set(dict_['serial_cur_cmd'],
-                               'com', dict_['serial_cur_com'])
+            if not self.comboBoxSerialCom.currentText():
+                return
+            dict_['serial_cur_com'] = re.findall(
+                r'COM[0-9]+', self.comboBoxSerialCom.currentText())[0]
+            if dict_['serial_cur_cmd']:
+                config.set(dict_['serial_cur_cmd'],
+                           'com', dict_['serial_cur_com'])
         except Exception as e:
             log.error(str(e))
 
@@ -844,7 +861,7 @@ class LogCheckUI(TabWidget):
         """
         try:
             if self.comboBoxSerialCmd.currentText():
-                dict_['serial_cur_cmd'] = self.comboBoxSerialCmd.currentText()
+                dict_['serial_cur_cmd'] = 'serial_' + self.comboBoxSerialCmd.currentText()
                 config.set('DEFAULT', 'serial', dict_['serial_cur_cmd'])
         except Exception as e:
             log.error(str(e))
@@ -857,8 +874,9 @@ class LogCheckUI(TabWidget):
         try:
             self.comboBoxSerialCmd.clear()
             for i in config.sections():
-                if re.match(r'^serial', i):
-                    self.comboBoxSerialCmd.addItem(i)
+                match = re.match(r'^serial_(.+)', i)
+                if match:
+                    self.comboBoxSerialCmd.addItem(match.group(1))
         except Exception as e:
             log.error(str(e))
             QMessageBox.information(self, '提示', str(e), QMessageBox.Ok)
@@ -891,7 +909,7 @@ class LogCheckUI(TabWidget):
             if self.kafka_topics:
                 self.kafka_topics.sort()
                 for i in self.kafka_topics:
-                    if re.match(r'^json.*', i):
+                    if re.match(r'^json\..+', i):
                         self.comboBoxKafkaTopic.addItem(str(i))
         except Exception as e:
             log.error(str(e))
@@ -903,8 +921,10 @@ class LogCheckUI(TabWidget):
         :param i: object
         :return: None
         """
-        self.comboBoxKafkaTopic.setCurrentText('test')
-        dict_['kafka_cur_topic'] = 'test'
+        # self.comboBoxKafkaTopic.setCurrentText('test')
+        # dict_['kafka_cur_topic'] = 'test'
+        dict_['kafka_cur_topic'] = self.comboBoxKafkaTopic.currentText()
+        config.set(dict_['kafka_cur_alias'], 'topic', dict_['kafka_cur_topic'])
 
     def comboBoxKafkaClusterClicked(self):
         """
@@ -914,8 +934,9 @@ class LogCheckUI(TabWidget):
         self.comboBoxKafkaCluster.clear()
         try:
             for i in config.sections():
-                if re.match(r'^kafka', i):
-                    self.comboBoxKafkaCluster.addItem(i)
+                match = re.match(r'^kafka_(.+)', i)
+                if match:
+                    self.comboBoxKafkaCluster.addItem(match.group(1))
         except Exception as e:
             log.error(str(e))
 
@@ -926,7 +947,9 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
-            dict_['kafka_cur_alias'] = self.comboBoxKafkaCluster.currentText()
+            if not self.comboBoxKafkaCluster.currentText():
+                return
+            dict_['kafka_cur_alias'] = 'kafka_' + self.comboBoxKafkaCluster.currentText()
             dict_['kafka_cur_server'] = config.get(
                 dict_['kafka_cur_alias'], 'server')
             config.set('DEFAULT', 'kafka', dict_['kafka_cur_alias'])
@@ -946,6 +969,9 @@ class LogCheckUI(TabWidget):
                 Qt.CheckState(2) if config.getboolean(dict_['kafka_cur_alias'], 'ssh_enable') else Qt.CheckState(0))
             self.lineEditKafkaFilter.setText(
                 config.get(dict_['kafka_cur_alias'], 'filter'))
+            self.comboBoxKafkaTopic.clear()
+            self.comboBoxKafkaTopic.addItem(config.get(
+                dict_['kafka_cur_alias'], 'topic'))
         except Exception as e:
             log.error(str(e))
 
@@ -965,6 +991,7 @@ class LogCheckUI(TabWidget):
             if i is self.lineEditSshPwd:
                 config.set(dict_['kafka_cur_alias'], 'ssh_pwd', i.text())
             if i is self.lineEditKafkaFilter:
+                dict_['kafka_cur_filter'] = i.text()
                 config.set(dict_['kafka_cur_alias'], 'filter', i.text())
         except Exception as e:
             log.error(str(e))
@@ -1034,7 +1061,8 @@ class LogCheckUI(TabWidget):
             self.checkBoxKafkaSshEnable.setEnabled(True)
             self.btnKafkaStart.setEnabled(True)
             self.btnKafkaStop.setEnabled(False)
-            dict_['kafka_start_flag'] = False
+            # dict_['kafka_start_flag'] = False
+            self.kafkaThread.__del__()
 
             log.info(text)
             QMessageBox.information(self, '提示', text, QMessageBox.Ok)
@@ -1125,8 +1153,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     main = LogCheckUI()
     qss_path = os.path.join(path, 'style.qss')
-    with open(qss_path, 'r') as f:
-        qssStyle = f.read()
+    with open(qss_path, 'r') as f_:
+        qssStyle = f_.read()
     main.setStyleSheet(qssStyle)
     main.show()
     sys.exit(app.exec_())

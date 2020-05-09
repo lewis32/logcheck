@@ -83,3 +83,8 @@
     margin-right:5px;
     width:100px;
 }
+.QTextEdit#textEditReadme {
+    border:1px solid #8f8f91;
+    border-radius:1px;
+    padding:10px;
+}

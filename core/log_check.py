@@ -216,13 +216,13 @@ class LogCheck:
 
     def _to_lower_key(self, key):
         """
-        复制小写字符，不影响原数据
+        转化小写，不影响原数据
         :param key: str
         :return: str
         """
         return key.lower()
 
-    def check_log(self, data=None):
+    def check_log(self, data=None, filter=None):
         """
         对比日志
         :param data: str
@@ -247,7 +247,7 @@ class LogCheck:
                 except json.decoder.JSONDecodeError as e:
                     log.error("Error occurs while decoding JSON: " + str(e))
                 else:
-                    if "eventcode" not in data:
+                    if "eventcode" not in data or (filter and filter in data):
                         continue
                     try:
                         ret = self._compare_log(data, self.policy_all)
