@@ -25,10 +25,9 @@ dict_ = {
     'kafka_cur_server': '',
     'kafka_cur_topic': '',
     'kafka_cur_filter': '',
-    'kafka_start_flag': False,
     'serial_cur_com': '',
     'serial_cur_cmd': '',
-    'serial_start_flag': False,
+    'serial_cur_filter': ''
 }
 
 
@@ -39,11 +38,16 @@ class SerialThread(QThread):
     add = pyqtSignal(list)
     terminal = pyqtSignal(object)
 
+    def __init__(self):
+        super(SerialThread, self).__init__()
+        self.working = True
+
+    def __del__(self):
+        self.working = False
+        self.wait()
+
     def run(self):
         try:
-            if not dict_['serial_cur_com']:
-                return
-
             self.serial = TVSerial(
                 port=dict_['serial_cur_com'], baudrate=115200, timeout=5)
             self.serial.sendComand('\n\n')
@@ -56,23 +60,21 @@ class SerialThread(QThread):
             self.serial.s.flushOutput()
             self.serial.s.flushInput()
 
-            dict_['serial_start_flag'] = True
-
             self.lc = LogCheck()
-            while self.serial.isOpen():
-                if not dict_['serial_start_flag']:
-                    self.terminal.emit('正常结束！')
-                    break
-
+            while self.working:
                 block = self.serial.s.read(size=10000).decode(
                         'utf-8', errors='ignore')
                 if block and block.strip():
                     log.info('Original log data: ' + block)
-                    res = self.lc.check_log(block)
+                    log.info('Filter: ' + dict_['serial_cur_filter'])
+                    res = self.lc.check_log(block, dict_['serial_cur_filter'].strip())
                     if res:
-                        self.add.emit(res)
                         log.info('Check result: ' + str(res))
+                        self.add.emit(res)
+                self.sleep(1)
+            self.terminal.emit('串口通信正常结束！')
         except Exception as e:
+            log.error(str(e))
             self.terminal.emit(str(e))
 
 
@@ -93,9 +95,6 @@ class KafkaThread(QThread):
 
     def run(self):
         try:
-            if not dict_['kafka_cur_topic']:
-                return
-
             kafka_server = {
                 'server': dict_['kafka_cur_server'],
                 'group_id': config.get(dict_['kafka_cur_alias'], 'group_id')
@@ -111,23 +110,20 @@ class KafkaThread(QThread):
             self.kafka = Kafka(kafka_config=kafka_server, ssh_config=ssh_config)
             self.kafka.init_kafka()
             self.kafka.subscribe_kafka(topics=[dict_['kafka_cur_topic']])
-            # dict_['kafka_start_flag'] = True
             self.lc = LogCheck()
             log.info(self.currentThreadId())
             while self.working:
-                # if not dict_['kafka_start_flag']:
-                #     self.terminal.emit('正常结束！')
-                #     break
-                # else:
                 block = self.kafka.poll_kafka()
                 if block and block.strip():
-                    log.info('Original log data: ' + block)
-                    res = self.lc.check_log(block, dict_['kafka_cur_filter'])
+                    log.info('Log data: ' + block)
+                    res = self.lc.check_log(block, dict_['kafka_cur_filter'].strip())
                     if res:
+                        log.info('Log check result: ' + str(res))
                         self.add.emit(res)
-                    log.info('Check result: ' + str(res))
-                time.sleep(5)
+                self.sleep(1)
+            self.terminal.emit('Kafka通信正常结束！')
         except Exception as e:
+            log.error(str(e))
             self.terminal.emit(str(e))
 
 
@@ -186,7 +182,7 @@ class LogCheckUI(TabWidget):
         # 创建串口模式header
         self.hboxLayoutSerialHeader = QHBoxLayout()
         self.hboxLayoutModeSelectHeader = QHBoxLayout()
-        self.hboxLayoutModeSelectHeader.setContentsMargins(10, 0, 850, 8)
+        self.hboxLayoutModeSelectHeader.setContentsMargins(10, 0, 800, 10)
         self.radioBtnSerialMode = QRadioButton('串口模式')
         self.radioBtnKafkaMode = QRadioButton('Kafka模式')
         self.radioBtnManualMode = QRadioButton('手动模式')
@@ -197,62 +193,45 @@ class LogCheckUI(TabWidget):
         self.gridLayoutSerialHeader = QGridLayout()
         self.gridLayoutSerialHeader.setContentsMargins(10, 10, 300, 10)
         self.gridLayoutSerialHeader.setObjectName('hboxLayoutHeader')
-        # self.gridLayoutSerialCmdHeader = QGridLayout()
-        # self.gridLayoutSerialCmdHeader.setContentsMargins(15, 15, 15, 15)
-        # self.gridLayoutSerialCmdHeader.setObjectName('hboxLayoutHeader')
 
         self.labelSerialCom = QLabel('端口')
         self.labelSerialCom.setObjectName('labelSerialCom')
         self.comboBoxSerialCom = MyComboBox()
         self.comboBoxSerialCom.setObjectName('comboBoxSerial')
         self.comboBoxSerialCom.setCurrentIndex(-1)
+        self.labelSerialFilter = QLabel('过滤词')
+        self.labelSerialFilter.setObjectName('labelKafkaFilter')
+        self.lineEditSerialFilter = QLineEdit()
+        self.lineEditSerialFilter.setObjectName('lineEditSerialFilter')
+        self.labelSerialCmd = QLabel('执行Shell命令')
+        self.labelSerialCmd.setObjectName('labelSerialCmd')
+        self.comboBoxSerialCmd = MyComboBox()
+        self.comboBoxSerialCmd.setObjectName('comboBoxSerialCmd')
+        self.btnSerialStart = QPushButton('开始')
+        self.btnSerialStart.setObjectName('btnHeader')
+        self.btnSerialStop = QPushButton('停止')
+        self.btnSerialStop.setObjectName('btnHeader')
+        self.btnSerialStop.setEnabled(False)
         self.btnSerialClear = QPushButton('清空')
         self.btnSerialClear.setObjectName('btnHeader')
         self.btnSerialTest = QPushButton('模拟调试')
         self.btnSerialTest.setObjectName('btnHeader')
         self.btnSerialTest.setVisible(False)
 
-        self.labelSerialCmd = QLabel('执行Shell命令')
-        self.labelSerialCmd.setObjectName('labelSerialCmd')
-        self.comboBoxSerialCmd = MyComboBox()
-        self.comboBoxSerialCmd.setObjectName('comboBoxSerialCmd')
-        # self.lineEditCmdBeforeStart = QLineEdit()
-        # self.lineEditCmdBeforeStart.setObjectName('lineEditCmdBeforeStart')
-        # self.labelCmdAfterStop = QLabel('结束后执行命令')
-        # self.labelCmdAfterStop.setObjectName('labelCmdAfterStop')
-        # self.lineEditCmdAfterStop = QLineEdit()
-        # self.lineEditCmdAfterStop.setObjectName('lineEditCmdAfterStop')
-        # self.lineEditCmdBeforeStart.setText(config.start_cmd)
-        # self.lineEditCmdAfterStop.setText(config.stop_cmd)
-        # self.labelCmdAfterStop.setEnabled(False)
-        # self.lineEditCmdAfterStop.setEnabled(False)
-
-        self.btnSerialStart = QPushButton('开始')
-        self.btnSerialStart.setObjectName('btnFooter')
-        self.btnSerialStart.setFont(self.font)
-        self.btnSerialStop = QPushButton('停止')
-        self.btnSerialStop.setObjectName('btnFooter')
-        self.btnSerialStop.setFont(self.font)
-        self.btnSerialStop.setEnabled(False)
-
         self.gridLayoutSerialHeader.addWidget(self.labelSerialCom, 0, 0)
         self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCom, 0, 1)
-        # self.gridLayoutSerialCmdHeader.addWidget(self.labelCmdBeforeStart, 1, 0)
-        # self.gridLayoutSerialCmdHeader.addWidget(self.comboBoxSerialCmd, 1, 1)
-        # self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStart, 1, 2)
-        # self.gridLayoutSerialCmdHeader.addWidget(self.btnSerialStop, 1, 3)
+        self.gridLayoutSerialHeader.addWidget(self.labelSerialFilter, 0, 2)
+        self.gridLayoutSerialHeader.addWidget(self.lineEditSerialFilter, 0, 3, 1, 2)
         self.gridLayoutSerialHeader.addWidget(self.labelSerialCmd, 1, 0)
         self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCmd, 1, 1)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialStart, 1, 2)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialStop, 1, 3)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 4)
-        # self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 0)
 
-        self.groupBoxSerialHeader = QGroupBox('选择串口端口')
+        self.groupBoxSerialHeader = QGroupBox('串口配置')
         self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
         self.groupBoxSerialHeader.setLayout(self.gridLayoutSerialHeader)
         self.groupBoxSerialHeader.setFixedSize(850, 120)
-        # self.hboxLayoutSerialHeader.addWidget(self.groupBoxSerialHeader)
 
         # 创建Kafka模式header
         self.hboxLayoutKafkaHeader = QHBoxLayout()
@@ -285,7 +264,7 @@ class LogCheckUI(TabWidget):
         self.labelKafkaTopic.setObjectName('labelKafkaTopic')
         self.comboBoxKafkaTopic = MyComboBox()
         self.comboBoxKafkaTopic.setObjectName('comboBoxKafkaTopic')
-        self.labelKafkaFilter = QLabel('过滤字段')
+        self.labelKafkaFilter = QLabel('过滤词')
         self.labelKafkaFilter.setObjectName('labelKafkaFilter')
         self.lineEditKafkaFilter = QLineEdit()
         self.lineEditKafkaFilter.setObjectName('lineEditKafkaFilter')
@@ -295,6 +274,7 @@ class LogCheckUI(TabWidget):
         self.btnKafkaStart.setObjectName('btnHeader')
         self.btnKafkaStop = QPushButton('停止')
         self.btnKafkaStop.setObjectName('btnHeader')
+        self.btnKafkaStop.setEnabled(False)
         self.btnKafkaClear = QPushButton('清空')
         self.btnKafkaClear.setObjectName('btnHeader')
 
@@ -366,12 +346,12 @@ class LogCheckUI(TabWidget):
         self.tableLeft.setFont(self.font)
         self.tableLeft.setHorizontalHeaderLabels(
             [
-                'src_event_code',
-                'event_code',
-                'event_alias',
-                'result',
-                'detail',
-                'more_detail'
+                '上级事件码',
+                '本级事件码',
+                '事件别名',
+                '结果',
+                '详情1',
+                '详情2'
             ]
         )
         self.tableLeft.horizontalHeader().setSectionResizeMode(
@@ -386,9 +366,9 @@ class LogCheckUI(TabWidget):
         self.tableMid.setFont(self.font)
         self.tableMid.setHorizontalHeaderLabels(
             [
-                'key',
-                'key_alias',
-                'value'
+                '键',
+                '键别名',
+                '值'
             ]
         )
         self.tableMid.verticalHeader().setVisible(False)
@@ -402,9 +382,9 @@ class LogCheckUI(TabWidget):
         self.tableRight.setFont(self.font)
         self.tableRight.setHorizontalHeaderLabels(
             [
-                'key',
-                'key_alias',
-                'value'
+                '键',
+                '键别名',
+                '值'
             ]
         )
         self.tableRight.verticalHeader().setVisible(False)
@@ -456,7 +436,8 @@ class LogCheckUI(TabWidget):
             dict_['kafka_cur_filter'] = \
                 config.get(dict_['kafka_cur_alias'], 'filter')
 
-            self.comboBoxKafkaCluster.addItem(re.match(r'kafka_(.+)', dict_['kafka_cur_alias']).group(1))
+            self.comboBoxKafkaCluster.addItem(
+                re.match(r'kafka_(.+)', dict_['kafka_cur_alias']).group(1))
             self.comboBoxKafkaTopic.addItem(dict_['kafka_cur_topic'])
             self.lineEditSshHost.setText(
                 config.get(dict_['kafka_cur_alias'], 'ssh_host'))
@@ -478,9 +459,14 @@ class LogCheckUI(TabWidget):
             dict_['serial_cur_cmd'] = config.get('DEFAULT', 'serial')
             dict_['serial_cur_com'] = \
                 config.get(dict_['serial_cur_cmd'], 'com')
+            dict_['serial_cur_filter'] = \
+                config.get(dict_['serial_cur_cmd'], 'filter')
 
             self.comboBoxSerialCom.addItem(dict_['serial_cur_com'])
-            self.comboBoxSerialCmd.addItem(re.match(r'serial_(.+)', dict_['serial_cur_cmd']).group(1))
+            self.comboBoxSerialCmd.addItem(
+                re.match(r'serial_(.+)', dict_['serial_cur_cmd']).group(1))
+            self.lineEditSerialFilter.setText(
+                config.get(dict_['serial_cur_cmd'], 'filter'))
         except Exception as e:
             log.error(str(e))
 
@@ -548,7 +534,7 @@ class LogCheckUI(TabWidget):
         self.comboBoxKafkaTopic.currentIndexChanged.connect(
             self.comboBoxKafkaTopicSelected)
         self.kafkaThread.add.connect(self.checkResultReceived)
-        self.kafkaThread.terminal.connect(self.stopSignalReceived)
+        self.kafkaThread.terminal.connect(self.kafkaStopSignalReceived)
         self.lineEditSshHost.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditSshHost))
         self.lineEditSshPort.textChanged.connect(
@@ -559,6 +545,8 @@ class LogCheckUI(TabWidget):
             lambda: self.lineEditChanged(self.lineEditSshPwd))
         self.lineEditKafkaFilter.textChanged.connect(
             lambda: self.lineEditChanged(self.lineEditKafkaFilter))
+        self.lineEditSerialFilter.textChanged.connect(
+            lambda: self.lineEditChanged(self.lineEditSerialFilter))
         self.radioBtnSerialMode.toggled.connect(
             lambda: self.radioBtnModeToggled(self.radioBtnSerialMode))
         self.radioBtnKafkaMode.toggled.connect(
@@ -568,9 +556,7 @@ class LogCheckUI(TabWidget):
         self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
         self.tableMid.cellClicked.connect(self.tableMidCellClicked)
         self.serialThread.add.connect(self.checkResultReceived)
-        # self.serialThread.terminal.connect(
-        #     lambda: self.stopSignalReceived(self.serialThread))
-        self.serialThread.terminal.connect(self.stopSignalReceived)
+        self.serialThread.terminal.connect(self.serialStopSignalReceived)
 
     def btnSerialClearClicked(self, btn):
         """
@@ -590,28 +576,38 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
+            log.info('Starting!!!')
+            if self.kafkaThread.isRunning():
+                reply = QMessageBox.information(
+                    self, '提示', '该操作将强制结束Kafka通信，请确认！', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.btnKafkaStop.click()
+                else:
+                    return
             if not dict_['serial_cur_com']:
-                log.error("未选择串口端口")
+                log.error("未选择串口端口或Shell命令")
                 QMessageBox.information(
-                    self, '提示', '请先选择端口！', QMessageBox.Ok)
+                    self, '提示', '请先选择串口端口和Shell命令！', QMessageBox.Ok)
                 return
+
+            self.serialThread.working = True
+            self.serialThread.start()
 
             self.row = 0
             self.tableLeft.clearContents()
             self.tableMid.clearContents()
             self.tableRight.clearContents()
-            self.serialThread.start()
-
             self.comboBoxSerialCom.setEnabled(False)
+            self.lineEditSerialFilter.setEnabled(False)
+            self.comboBoxSerialCmd.setEnabled(False)
             self.btnSerialStart.setEnabled(False)
-            self.btnSerialStop.setEnabled(False)
 
-            # 开始后马上点击结束会报错，添加延时
+            # 添加延时
             timer = QTimer(self)
             timer.setSingleShot(True)
             timer.timeout.connect(lambda: self.btnSerialStop.setEnabled(True))
             timer.start(5000)
-            timer.start(5000)
+
         except Exception as e:
             log.error(str(e))
 
@@ -622,31 +618,9 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
-            if not dict_['serial_start_flag']:
-                log.error("串口端口异常")
-                QMessageBox.information(
-                    self, '提示', '串口异常，重启后尝试！', QMessageBox.Ok)
-                return
             self.serialThread.serial.stopReadSerial()
-            # TODO
-            # if self.lineEditCmdAfterStop.text()
-            # and self.lineEditCmdAfterStop.text().strip():
-            #     self.serialThread.serial.sendComand(
-            # self.lineEditCmdAfterStop.text())
-            #     cmd_list = re.split(r'\\n', stopCmd)
-            #     LOGGER.info("Command List: " + str(cmd_list))
-            #
-            #     for cmd in cmd_list:
-            #         self.serialThread.serial.sendComand('\n\n')
-            #         self.serialThread.sleep(1)
-            #         self.serialThread.serial.sendComand(str(cmd))
-            #         LOGGER.info("Execute command: " + str(cmd))
             self.serialThread.serial.close()
-
-            self.comboBoxSerialCom.setEnabled(True)
-            self.btnSerialStart.setEnabled(True)
-            self.btnSerialStop.setEnabled(False)
-            dict_['serial_start_flag'] = False
+            self.serialThread.__del__()
         except Exception as e:
             log.error(str(e))
 
@@ -673,27 +647,38 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
+            if self.serialThread.isRunning():
+                reply  = QMessageBox.information(
+                    self, '提示', '该操作将强制结束串口通信，请确认！', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.btnSerialStop.click()
+                else:
+                    return
             if not self.comboBoxKafkaTopic.currentText():
-                log.info('未选择Topic')
                 QMessageBox.information(
-                    self, '提示', '请先选择Topic！', QMessageBox.Ok)
+                    self, '提示', '请先选择Server和Topic！', QMessageBox.Ok)
                 return
+
+            self.kafkaThread.working = True
+            self.kafkaThread.start()
 
             self.row = 0
             self.tableLeft.clearContents()
             self.tableMid.clearContents()
             self.tableRight.clearContents()
-
-            if config.get(dict_['kafka_cur_alias'], 'ssh_enable'):
-                self.groupBoxSshHeader.setEnabled(False)
+            self.groupBoxSshHeader.setEnabled(False)
             self.comboBoxKafkaCluster.setEnabled(False)
             self.lineEditKafkaFilter.setEnabled(False)
             self.comboBoxKafkaTopic.setEnabled(False)
             self.checkBoxKafkaSshEnable.setEnabled(False)
             self.btnKafkaStart.setEnabled(False)
-            self.btnKafkaStop.setEnabled(True)
-            self.kafkaThread.working = True
-            self.kafkaThread.start()
+
+            # 添加延时
+            timer = QTimer(self)
+            timer.setSingleShot(True)
+            timer.timeout.connect(lambda: self.btnKafkaStop.setEnabled(True))
+            timer.start(5000)
+
         except Exception as e:
             log.error(str(e))
 
@@ -704,17 +689,10 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
+
+
             self.kafkaThread.kafka.stop_kafka()
             self.kafkaThread.__del__()
-            if config.get(dict_['kafka_cur_alias'], 'ssh_enable'):
-                self.groupBoxSshHeader.setEnabled(True)
-            self.comboBoxKafkaCluster.setEnabled(True)
-            self.lineEditKafkaFilter.setEnabled(True)
-            self.comboBoxKafkaTopic.setEnabled(True)
-            self.checkBoxKafkaSshEnable.setEnabled(True)
-            self.btnKafkaStart.setEnabled(True)
-            self.btnKafkaStop.setEnabled(False)
-            # dict_['kafka_start_flag'] = False
         except Exception as e:
             log.error(str(e))
 
@@ -993,6 +971,9 @@ class LogCheckUI(TabWidget):
             if i is self.lineEditKafkaFilter:
                 dict_['kafka_cur_filter'] = i.text()
                 config.set(dict_['kafka_cur_alias'], 'filter', i.text())
+            if i is self.lineEditSerialFilter:
+                dict_['serial_cur_filter'] = i.text()
+                config.set(dict_['serial_cur_cmd'], 'filter', i.text())
         except Exception as e:
             log.error(str(e))
 
@@ -1026,7 +1007,7 @@ class LogCheckUI(TabWidget):
         except Exception as e:
             log.error(str(e))
 
-    def stopSignalReceived(self, text):
+    def serialStopSignalReceived(self, text):
         """
         Serial子线程结束触发提示
         :param text: str
@@ -1034,37 +1015,28 @@ class LogCheckUI(TabWidget):
         """
         try:
             self.comboBoxSerialCom.setEnabled(True)
-            # self.btnSerialRefresh.setEnabled(True)
-            # self.lineEditCmdBeforeStart.setEnabled(True)
-            # self.lineEditCmdAfterStop.setEnabled(True)
+            self.lineEditSerialFilter.setEnabled(True)
+            self.comboBoxSerialCmd.setEnabled(True)
             self.btnSerialStart.setEnabled(True)
             self.btnSerialStop.setEnabled(False)
-            dict_['serial_start_flag'] = False
-
-            log.info(text)
             QMessageBox.information(self, '提示', text, QMessageBox.Ok)
         except Exception as e:
             log.error(str(e))
 
-    def stopKafkaSignalReceived(self, text):
+    def kafkaStopSignalReceived(self, text):
         """
         Kafka子线程结束触发提示
         :param text: str
         :return:
         """
         try:
-            if config.get(dict_['kafka_cur_alias'], 'ssh_enable'):
-                self.groupBoxSshHeader.setEnabled(True)
+            self.groupBoxSshHeader.setEnabled(True)
             self.comboBoxKafkaCluster.setEnabled(True)
             self.lineEditKafkaFilter.setEnabled(True)
             self.comboBoxKafkaTopic.setEnabled(True)
             self.checkBoxKafkaSshEnable.setEnabled(True)
             self.btnKafkaStart.setEnabled(True)
             self.btnKafkaStop.setEnabled(False)
-            # dict_['kafka_start_flag'] = False
-            self.kafkaThread.__del__()
-
-            log.info(text)
             QMessageBox.information(self, '提示', text, QMessageBox.Ok)
         except Exception as e:
             log.error(str(e))
@@ -1084,7 +1056,6 @@ class LogCheckUI(TabWidget):
                 dictData = json.loads(self.tableLeft.item(row, 4).text())
                 dictRes = json.loads(self.tableLeft.item(row, 5).text())
                 n = 0
-                # for k in dictData:
                 for k in dictRes['data']:
                     self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))

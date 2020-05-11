@@ -25,12 +25,14 @@ class MyKafka:
                 log.info('开始执行SSH通道')
             except Exception as e:
                 log.error(str(e))
+                raise
 
     def _stop_ssh(self):
         try:
             self.server.stop()
         except Exception as e:
             log.error(str(e))
+            raise
 
     def init_kafka(self):
         try:
@@ -45,10 +47,10 @@ class MyKafka:
                 'group_id': self.kafka_config['group_id']
             }
             log.info(config)
-
             self.consumer = kc(**config)
         except Exception as e:
             log.error(str(e))
+            raise
 
     def subscribe_kafka(self, topics=None):
         try:
@@ -56,6 +58,7 @@ class MyKafka:
             self.consumer.subscribe(topics=topics)
         except Exception as e:
             log.error(str(e))
+            raise
 
     def poll_kafka(self):
         try:
@@ -67,6 +70,7 @@ class MyKafka:
                 return data_
         except Exception as e:
             log.error(str(e))
+            raise
 
     def stop_kafka(self):
         try:
@@ -76,6 +80,7 @@ class MyKafka:
                 self.server.stop()
         except Exception as e:
             log.error(str(e))
+            raise
 
     def topics_kafka(self):
         return self.consumer.topics()

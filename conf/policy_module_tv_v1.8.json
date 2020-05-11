@@ -54,6 +54,9 @@
                 "mapping":null
             }
         },
-        "ignore_keys":[]
+        "ignore_keys":[
+            "test3",
+            "test4"
+        ]
     }
 }
