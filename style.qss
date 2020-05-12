@@ -3,6 +3,12 @@
     margin-left:5px;
     margin-right:0px;
     margin-bottom:5px;
+    alternate-background-color:#dcdcdc;
+
+}
+.QTableWidget::item#markTableItem {
+    color:white;
+    background-color: red;
 }
 .QLabel#labelSerialCom,
 #labelSerialCmd,

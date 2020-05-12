@@ -216,7 +216,7 @@ class LogCheckUI(TabWidget):
         self.btnSerialClear.setObjectName('btnHeader')
         self.btnSerialTest = QPushButton('模拟调试')
         self.btnSerialTest.setObjectName('btnHeader')
-        self.btnSerialTest.setVisible(False)
+        self.btnSerialTest.setVisible(True)
 
         self.gridLayoutSerialHeader.addWidget(self.labelSerialCom, 0, 0)
         self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCom, 0, 1)
@@ -227,6 +227,7 @@ class LogCheckUI(TabWidget):
         self.gridLayoutSerialHeader.addWidget(self.btnSerialStart, 1, 2)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialStop, 1, 3)
         self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 4)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 5)
 
         self.groupBoxSerialHeader = QGroupBox('串口配置')
         self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
@@ -354,29 +355,46 @@ class LogCheckUI(TabWidget):
                 '详情2'
             ]
         )
+        # self.tableLeft.horizontalHeader().setSectionResizeMode(
+        #     QHeaderView.Stretch)
         self.tableLeft.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.tableLeft.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
+            QHeaderView.Fixed)
+        # self.tableLeft.horizontalHeader().setSectionResizeMode(
+        #     0, QHeaderView.ResizeToContents)
         self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableLeft.setAlternatingRowColors(True)
+        self.tableLeft.setColumnHidden(3, True)
         self.tableLeft.setColumnHidden(4, True)
         self.tableLeft.setColumnHidden(5, True)
+        self.tableLeft.setColumnWidth(0, 80)
+        self.tableLeft.setColumnWidth(1, 80)
+        self.tableLeft.setColumnWidth(2, 155)
 
-        self.tableMid = QTableWidget(0, 3)
+        self.tableMid = QTableWidget(0, 5)
         self.tableMid.setFont(self.font)
         self.tableMid.setHorizontalHeaderLabels(
             [
                 '键',
                 '键别名',
-                '值'
+                '值',
+                '值别名',
+                '结果'
             ]
         )
         self.tableMid.verticalHeader().setVisible(False)
+        # self.tableMid.horizontalHeader().setSectionResizeMode(
+        #     QHeaderView.Stretch)
         self.tableMid.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.tableMid.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
+            QHeaderView.Fixed)
+        # self.tableMid.horizontalHeader().setSectionResizeMode(
+        #     0, QHeaderView.ResizeToContents)
         self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableMid.setAlternatingRowColors(True)
+        self.tableMid.setColumnHidden(4, True)
+        self.tableMid.setColumnWidth(0, 110)
+        self.tableMid.setColumnWidth(1, 100)
+        self.tableMid.setColumnWidth(2, 153)
+        self.tableMid.setColumnWidth(3, 100)
 
         self.tableRight = QTableWidget(0, 3)
         self.tableRight.setFont(self.font)
@@ -393,6 +411,7 @@ class LogCheckUI(TabWidget):
         self.tableRight.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeToContents)
         self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableRight.setAlternatingRowColors(True)
 
         self.hboxLayoutTableLeft.addWidget(self.tableLeft)
         self.hboxLayoutTableMid.addWidget(self.tableMid)
@@ -404,12 +423,13 @@ class LogCheckUI(TabWidget):
         self.groupBoxTableMid.setLayout(self.hboxLayoutTableMid)
         self.groupBoxTableRight = QGroupBox('二级数据')
         self.groupBoxTableRight.setLayout(self.hboxLayoutTableRight)
+        # self.groupBoxTableRight.setVisible(False)
         self.hboxLayoutBody.addWidget(self.groupBoxTableLeft)
         self.hboxLayoutBody.addWidget(self.groupBoxTableMid)
         self.hboxLayoutBody.addWidget(self.groupBoxTableRight)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableLeft, 7)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableMid, 7)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableRight, 5)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableLeft, 3)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableMid, 4)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableRight, 2)
 
         self.mainLayout.addLayout(self.hboxLayoutModeSelectHeader)
         self.mainLayout.addWidget(self.groupBoxSerialHeader)
@@ -630,15 +650,13 @@ class LogCheckUI(TabWidget):
             :param btn: object
             :return: None
             """
-            data = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
-    ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
-            log.info('Mock log data: ' + data)
-            self.test = LogCheck()
-            res = self.test.check_log(data)
+            with open(os.path.join(path, 'conf', 'test.txt')) as f:
+                data = f.read()
+            test = LogCheck()
+            res = test.check_log(data)
             if res:
                 self.row = 0
                 self.checkResultReceived(res)
-            log.info('Mock Check result: ' + str(res))
 
     def btnKafkaStartClicked(self, btn):
         """
@@ -703,8 +721,8 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
-            data_tmp = """{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211010",   "eventtime" : "1585185206",   "logstamp" : "21",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "appid" : "184",   "appname" : "vidaa-free",   "apppackage" : "vidaa-free",   "appversion" : "",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200101",   "launchsource" : "1",   "os" : "Linux",   "starttime" : "1585185206",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185206",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "341",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "211011",   "eventtime" : "1585185230",   "logstamp" : "21",   "objectid" : "68",   "objecttype" : "600003",   "original" : "0",   "os" : "Linux",   "pageid" : "home",   "pagetype" : "-1",   "posindex" : "0",   "rowindex" : "9",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}
-            ,{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200242",   "eventtime" : "1585185126",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185184",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185181",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200120",   "eventtime" : "1585185188",   "keyname" : "TWO",   "os" : "Linux",   "remotecontroltype" : "EN3B39",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185192",   "objectid" : "setting",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "2",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185192",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185189",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "columnid" : "navigation",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200291",   "eventtime" : "1585185200",   "objectid" : "notification",   "objecttype" : "9900",   "original" : "-1",   "os" : "Linux",   "pageid" : "launcher",   "pagetype" : "-1",   "posindex" : "3",   "rowindex" : "0",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "1",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "1585185200",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185198",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200260",   "eventtime" : "1585185201",   "objectid" : "setting",   "objecttype" : "9900",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "eventcode" : "200261",   "eventtime" : "1585185202",   "extra" : "{\"advertising\":1,\"newarrivals\":1,\"warningsandlegalstatements\":1,\"systemmessage\":1}",   "os" : "Linux",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"},{   "backgroundapppackage" : "launcher",   "brand" : "his",   "capabilitycode" : "2019072901",   "chipplatform" : "mstar6886",   "closereason" : "0",   "countrycode" : "GBR",   "deviceid" : "861003009000006000000641f432adfa1fb7ee6860d2ed6cf6eb0d9a",   "devicemsg" : "HE55A6103FUWTS351",   "endtime" : "0",   "eventcode" : "200147",   "os" : "Linux",   "starttime" : "1585185203",   "tvmode" : "2",   "tvversion" : "V0000.01.00G.K0324",   "version" : "3.0",   "zone" : "0"}"""
+            with open(os.path.join(path, 'conf', 'test.txt')) as f:
+                data_tmp = f.read()
             data = self.textEditManual.toPlainText() \
                 if self.textEditManual.toPlainText().strip() else data_tmp
             log.info('Mock log data: ' + data)
@@ -755,6 +773,8 @@ class LogCheckUI(TabWidget):
 
         try:
             for i in res:
+                if not i:
+                    continue
                 self.tableLeft.setRowCount(self.row + 1)
                 self.tableLeft.setItem(self.row, 0, QTableWidgetItem(
                     str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
@@ -770,20 +790,20 @@ class LogCheckUI(TabWidget):
                         QBrush(QColor(211, 211, 211)))
                     self.setToolTip('配置文件中没有对应的eventcode！')
                 if i['result'] == 0:
-                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Pass'))
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('正常'))
                     # 绿色表示全部字段均正常
                     self.tableLeft.item(self.row, 3).setBackground(
                         QBrush(QColor(0, 128, 0)))
                     self.setToolTip('所有字段均正常，Ctrl+C可复制内容')
                 if i['result'] == 1:
-                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('Fail'))
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('异常'))
                     # 红色表示部分字段缺失或值错误
                     self.tableLeft.item(self.row, 3).setBackground(
                         QBrush(QColor(255, 0, 0)))
                     self.setToolTip('部分字段缺失或错误，Ctrl+C可复制内容')
                 if i['result'] == 2:
                     self.tableLeft.setItem(self.row, 3,
-                                           QTableWidgetItem('Warn'))
+                                           QTableWidgetItem('警告'))
                     # 黄色表示包含未定义字段
                     self.tableLeft.item(self.row, 3).setBackground(
                         QBrush(QColor(255, 255, 0)))
@@ -1059,39 +1079,36 @@ class LogCheckUI(TabWidget):
                 for k in dictRes['data']:
                     self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
-                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['data'][k].get('key_alias'))))
+                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['data'][k].get('key_alias')) if dictRes['data'][k].get('key_alias') else 'N/A'))
                     self.tableMid.setItem(n, 2, QTableWidgetItem(str(dictRes['data'][k].get('value'))))
+                    self.tableMid.setItem(n, 3, QTableWidgetItem(
+                        str(dictRes['data'][k].get('value'))))
 
                     if k in dictRes['invalid_key']:
-                        self.tableMid.item(n, 0).setBackground(
-                            QBrush(QColor(255, 0, 0)))
-                        self.tableMid.item(n, 1).setBackground(
-                            QBrush(QColor(255, 0, 0)))
-                        self.tableMid.item(n, 2).setBackground(
-                            QBrush(QColor(255, 0, 0)))
+                        self.tableMid.setItem(n, 4, QTableWidgetItem('不符合'))
+                        for i in range(self.tableMid.columnCount()):
+                            self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 0, 0)))
+                            self.tableMid.item(n, i).setObjectName('markTableItem')
 
-                    if k in dictRes['undefined_key']:
-                        self.tableMid.item(n, 0).setBackground(
-                            QBrush(QColor(255, 255, 0)))
-                        self.tableMid.item(n, 1).setBackground(
-                            QBrush(QColor(255, 255, 0)))
-                        self.tableMid.item(n, 2).setBackground(
-                            QBrush(QColor(255, 255, 0)))
+                    elif k in dictRes['undefined_key']:
+                        self.tableMid.setItem(n, 4, QTableWidgetItem('未定义'))
+                        for i in range(self.tableMid.columnCount()):
+                            self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 255, 0)))
+                    else:
+                        self.tableMid.setItem(n, 4, QTableWidgetItem('符合'))
                     n += 1
 
                 for i in dictRes['missing_key']:
                     self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(i)))
                     self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['missing_key'][i].get('key_alias'))))
-                    self.tableMid.setItem(n, 2, QTableWidgetItem('该字段缺失！'))
-                    self.tableMid.item(n, 0).setBackground(
-                        QBrush(QColor(255, 0, 0)))
-                    self.tableMid.item(n, 1).setBackground(
-                        QBrush(QColor(255, 0, 0)))
-                    self.tableMid.item(n, 2).setBackground(
-                        QBrush(QColor(255, 0, 0)))
+                    self.tableMid.setItem(n, 2, QTableWidgetItem('N/A'))
+                    self.tableMid.setItem(n, 3, QTableWidgetItem('N/A'))
+                    self.tableMid.setItem(n, 4, QTableWidgetItem('未上报'))
+                    for k in range(self.tableMid.columnCount()):
+                        self.tableMid.item(n, k).setBackground(
+                            QBrush(QColor(255, 0, 0)))
                     n += 1
-                # QStandardItem()
                 self.tableMid.setSortingEnabled(True)
                 self.tableMid.sortByColumn(0, Qt.AscendingOrder)
         except Exception as e:

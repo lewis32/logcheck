@@ -38,6 +38,7 @@ class LogCheck:
                 array_json.append(raw_str[stack_left_bracket[0]: stack_right_bracket.pop() + 1])
                 stack_left_bracket = []
                 stack_right_bracket = []
+        log.info('array_json: ' + array_json.__str__())
         return array_json
 
     def _load_policy(self):
@@ -84,23 +85,23 @@ class LogCheck:
                         'key_alias': '日志版本'
                     }
                 policy_common_ = policy_common['keys'].copy()
-                for ex in policy_module[event]['ignore_keys']:
-                    if ex in policy_common_:
-                        policy_common_.pop(ex)
-                    if ex in policy_module:
-                        policy_module[event]['keys'].pop(ex)
-                    else:
-                        log.error('找不到限制字段%s！' % (ex,))
+                # for ex in policy_module[event]['ignore_keys']:
+                #     if ex in policy_common_:
+                #         policy_common_.pop(ex)
+                #     if ex in policy_module:
+                #         policy_module[event]['keys'].pop(ex)
+                #     else:
+                #         log.error('找不到限制字段%s！' % (ex,))
                 policy_module[event]['keys'] = dict(policy_module[event]['keys'], **policy_common_)
-                policy_module[event]['ignore_keys'] = policy_common['ignore_keys']
+                policy_module[event]['ignore_keys'] = list(set(policy_common['ignore_keys'] + policy_module[event]['ignore_keys']))
             log.info("policy: " + json.dumps(policy_module))
             return policy_module
 
-    def _compare_keys(self, data_, conf_):
+    def _compare_keys(self, data, conf):
         """
-        查找日志中重复、多余和缺失的字段
-        :param data_: dict
-        :param conf_: dict
+        查找日志中对应、多余和缺失的字段
+        :param data: dict
+        :param conf: dict
         :return: list, list, list
         """
 
@@ -108,24 +109,28 @@ class LogCheck:
         mutual_key_lower = []
 
         data_ = [i for i in data]
-        conf_ = [i for i in conf['keys']]
-        log.info("conf" + str(conf_))
-        conf_.sort()
+        data_dict = {}
+        for i in data_:
+            data_dict[i.lower()] = i
+        conf_lower = [i.lower() for i in conf['keys']]
+        for ex in conf['ignore_keys']:
+            if ex in data_dict:
+                data_.remove(data_dict[ex])
+            if ex in conf_lower:
+                conf_lower.remove(ex)
+        conf_lower.sort()
 
         for i in data_:
-            pos = bisect.bisect_left(conf_, (lambda x: x.lower())(i))
-            if pos < len(conf_) and conf_[pos] == (lambda x: x.lower())(i):
+            pos = bisect.bisect_left(conf_lower, (lambda x: x.lower())(i))
+            if pos < len(conf_lower) and conf_lower[pos] == (lambda x: x.lower())(i):
                 mutual_key.append(i)
                 mutual_key_lower.append((lambda x: x.lower())(i))
 
         mutual_key = list(set(mutual_key))
         mutual_key_lower = list(set(mutual_key_lower))
         data_key = list(set(data_).difference(set(mutual_key)))
-        conf_key = list(set(conf_).difference(set(mutual_key_lower)))
+        conf_key = list(set(conf_lower).difference(set(mutual_key_lower)))
 
-        for ex in conf['ignore_keys']:
-            if ex in data_key:
-                data_key.remove(ex)
         return mutual_key, data_key, conf_key
 
     def _compare_log(self, data, conf):
@@ -220,9 +225,9 @@ class LogCheck:
             return res
         except Exception as e:
             log.error(str(e))
-            return None
+            return
 
-    def check_log(self, data=None, filter_=None):
+    def check_log(self, data='', filter_=''):
         """
         对比日志
         :param data: str
@@ -243,15 +248,16 @@ class LogCheck:
             listed_data = self._split_log(data)
             listed_results = []
 
-            for data in listed_data:
+            for i in listed_data:
                 try:
-                    if not("eventcode" in data and filter_ in data):
+                    log.info(filter_)
+                    if not("eventcode" in i and filter_ in i):
                         continue
-                    data = json.loads(data)
+                    data_ = json.loads(i)
                 except json.decoder.JSONDecodeError as e:
                     log.error("Error decoding JSON: " + str(e))
                 else:
-                    ret = self._compare_log(data, self.policy_all)
+                    ret = self._compare_log(data_, self.policy_all)
                     listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
             log.info(json.dumps(listed_results))

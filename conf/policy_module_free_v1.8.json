@@ -13,7 +13,9 @@
                 "mapping":null
             }
         },
-        "ignore_keys":[]
+        "ignore_keys":[
+            "logstamp"
+        ]
     },
     "null_211011_3.0":{
         "event_alias":"VIDAA Free点击二级页",

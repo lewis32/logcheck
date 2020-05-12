@@ -12,7 +12,7 @@
 	        "mapping":null
 	    },
 	    "brand":{
-	        "regex":"^his$",
+	        "regex":"^shp$",
 	        "key_alias":"品牌",
 	        "mapping":null
 	    },
