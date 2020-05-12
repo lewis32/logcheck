@@ -438,6 +438,27 @@ class LogCheckUI(TabWidget):
         self.mainLayout.addLayout(self.hboxLayoutBody)
         self.tabMainUI.setLayout(self.mainLayout)
 
+    def initHintUI(self):
+        """
+        初始化提示UI
+        :return: None
+        """
+        self.hintLayout = QVBoxLayout()
+        self.hintLayout.setContentsMargins(20, 20, 20, 20)
+
+        readme_path = os.path.join(path, 'README.txt')
+        self.textEditReadme = QTextEdit()
+        self.textEditReadme.setObjectName('textEditReadme')
+        self.textEditReadme.setReadOnly(True)
+        try:
+            with open(readme_path, encoding='utf-8') as f:
+                self.textEditReadme.setPlainText(f.read())
+        except Exception as e:
+            log.error(str(e))
+
+        self.hintLayout.addWidget(self.textEditReadme)
+        self.tabHintUI.setLayout(self.hintLayout)
+
     def loadConfig(self):
         try:
             if config.get('DEFAULT', 'mode') == 'serial':
@@ -489,27 +510,6 @@ class LogCheckUI(TabWidget):
                 config.get(dict_['serial_cur_cmd'], 'filter'))
         except Exception as e:
             log.error(str(e))
-
-    def initHintUI(self):
-        """
-        初始化提示UI
-        :return: None
-        """
-        self.hintLayout = QVBoxLayout()
-        self.hintLayout.setContentsMargins(20, 20, 20, 20)
-
-        readme_path = os.path.join(path, 'README.txt')
-        self.textEditReadme = QTextEdit()
-        self.textEditReadme.setObjectName('textEditReadme')
-        self.textEditReadme.setReadOnly(True)
-        try:
-            with open(readme_path, encoding='utf-8') as f:
-                self.textEditReadme.setPlainText(f.read())
-        except Exception as e:
-            log.error(str(e))
-
-        self.hintLayout.addWidget(self.textEditReadme)
-        self.tabHintUI.setLayout(self.hintLayout)
 
     def bind(self):
         """
@@ -666,7 +666,7 @@ class LogCheckUI(TabWidget):
         """
         try:
             if self.serialThread.isRunning():
-                reply  = QMessageBox.information(
+                reply = QMessageBox.information(
                     self, '提示', '该操作将强制结束串口通信，请确认！', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     self.btnSerialStop.click()
@@ -707,8 +707,6 @@ class LogCheckUI(TabWidget):
         :return: None
         """
         try:
-
-
             self.kafkaThread.kafka.stop_kafka()
             self.kafkaThread.__del__()
         except Exception as e:
@@ -817,7 +815,7 @@ class LogCheckUI(TabWidget):
                 cnt += 1
                 self.row += 1
         except Exception as e:
-            log.error(sr(e))
+            log.error(str(e))
 
     def comboBoxSerialComSelected(self, i):
         """
@@ -1076,8 +1074,8 @@ class LogCheckUI(TabWidget):
                 dictData = json.loads(self.tableLeft.item(row, 4).text())
                 dictRes = json.loads(self.tableLeft.item(row, 5).text())
                 n = 0
+                self.tableMid.setRowCount(len(dictRes['data']) + len(dictRes['missing_key']))
                 for k in dictRes['data']:
-                    self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
                     self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['data'][k].get('key_alias')) if dictRes['data'][k].get('key_alias') else 'N/A'))
                     self.tableMid.setItem(n, 2, QTableWidgetItem(str(dictRes['data'][k].get('value'))))
@@ -1088,7 +1086,7 @@ class LogCheckUI(TabWidget):
                         self.tableMid.setItem(n, 4, QTableWidgetItem('不符合'))
                         for i in range(self.tableMid.columnCount()):
                             self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 0, 0)))
-                            self.tableMid.item(n, i).setObjectName('markTableItem')
+                            self.tableMid.item(n, i).setFont()
 
                     elif k in dictRes['undefined_key']:
                         self.tableMid.setItem(n, 4, QTableWidgetItem('未定义'))
@@ -1099,7 +1097,6 @@ class LogCheckUI(TabWidget):
                     n += 1
 
                 for i in dictRes['missing_key']:
-                    self.tableMid.setRowCount(n + 1)
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(i)))
                     self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['missing_key'][i].get('key_alias'))))
                     self.tableMid.setItem(n, 2, QTableWidgetItem('N/A'))
