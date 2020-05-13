@@ -1,6 +1,6 @@
 ﻿{
     "null_211010_3.0":{
-        "event_alias":"VIDAA Free首页展示",
+        "event_alias":"Free首页展示",
         "keys":{
             "pageid":{
                 "regex":"^home$",
@@ -18,7 +18,7 @@
         ]
     },
     "null_211011_3.0":{
-        "event_alias":"VIDAA Free点击二级页",
+        "event_alias":"Free点击二级页",
         "keys":{
             "columnid":{
                 "regex":"",

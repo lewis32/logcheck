@@ -152,7 +152,7 @@ class LogCheckUI(TabWidget):
         self.row = 0
 
         self.setWindowTitle('日志验证工具 v1.3')
-        self.resize(1200, 700)
+        self.resize(1500, 700)
         self.setFixedSize(self.width(), self.height())
 
         self.font = QFont()
@@ -182,7 +182,7 @@ class LogCheckUI(TabWidget):
         # 创建串口模式header
         self.hboxLayoutSerialHeader = QHBoxLayout()
         self.hboxLayoutModeSelectHeader = QHBoxLayout()
-        self.hboxLayoutModeSelectHeader.setContentsMargins(10, 0, 800, 10)
+        self.hboxLayoutModeSelectHeader.setAlignment(Qt.AlignLeft)
         self.radioBtnSerialMode = QRadioButton('串口模式')
         self.radioBtnKafkaMode = QRadioButton('Kafka模式')
         self.radioBtnManualMode = QRadioButton('手动模式')
@@ -191,7 +191,7 @@ class LogCheckUI(TabWidget):
         self.hboxLayoutModeSelectHeader.addWidget(self.radioBtnManualMode)
 
         self.gridLayoutSerialHeader = QGridLayout()
-        self.gridLayoutSerialHeader.setContentsMargins(10, 10, 300, 10)
+        self.gridLayoutSerialHeader.setContentsMargins(10, 10, 10, 10)
         self.gridLayoutSerialHeader.setObjectName('hboxLayoutHeader')
 
         self.labelSerialCom = QLabel('端口')
@@ -214,28 +214,25 @@ class LogCheckUI(TabWidget):
         self.btnSerialStop.setEnabled(False)
         self.btnSerialClear = QPushButton('清空')
         self.btnSerialClear.setObjectName('btnHeader')
-        self.btnSerialTest = QPushButton('模拟调试')
-        self.btnSerialTest.setObjectName('btnHeader')
-        self.btnSerialTest.setVisible(True)
 
         self.gridLayoutSerialHeader.addWidget(self.labelSerialCom, 0, 0)
         self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCom, 0, 1)
-        self.gridLayoutSerialHeader.addWidget(self.labelSerialFilter, 0, 2)
-        self.gridLayoutSerialHeader.addWidget(self.lineEditSerialFilter, 0, 3, 1, 2)
+        self.gridLayoutSerialHeader.addWidget(self.labelSerialFilter, 0, 3)
+        self.gridLayoutSerialHeader.addWidget(self.lineEditSerialFilter, 0, 4, 1, 3)
         self.gridLayoutSerialHeader.addWidget(self.labelSerialCmd, 1, 0)
-        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCmd, 1, 1)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialStart, 1, 2)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialStop, 1, 3)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 4)
-        self.gridLayoutSerialHeader.addWidget(self.btnSerialTest, 1, 5)
+        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCmd, 1, 1, 1, 2)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialStart, 1, 4)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialStop, 1, 5)
+        self.gridLayoutSerialHeader.addWidget(self.btnSerialClear, 1, 6)
 
         self.groupBoxSerialHeader = QGroupBox('串口配置')
         self.groupBoxSerialHeader.setObjectName('groupBoxHeader')
         self.groupBoxSerialHeader.setLayout(self.gridLayoutSerialHeader)
-        self.groupBoxSerialHeader.setFixedSize(850, 120)
+        self.groupBoxSerialHeader.setFixedSize(700, 120)
 
         # 创建Kafka模式header
         self.hboxLayoutKafkaHeader = QHBoxLayout()
+        self.hboxLayoutKafkaHeader.setAlignment(Qt.AlignLeft)
         self.gridLayoutSshHeader = QGridLayout()
         self.gridLayoutSshHeader.setContentsMargins(10, 10, 10, 10)
         self.gridLayoutKafkaHeader = QGridLayout()
@@ -269,7 +266,7 @@ class LogCheckUI(TabWidget):
         self.labelKafkaFilter.setObjectName('labelKafkaFilter')
         self.lineEditKafkaFilter = QLineEdit()
         self.lineEditKafkaFilter.setObjectName('lineEditKafkaFilter')
-        self.checkBoxKafkaSshEnable = QCheckBox('启用SSH通道')
+        self.checkBoxKafkaSshEnable = QCheckBox('启用SSH')
         self.checkBoxKafkaSshEnable.setObjectName('checkBoxKafkaSshEnable')
         self.btnKafkaStart = QPushButton('开始')
         self.btnKafkaStart.setObjectName('btnHeader')
@@ -289,11 +286,12 @@ class LogCheckUI(TabWidget):
         self.gridLayoutSshHeader.addWidget(self.lineEditSshPwd, 1, 3)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaCluster, 0, 0)
         self.gridLayoutKafkaHeader.addWidget(self.comboBoxKafkaCluster, 0, 1)
-        self.gridLayoutKafkaHeader.addWidget(self.labelKafkaFilter, 0, 2)
-        self.gridLayoutKafkaHeader.addWidget(self.lineEditKafkaFilter, 0, 3, 1, 4)
+        self.gridLayoutKafkaHeader.addWidget(self.checkBoxKafkaSshEnable, 0, 2)
+        self.gridLayoutKafkaHeader.addWidget(self.labelKafkaFilter, 0, 3)
+        self.gridLayoutKafkaHeader.addWidget(self.lineEditKafkaFilter, 0, 4, 1, 3)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaTopic, 1, 0)
         self.gridLayoutKafkaHeader.addWidget(self.comboBoxKafkaTopic, 1, 1, 1, 2)
-        self.gridLayoutKafkaHeader.addWidget(self.checkBoxKafkaSshEnable, 1, 3)
+
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStart, 1, 4)
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStop, 1, 5)
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaClear, 1, 6)
@@ -302,12 +300,12 @@ class LogCheckUI(TabWidget):
         self.groupBoxSshHeader.setObjectName('groupBoxHeader')
         self.groupBoxSshHeader.setLayout(self.gridLayoutSshHeader)
         self.groupBoxSshHeader.setVisible(False)
-        self.groupBoxSshHeader.setFixedSize(420, 120)
+        self.groupBoxSshHeader.setFixedSize(430, 120)
         self.groupBoxKafkaHeader = QGroupBox('Kafka配置')
         self.groupBoxKafkaHeader.setObjectName('groupBoxHeader')
         self.groupBoxKafkaHeader.setLayout(self.gridLayoutKafkaHeader)
         self.groupBoxKafkaHeader.setVisible(False)
-        self.groupBoxKafkaHeader.setFixedSize(730, 120)
+        self.groupBoxKafkaHeader.setFixedSize(700, 120)
 
         self.hboxLayoutKafkaHeader.addWidget(self.groupBoxSshHeader)
         self.hboxLayoutKafkaHeader.addWidget(self.groupBoxKafkaHeader)
@@ -331,24 +329,21 @@ class LogCheckUI(TabWidget):
         self.groupBoxManualHeader.setObjectName('groupBoxHeader')
         self.groupBoxManualHeader.setLayout(self.gridLayoutManualHeader)
         self.groupBoxManualHeader.setVisible(False)
-        self.groupBoxManualHeader.setFixedSize(850, 120)
+        self.groupBoxManualHeader.setFixedSize(750, 120)
 
         # 创建显示结果数据body
         self.hboxLayoutBody = QHBoxLayout()
         self.hboxLayoutBody.setObjectName('hboxLayoutBody')
-        # hboxLayoutBody.setContentsMargins(15, 15, 15, 15)
-        self.hboxLayoutTableLeft = QVBoxLayout()
-        self.hboxLayoutTableMid = QVBoxLayout()
-        self.hboxLayoutTableRight = QVBoxLayout()
+        self.vboxLayoutTableLeft = QVBoxLayout()
+        self.vboxLayoutTableMid = QVBoxLayout()
+        self.vboxLayoutTableRight = QVBoxLayout()
 
         self.tableLeft = QTableWidget(0, 6)
-        self.tableLeft.setToolTip('点击查看详细结果，右键复制验证数据')
-        self.tableLeft.setMouseTracking(True)
         self.tableLeft.setFont(self.font)
         self.tableLeft.setHorizontalHeaderLabels(
             [
-                '上级事件码',
-                '本级事件码',
+                '上级事件',
+                '本级事件',
                 '事件别名',
                 '结果',
                 '详情1',
@@ -363,21 +358,54 @@ class LogCheckUI(TabWidget):
         #     0, QHeaderView.ResizeToContents)
         self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableLeft.setAlternatingRowColors(True)
-        self.tableLeft.setColumnHidden(3, True)
+        # self.tableLeft.setColumnHidden(3, True)
         self.tableLeft.setColumnHidden(4, True)
         self.tableLeft.setColumnHidden(5, True)
-        self.tableLeft.setColumnWidth(0, 80)
-        self.tableLeft.setColumnWidth(1, 80)
-        self.tableLeft.setColumnWidth(2, 155)
+        self.tableLeft.setColumnWidth(0, 70)
+        self.tableLeft.setColumnWidth(1, 70)
+        self.tableLeft.setColumnWidth(2, 185)
+        self.tableLeft.setColumnWidth(3, 40)
+
+        self.gridLayoutHintLeft = QGridLayout()
+        self.gridLayoutHintLeft.setContentsMargins(10, 0, 10, 0)
+        self.gridLayoutHintLeft.setAlignment(Qt.AlignLeft)
+        self.labelCheckMark = QLabel('')
+        self.labelCheckMark.setFixedSize(20, 20)
+        self.labelCheckMark.setPixmap(
+            QPixmap("./assets/check_mark.png").scaled(15, 15))
+        self.labelCheckMarkHint = QLabel('数据正常')
+        self.labelCrossMark = QLabel('')
+        self.labelCrossMark.setFixedSize(20, 20)
+        self.labelCrossMark.setPixmap(
+            QPixmap("./assets/cross_mark.png").scaled(15, 15))
+        self.labelCrossMarkHint = QLabel('数据异常')
+        self.labelQuestionMark = QLabel('')
+        self.labelQuestionMark.setFixedSize(20, 20)
+        self.labelQuestionMark.setPixmap(
+            QPixmap("./assets/question_mark.png").scaled(15, 15))
+        self.labelQuestionMarkHint = QLabel('事件未定义')
+        self.labelExclamationMark = QLabel('')
+        self.labelExclamationMark.setFixedSize(20, 20)
+        self.labelExclamationMark.setPixmap(
+            QPixmap("./assets/exclamation_mark.png").scaled(15, 15))
+        self.labelExclamationMarkHint = QLabel('键值未定义')
+        self.gridLayoutHintLeft.addWidget(self.labelCheckMark, 0, 0)
+        self.gridLayoutHintLeft.addWidget(self.labelCheckMarkHint, 0, 1)
+        self.gridLayoutHintLeft.addWidget(self.labelCrossMark, 0, 2)
+        self.gridLayoutHintLeft.addWidget(self.labelCrossMarkHint, 0, 3)
+        self.gridLayoutHintLeft.addWidget(self.labelQuestionMark, 0, 4)
+        self.gridLayoutHintLeft.addWidget(self.labelQuestionMarkHint, 0, 5)
+        self.gridLayoutHintLeft.addWidget(self.labelExclamationMark, 0, 6)
+        self.gridLayoutHintLeft.addWidget(self.labelExclamationMarkHint, 0, 7)
 
         self.tableMid = QTableWidget(0, 5)
         self.tableMid.setFont(self.font)
         self.tableMid.setHorizontalHeaderLabels(
             [
                 '键',
-                '键别名',
+                '别名',
                 '值',
-                '值别名',
+                '别名',
                 '结果'
             ]
         )
@@ -391,45 +419,82 @@ class LogCheckUI(TabWidget):
         self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableMid.setAlternatingRowColors(True)
         self.tableMid.setColumnHidden(4, True)
-        self.tableMid.setColumnWidth(0, 110)
-        self.tableMid.setColumnWidth(1, 100)
-        self.tableMid.setColumnWidth(2, 153)
-        self.tableMid.setColumnWidth(3, 100)
+        self.tableMid.setColumnWidth(0, 130)
+        self.tableMid.setColumnWidth(1, 115)
+        self.tableMid.setColumnWidth(2, 170)
+        self.tableMid.setColumnWidth(3, 115)
 
-        self.tableRight = QTableWidget(0, 3)
+        self.gridLayoutHintMid = QGridLayout()
+        self.gridLayoutHintMid.setContentsMargins(10, 0, 10, 0)
+        self.gridLayoutHintMid.setAlignment(Qt.AlignLeft)
+        self.labelRes1 = QLabel('')
+        self.labelRes1.setFixedSize(20, 20)
+        self.labelRes1.setStyleSheet('QLabel{background-color:rgb(255, 99, 71)}')
+        self.labelRes1Hint = QLabel('键值与正则规则不符')
+        self.labelRes2 = QLabel('')
+        self.labelRes2.setFixedSize(20, 20)
+        self.labelRes2.setStyleSheet('QLabel{background-color:rgb(255, 215, 0)}')
+        self.labelRes2Hint = QLabel('键值有定义但未上报')
+        self.labelRes3 = QLabel('')
+        self.labelRes3.setFixedSize(20, 20)
+        self.labelRes3.setStyleSheet('QLabel{background-color:rgb(0, 206, 209)}')
+        self.labelRes3Hint = QLabel('键值有上报但未定义')
+        # self.labelRes4 = QLabel('')
+        # self.labelRes4.setFixedSize(20, 20)
+        # self.labelRes4.setStyleSheet('QLabel{background-color:green}')
+        # self.labelRes4Hint = QLabel('事件数据包含未定义键值')
+
+        self.gridLayoutHintMid.addWidget(self.labelRes1, 0, 0)
+        self.gridLayoutHintMid.addWidget(self.labelRes1Hint, 0, 1)
+        self.gridLayoutHintMid.addWidget(self.labelRes2, 0, 2)
+        self.gridLayoutHintMid.addWidget(self.labelRes2Hint, 0, 3)
+        self.gridLayoutHintMid.addWidget(self.labelRes3, 0, 4)
+        self.gridLayoutHintMid.addWidget(self.labelRes3Hint, 0, 5)
+        # self.gridLayoutHintMid.addWidget(self.labelRes4, 1, 2)
+        # self.gridLayoutHintMid.addWidget(self.labelRes4Hint, 1, 3)
+
+        self.tableRight = QTableWidget(0, 4)
         self.tableRight.setFont(self.font)
         self.tableRight.setHorizontalHeaderLabels(
             [
                 '键',
-                '键别名',
-                '值'
+                '别名',
+                '值',
+                '别名'
             ]
         )
         self.tableRight.verticalHeader().setVisible(False)
         self.tableRight.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
-        self.tableRight.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
+            QHeaderView.Fixed)
+        # self.tableRight.horizontalHeader().setSectionResizeMode(
+        #     0, QHeaderView.ResizeToContents)
         self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableRight.setAlternatingRowColors(True)
+        self.tableRight.setColumnWidth(0, 100)
+        self.tableRight.setColumnWidth(1, 90)
+        self.tableRight.setColumnWidth(2, 100)
+        self.tableRight.setColumnWidth(3, 90)
 
-        self.hboxLayoutTableLeft.addWidget(self.tableLeft)
-        self.hboxLayoutTableMid.addWidget(self.tableMid)
-        self.hboxLayoutTableRight.addWidget(self.tableRight)
+        self.vboxLayoutTableLeft.addWidget(self.tableLeft)
+        self.vboxLayoutTableLeft.addLayout(self.gridLayoutHintLeft)
+        self.vboxLayoutTableMid.addWidget(self.tableMid)
+        self.vboxLayoutTableMid.addLayout(self.gridLayoutHintMid)
+        self.vboxLayoutTableMid.addLayout(self.gridLayoutHintMid)
+        self.vboxLayoutTableRight.addWidget(self.tableRight)
 
         self.groupBoxTableLeft = QGroupBox('验证结果')
-        self.groupBoxTableLeft.setLayout(self.hboxLayoutTableLeft)
+        self.groupBoxTableLeft.setLayout(self.vboxLayoutTableLeft)
         self.groupBoxTableMid = QGroupBox('一级数据')
-        self.groupBoxTableMid.setLayout(self.hboxLayoutTableMid)
+        self.groupBoxTableMid.setLayout(self.vboxLayoutTableMid)
         self.groupBoxTableRight = QGroupBox('二级数据')
-        self.groupBoxTableRight.setLayout(self.hboxLayoutTableRight)
+        self.groupBoxTableRight.setLayout(self.vboxLayoutTableRight)
         # self.groupBoxTableRight.setVisible(False)
         self.hboxLayoutBody.addWidget(self.groupBoxTableLeft)
         self.hboxLayoutBody.addWidget(self.groupBoxTableMid)
         self.hboxLayoutBody.addWidget(self.groupBoxTableRight)
         self.hboxLayoutBody.setStretchFactor(self.groupBoxTableLeft, 3)
         self.hboxLayoutBody.setStretchFactor(self.groupBoxTableMid, 4)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableRight, 2)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableRight, 3)
 
         self.mainLayout.addLayout(self.hboxLayoutModeSelectHeader)
         self.mainLayout.addWidget(self.groupBoxSerialHeader)
@@ -522,8 +587,6 @@ class LogCheckUI(TabWidget):
         self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
         self.btnSerialStop.clicked.connect(
             lambda: self.btnSerialStopClicked(self.btnSerialStop))
-        self.btnSerialTest.clicked.connect(
-            lambda: self.btnSerialTestClicked(self.btnSerialTest))
         self.btnKafkaStart.clicked.connect(
             lambda: self.btnKafkaStartClicked(self.btnKafkaStart))
         self.btnKafkaStop.clicked.connect(
@@ -643,20 +706,6 @@ class LogCheckUI(TabWidget):
             self.serialThread.__del__()
         except Exception as e:
             log.error(str(e))
-
-    def btnSerialTestClicked(self, btn):
-            """
-            点击自动模式的模拟调试按钮
-            :param btn: object
-            :return: None
-            """
-            with open(os.path.join(path, 'conf', 'test.txt')) as f:
-                data = f.read()
-            test = LogCheck()
-            res = test.check_log(data)
-            if res:
-                self.row = 0
-                self.checkResultReceived(res)
 
     def btnKafkaStartClicked(self, btn):
         """
@@ -782,31 +831,17 @@ class LogCheckUI(TabWidget):
                     str(i['event_alias']) if i['event_alias'] else 'N/A'))
 
                 if i['result'] == -1:
-                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('N/A'))
-                    # 灰色表示从配置文件中找不到对应的事件
-                    self.tableLeft.item(self.row, 3).setBackground(
-                        QBrush(QColor(211, 211, 211)))
-                    self.setToolTip('配置文件中没有对应的eventcode！')
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
+                        QIcon('./assets/question_mark.png'), ''))
                 if i['result'] == 0:
-                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('正常'))
-                    # 绿色表示全部字段均正常
-                    self.tableLeft.item(self.row, 3).setBackground(
-                        QBrush(QColor(0, 128, 0)))
-                    self.setToolTip('所有字段均正常，Ctrl+C可复制内容')
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
+                        QIcon('./assets/check_mark.png'), ''))
                 if i['result'] == 1:
-                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem('异常'))
-                    # 红色表示部分字段缺失或值错误
-                    self.tableLeft.item(self.row, 3).setBackground(
-                        QBrush(QColor(255, 0, 0)))
-                    self.setToolTip('部分字段缺失或错误，Ctrl+C可复制内容')
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
+                        QIcon('./assets/cross_mark.png'), ''))
                 if i['result'] == 2:
-                    self.tableLeft.setItem(self.row, 3,
-                                           QTableWidgetItem('警告'))
-                    # 黄色表示包含未定义字段
-                    self.tableLeft.item(self.row, 3).setBackground(
-                        QBrush(QColor(255, 255, 0)))
-                    self.setToolTip('部分字段不在定义内，Ctrl+C可复制内容')
-
+                    self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
+                        QIcon('./assets/exclamation_mark.png'), ''))
                 self.tableLeft.setItem(self.row, 4, QTableWidgetItem(
                     json.dumps(i['data'])))
                 self.tableLeft.setItem(self.row, 5, QTableWidgetItem(
@@ -1085,13 +1120,12 @@ class LogCheckUI(TabWidget):
                     if k in dictRes['invalid_key']:
                         self.tableMid.setItem(n, 4, QTableWidgetItem('不符合'))
                         for i in range(self.tableMid.columnCount()):
-                            self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 0, 0)))
-                            self.tableMid.item(n, i).setFont()
+                            self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 99, 71)))
 
                     elif k in dictRes['undefined_key']:
                         self.tableMid.setItem(n, 4, QTableWidgetItem('未定义'))
                         for i in range(self.tableMid.columnCount()):
-                            self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 255, 0)))
+                            self.tableMid.item(n, i).setBackground(QBrush(QColor(0, 206, 209)))
                     else:
                         self.tableMid.setItem(n, 4, QTableWidgetItem('符合'))
                     n += 1
@@ -1104,7 +1138,7 @@ class LogCheckUI(TabWidget):
                     self.tableMid.setItem(n, 4, QTableWidgetItem('未上报'))
                     for k in range(self.tableMid.columnCount()):
                         self.tableMid.item(n, k).setBackground(
-                            QBrush(QColor(255, 0, 0)))
+                            QBrush(QColor(255, 215, 0)))
                     n += 1
                 self.tableMid.setSortingEnabled(True)
                 self.tableMid.sortByColumn(0, Qt.AscendingOrder)
