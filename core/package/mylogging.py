@@ -2,11 +2,9 @@ import logging
 
 
 class MyLogging:
-    # logging.basicConfig(level=logging.INFO,
-    #                     filename='log.txt',
-    #                     filemode='w',
-    #                     format='[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s')
     logging.basicConfig(level=logging.INFO,
+                        filename='all.log',
+                        filemode='w',
                         format='[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s')
 
     @staticmethod
@@ -23,7 +21,6 @@ class MyLogging:
         # fh.setFormatter(format_)
         # log.addHandler(sh)
         # log.addHandler(fh)
-
         return log
 
     @staticmethod

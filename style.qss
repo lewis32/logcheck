@@ -1,14 +1,16 @@
 .QTableWidget {
     border:1px solid #8f8f91;
-    margin-left:5px;
-    margin-right:0px;
-    margin-bottom:5px;
+    margin:0 0 5px 5px;
     alternate-background-color: #dcdcdc;
 
 }
 .QTableWidget::item#markTableItem {
     color:white;
     background-color: red;
+}
+.QLabel#labelMarkHint,
+#labelResHint{
+    margin:0 10px 0 0;
 }
 .QLabel#labelSerialCom,
 #labelSerialCmd,
@@ -21,18 +23,15 @@
 #labelSshUser,
 #labelSshPwd {
     position:relative;
-    margin-left:10px;
-    margin-right:0px;
+    margin:0 0 0 10px;
     height:25px;
     max-width:150px;
 }
 .MyComboBox#comboBoxSerial {
     border:1px solid #8f8f91;
     border-radius:4px;
-    margin-left:5px;
-    margin-right:5px;
-    padding-left:10px;
-    padding-right:10px;
+    margin:0 5px;
+    padding:0 10px;
     position:relative;
     height:25px;
     width:100px;
@@ -41,10 +40,8 @@
 .MyComboBox#comboBoxSerialCmd {
     border:1px solid #8f8f91;
     border-radius:4px;
-    margin-left:5px;
-    margin-right:5px;
-    padding-left:10px;
-    padding-right:10px;
+    margin:0 5px;
+    padding:0 10px;
     position:relative;
     height:25px;
     width:200px;
@@ -53,10 +50,8 @@
 .MyComboBox#comboBoxKafkaCluster {
     border:1px solid #8f8f91;
     border-radius:4px;
-    margin-left:5px;
-    margin-right:5px;
-    padding-left:10px;
-    padding-right:10px;
+    margin:0 5px;
+    padding:0 10px;
     position:relative;
     height:25px;
     width:100px;
@@ -65,25 +60,22 @@
 .MyComboBox#comboBoxKafkaTopic {
     border:1px solid #8f8f91;
     border-radius:4px;
-    margin-left:5px;
-    margin-right:5px;
-    padding-left:10px;
-    padding-right:10px;
+    margin:0 5px;
+    padding:0 10px;
     position:relative;
     height:25px;
     width:200px;
     max-width:200px;
 }
 .QCheckBox#checkBoxKafkaSshEnable {
-    margin-left:10px;
+    margin:0 0 0 10px;
 }
 .QPushButton#btnHeader,
 #btnFooter {
     border:1px solid #8f8f91;
     border-radius:4px;
     position:relative;
-    margin-left:5px;
-    margin-right:5px;
+    margin:0 5px;
     width:90px;
     height:25px;
     max-width:80px;
@@ -97,10 +89,8 @@
 {
     border:1px solid #8f8f91;
     border-radius:4px;
-    margin-left:5px;
-    margin-right:5px;
-    padding-left:10px;
-    padding-right:10px;
+    margin:0 5px;
+    padding:0 10px;
     height:25px;
     max-width:400px;
 }
@@ -110,8 +100,7 @@
 .QTextEdit#textEditManual {
     border:1px solid #8f8f91;
     border-radius:1px;
-    margin-left:5px;
-    margin-right:5px;
+    margin:0 5px;
     width:100px;
 }
 .QTextEdit#textEditReadme {

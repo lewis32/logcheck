@@ -13,6 +13,7 @@ from core.package.mykafka import MyKafka as Kafka
 from core.package.mylogging import MyLogging as Logging
 from configparser import *
 from core.package.mycombobox import MyComboBox
+# from core.package.mytablewidget import MyTableWidget as QTableWidget
 
 path = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 log = Logging.getLogger('start')
@@ -300,7 +301,7 @@ class LogCheckUI(TabWidget):
         self.groupBoxSshHeader.setObjectName('groupBoxHeader')
         self.groupBoxSshHeader.setLayout(self.gridLayoutSshHeader)
         self.groupBoxSshHeader.setVisible(False)
-        self.groupBoxSshHeader.setFixedSize(430, 120)
+        self.groupBoxSshHeader.setFixedSize(460, 120)
         self.groupBoxKafkaHeader = QGroupBox('Kafka配置')
         self.groupBoxKafkaHeader.setObjectName('groupBoxHeader')
         self.groupBoxKafkaHeader.setLayout(self.gridLayoutKafkaHeader)
@@ -358,12 +359,11 @@ class LogCheckUI(TabWidget):
         #     0, QHeaderView.ResizeToContents)
         self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableLeft.setAlternatingRowColors(True)
-        # self.tableLeft.setColumnHidden(3, True)
         self.tableLeft.setColumnHidden(4, True)
         self.tableLeft.setColumnHidden(5, True)
-        self.tableLeft.setColumnWidth(0, 70)
-        self.tableLeft.setColumnWidth(1, 70)
-        self.tableLeft.setColumnWidth(2, 185)
+        self.tableLeft.setColumnWidth(0, 80)
+        self.tableLeft.setColumnWidth(1, 80)
+        self.tableLeft.setColumnWidth(2, 180)
         self.tableLeft.setColumnWidth(3, 40)
 
         self.gridLayoutHintLeft = QGridLayout()
@@ -372,23 +372,27 @@ class LogCheckUI(TabWidget):
         self.labelCheckMark = QLabel('')
         self.labelCheckMark.setFixedSize(20, 20)
         self.labelCheckMark.setPixmap(
-            QPixmap("./assets/check_mark.png").scaled(15, 15))
+            QPixmap("./assets/check_mark.png").scaled(20, 20))
         self.labelCheckMarkHint = QLabel('数据正常')
+        self.labelCheckMarkHint.setObjectName('labelMarkHint')
         self.labelCrossMark = QLabel('')
         self.labelCrossMark.setFixedSize(20, 20)
         self.labelCrossMark.setPixmap(
-            QPixmap("./assets/cross_mark.png").scaled(15, 15))
+            QPixmap("./assets/cross_mark.png").scaled(20, 20))
         self.labelCrossMarkHint = QLabel('数据异常')
+        self.labelCrossMarkHint.setObjectName('labelMarkHint')
         self.labelQuestionMark = QLabel('')
         self.labelQuestionMark.setFixedSize(20, 20)
         self.labelQuestionMark.setPixmap(
-            QPixmap("./assets/question_mark.png").scaled(15, 15))
+            QPixmap("./assets/question_mark.png").scaled(20, 20))
         self.labelQuestionMarkHint = QLabel('事件未定义')
+        self.labelQuestionMarkHint.setObjectName('labelMarkHint')
         self.labelExclamationMark = QLabel('')
         self.labelExclamationMark.setFixedSize(20, 20)
         self.labelExclamationMark.setPixmap(
-            QPixmap("./assets/exclamation_mark.png").scaled(15, 15))
+            QPixmap("./assets/exclamation_mark.png").scaled(20, 20))
         self.labelExclamationMarkHint = QLabel('键值未定义')
+        self.labelExclamationMarkHint.setObjectName('labelMarkHint')
         self.gridLayoutHintLeft.addWidget(self.labelCheckMark, 0, 0)
         self.gridLayoutHintLeft.addWidget(self.labelCheckMarkHint, 0, 1)
         self.gridLayoutHintLeft.addWidget(self.labelCrossMark, 0, 2)
@@ -398,15 +402,16 @@ class LogCheckUI(TabWidget):
         self.gridLayoutHintLeft.addWidget(self.labelExclamationMark, 0, 6)
         self.gridLayoutHintLeft.addWidget(self.labelExclamationMarkHint, 0, 7)
 
-        self.tableMid = QTableWidget(0, 5)
+        self.tableMid = QTableWidget(0, 4)
+        # self.tableMid.setMouseTracking(True)
+        # self.tableMid.entered.connect(self.tableMid.showToolTip)
         self.tableMid.setFont(self.font)
         self.tableMid.setHorizontalHeaderLabels(
             [
                 '键',
                 '别名',
                 '值',
-                '别名',
-                '结果'
+                '别名'
             ]
         )
         self.tableMid.verticalHeader().setVisible(False)
@@ -419,10 +424,10 @@ class LogCheckUI(TabWidget):
         self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableMid.setAlternatingRowColors(True)
         self.tableMid.setColumnHidden(4, True)
-        self.tableMid.setColumnWidth(0, 130)
-        self.tableMid.setColumnWidth(1, 115)
+        self.tableMid.setColumnWidth(0, 125)
+        self.tableMid.setColumnWidth(1, 110)
         self.tableMid.setColumnWidth(2, 170)
-        self.tableMid.setColumnWidth(3, 115)
+        self.tableMid.setColumnWidth(3, 110)
 
         self.gridLayoutHintMid = QGridLayout()
         self.gridLayoutHintMid.setContentsMargins(10, 0, 10, 0)
@@ -431,18 +436,17 @@ class LogCheckUI(TabWidget):
         self.labelRes1.setFixedSize(20, 20)
         self.labelRes1.setStyleSheet('QLabel{background-color:rgb(255, 99, 71)}')
         self.labelRes1Hint = QLabel('键值与正则规则不符')
+        self.labelRes1Hint.setObjectName('labelResHint')
         self.labelRes2 = QLabel('')
         self.labelRes2.setFixedSize(20, 20)
         self.labelRes2.setStyleSheet('QLabel{background-color:rgb(255, 215, 0)}')
         self.labelRes2Hint = QLabel('键值有定义但未上报')
+        self.labelRes2Hint.setObjectName('labelResHint')
         self.labelRes3 = QLabel('')
         self.labelRes3.setFixedSize(20, 20)
         self.labelRes3.setStyleSheet('QLabel{background-color:rgb(0, 206, 209)}')
         self.labelRes3Hint = QLabel('键值有上报但未定义')
-        # self.labelRes4 = QLabel('')
-        # self.labelRes4.setFixedSize(20, 20)
-        # self.labelRes4.setStyleSheet('QLabel{background-color:green}')
-        # self.labelRes4Hint = QLabel('事件数据包含未定义键值')
+        self.labelRes3Hint.setObjectName('labelResHint')
 
         self.gridLayoutHintMid.addWidget(self.labelRes1, 0, 0)
         self.gridLayoutHintMid.addWidget(self.labelRes1Hint, 0, 1)
@@ -450,8 +454,6 @@ class LogCheckUI(TabWidget):
         self.gridLayoutHintMid.addWidget(self.labelRes2Hint, 0, 3)
         self.gridLayoutHintMid.addWidget(self.labelRes3, 0, 4)
         self.gridLayoutHintMid.addWidget(self.labelRes3Hint, 0, 5)
-        # self.gridLayoutHintMid.addWidget(self.labelRes4, 1, 2)
-        # self.gridLayoutHintMid.addWidget(self.labelRes4Hint, 1, 3)
 
         self.tableRight = QTableWidget(0, 4)
         self.tableRight.setFont(self.font)
@@ -829,6 +831,7 @@ class LogCheckUI(TabWidget):
                     str(i['event_code']) if i['event_code'] else 'N/A'))
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem(
                     str(i['event_alias']) if i['event_alias'] else 'N/A'))
+                self.tableLeft.item(self.row, 2).setToolTip(str(i['event_alias']) if i['event_alias'] else 'N/A')
 
                 if i['result'] == -1:
                     self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
@@ -1110,24 +1113,32 @@ class LogCheckUI(TabWidget):
                 dictRes = json.loads(self.tableLeft.item(row, 5).text())
                 n = 0
                 self.tableMid.setRowCount(len(dictRes['data']) + len(dictRes['missing_key']))
-                for k in dictRes['data']:
-                    self.tableMid.setItem(n, 0, QTableWidgetItem(str(k)))
-                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['data'][k].get('key_alias')) if dictRes['data'][k].get('key_alias') else 'N/A'))
-                    self.tableMid.setItem(n, 2, QTableWidgetItem(str(dictRes['data'][k].get('value'))))
-                    self.tableMid.setItem(n, 3, QTableWidgetItem(
-                        str(dictRes['data'][k].get('value'))))
+                for key in dictRes['data']:
+                    key_alias = dictRes['data'][key].get('key_alias')
+                    value = dictRes['data'][key].get('value')
+                    value_alias = dictRes['data'][key].get('value_alias')
 
-                    if k in dictRes['invalid_key']:
-                        self.tableMid.setItem(n, 4, QTableWidgetItem('不符合'))
+                    self.tableMid.setItem(n, 0, QTableWidgetItem(str(key)))
+                    self.tableMid.item(n, 0).setToolTip(str(key))
+                    self.tableMid.setItem(n, 1, QTableWidgetItem(
+                        str(key_alias) if key_alias else 'N/A'))
+                    self.tableMid.item(n, 1).setToolTip(
+                        str(key_alias) if key_alias else 'N/A')
+                    self.tableMid.setItem(n, 2, QTableWidgetItem(
+                        str(value) if value else 'N/A'))
+                    self.tableMid.item(n, 2).setToolTip(
+                        str(value) if value else 'N/A')
+                    self.tableMid.setItem(n, 3, QTableWidgetItem(
+                        str(value_alias) if value_alias else '\\'))
+                    self.tableMid.item(n, 3).setToolTip(
+                        str(value_alias) if value_alias else '\\')
+                    if key in dictRes['invalid_key']:
                         for i in range(self.tableMid.columnCount()):
                             self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 99, 71)))
 
-                    elif k in dictRes['undefined_key']:
-                        self.tableMid.setItem(n, 4, QTableWidgetItem('未定义'))
+                    if key in dictRes['undefined_key']:
                         for i in range(self.tableMid.columnCount()):
                             self.tableMid.item(n, i).setBackground(QBrush(QColor(0, 206, 209)))
-                    else:
-                        self.tableMid.setItem(n, 4, QTableWidgetItem('符合'))
                     n += 1
 
                 for i in dictRes['missing_key']:
@@ -1135,7 +1146,6 @@ class LogCheckUI(TabWidget):
                     self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['missing_key'][i].get('key_alias'))))
                     self.tableMid.setItem(n, 2, QTableWidgetItem('N/A'))
                     self.tableMid.setItem(n, 3, QTableWidgetItem('N/A'))
-                    self.tableMid.setItem(n, 4, QTableWidgetItem('未上报'))
                     for k in range(self.tableMid.columnCount()):
                         self.tableMid.item(n, k).setBackground(
                             QBrush(QColor(255, 215, 0)))

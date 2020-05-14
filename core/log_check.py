@@ -177,8 +177,7 @@ class LogCheck:
                 res['result'] = -1
                 return res
 
-            if conf[title]['event_alias'].strip() != '':
-                res['event_alias'] = conf[title]['event_alias']
+            res['event_alias'] = conf[title].get('event_alias')
 
             for i in conf[title]['keys']:
                 conf[title]['keys'][(lambda x:x.lower())(i)] = conf[title]['keys'].pop(i)
@@ -195,7 +194,7 @@ class LogCheck:
             if len(conf_key):
                 for key in conf_key:
                     res['missing_key'][key] = {}
-                    res['missing_key'][key]['key_alias'] = conf[title]['keys'][key]['key_alias']
+                    res['missing_key'][key]['key_alias'] = conf[title]['keys'][key].get('key_alias')
 
             mutual_dict = {}
             invalid_mutual_dict = {}
@@ -203,13 +202,18 @@ class LogCheck:
                 mutual_dict[i] = conf[title]['keys'][(lambda x: x.lower())(i)]
                 res['data'][i] = {}
                 res['data'][i]['value'] = data[i]
-                res['data'][i]['key_alias'] = conf[title]['keys'][(lambda x: x.lower())(i)]['key_alias']
-                # if not re.match(eval(mutual_dict[i]['regex']), str(data[i])):
+                res['data'][i]['key_alias'] = conf[title]['keys'][(lambda x: x.lower())(i)].get('key_alias')
                 if not re.match(mutual_dict[i]['regex'], str(data[i])):
                     invalid_mutual_dict[i] = {}
                     invalid_mutual_dict[i]['value'] = data[i]
-                    invalid_mutual_dict[i]['key_alias'] = conf[title]['keys'][i]['key_alias']
+                    invalid_mutual_dict[i]['key_alias'] = conf[title]['keys'][i].get('key_alias')
                     # invalid_mutual_dict[i] = data[i]
+                    continue
+                v_alias = conf[title]['keys'][(lambda x: x.lower())(i)].get('value_alias')
+                if v_alias:
+                    for n in v_alias:
+                        if n == data[i]:
+                            res['data'][i]['value_alias'] = v_alias[n]
 
             if len(invalid_mutual_dict):
                 res['invalid_key'] = dict(**res['invalid_key'], **invalid_mutual_dict)
