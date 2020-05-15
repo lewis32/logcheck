@@ -4,15 +4,15 @@
 
 import sys
 import socket
+from configparser import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from core.log_check import *
-from core.package.myserial import *
+from core.package.myserial import MySerial
 from core.package.mykafka import MyKafka as Kafka
 from core.package.mylogging import MyLogging as Logging
-from configparser import *
-from core.package.mycombobox import MyComboBox
+from core.package.mycombobox import MyComboBox as QComboBox
 
 path = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 log = Logging.getLogger('start')
@@ -48,21 +48,16 @@ class SerialThread(QThread):
 
     def run(self):
         try:
-            self.serial = TVSerial(
-                port=dict_['serial_cur_com'], baudrate=115200, timeout=5)
-            self.serial.sendComand('\n\n')
-            self.sleep(1)
-            self.serial.sendComand(
+            self.serial = MySerial(dict_['serial_cur_com'])
+            self.serial.send_command(
                 config.get(dict_['serial_cur_cmd'], 'start_cmd'))
-            self.serial.sendComand('\n\n')
-            self.sleep(1)
 
-            self.serial.s.flushOutput()
-            self.serial.s.flushInput()
+            self.serial.serial.flushOutput()
+            self.serial.serial.flushInput()
 
             self.lc = LogCheck()
             while self.working:
-                block = self.serial.s.read(size=10000).decode(
+                block = self.serial.serial.read(size=10000).decode(
                         'utf-8', errors='ignore')
                 if block and block.strip():
                     log.info('Original log data: ' + block)
@@ -200,7 +195,7 @@ class LogCheckUI(TabWidget):
 
         self.labelSerialCom = QLabel('端口')
         self.labelSerialCom.setObjectName('labelSerialCom')
-        self.comboBoxSerialCom = MyComboBox()
+        self.comboBoxSerialCom = QComboBox()
         self.comboBoxSerialCom.setObjectName('comboBoxSerial')
         self.comboBoxSerialCom.setCurrentIndex(-1)
         self.labelSerialFilter = QLabel('过滤词')
@@ -209,7 +204,7 @@ class LogCheckUI(TabWidget):
         self.lineEditSerialFilter.setObjectName('lineEditSerialFilter')
         self.labelSerialCmd = QLabel('执行Shell命令')
         self.labelSerialCmd.setObjectName('labelSerialCmd')
-        self.comboBoxSerialCmd = MyComboBox()
+        self.comboBoxSerialCmd = QComboBox()
         self.comboBoxSerialCmd.setObjectName('comboBoxSerialCmd')
         self.btnSerialStart = QPushButton('开始')
         self.btnSerialStart.setObjectName('btnHeader')
@@ -260,11 +255,11 @@ class LogCheckUI(TabWidget):
         self.lineEditSshPwd.setObjectName('lineEditSshPwd')
         self.labelKafkaCluster = QLabel('Server')
         self.labelKafkaCluster.setObjectName('labelKafkaCluster')
-        self.comboBoxKafkaCluster = MyComboBox()
+        self.comboBoxKafkaCluster = QComboBox()
         self.comboBoxKafkaCluster.setObjectName('comboBoxKafkaCluster')
         self.labelKafkaTopic = QLabel('Topic')
         self.labelKafkaTopic.setObjectName('labelKafkaTopic')
-        self.comboBoxKafkaTopic = MyComboBox()
+        self.comboBoxKafkaTopic = QComboBox()
         self.comboBoxKafkaTopic.setObjectName('comboBoxKafkaTopic')
         self.labelKafkaFilter = QLabel('过滤词')
         self.labelKafkaFilter.setObjectName('labelKafkaFilter')
@@ -865,7 +860,7 @@ class LogCheckUI(TabWidget):
     def comboBoxSerialComSelected(self, i):
         """
         下拉框选择端口触发
-        :param i: MyComboBox
+        :param i: QComboBox
         :return: None
         """
         try:
@@ -897,7 +892,7 @@ class LogCheckUI(TabWidget):
     def comboBoxSerialCmdSelected(self, i):
         """
         下拉框选择串口命令触发
-        :param i: MyComboBox
+        :param i: QComboBox
         :return: None
         """
         try:
