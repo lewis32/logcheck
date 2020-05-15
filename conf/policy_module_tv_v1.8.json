@@ -617,10 +617,43 @@
     "null_200261_3.0":{
         "event_alias":"Notification-setting设置",
         "keys":{
-            "extra":{
+            "Extra":{
                 "regex":"",
                 "key_alias":"",
-                "value_alias":null
+                "value_alias":null,
+                "more":{
+                    "warningsandlegalstatements":{
+                        "regex":"",
+                        "key_alias":"",
+                        "value_alias":{
+                            "0":"关",
+                            "1":"开"
+                        }
+                    },
+                    "newarrivals":{
+                        "regex":"",
+                        "key_alias":null,
+                        "value_alias":{
+                            "0":"关",
+                            "1":"开"
+                        }
+                    },
+                    "advertising":{
+                        "regex":"",
+                        "key_alias":"Advertising",
+                        "value_alias":{
+                            "0":"关"
+                        }
+                    },
+                    "systemmessage":{
+                        "regex":"",
+                        "key_alias":"System Message",
+                        "value_alias":{
+                            "0":"关",
+                            "1":"开"
+                        }
+                    }
+                }
             }
         },
         "ignore_keys":[]

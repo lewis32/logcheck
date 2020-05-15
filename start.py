@@ -13,7 +13,6 @@ from core.package.mykafka import MyKafka as Kafka
 from core.package.mylogging import MyLogging as Logging
 from configparser import *
 from core.package.mycombobox import MyComboBox
-# from core.package.mytablewidget import MyTableWidget as QTableWidget
 
 path = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 log = Logging.getLogger('start')
@@ -153,6 +152,10 @@ class LogCheckUI(TabWidget):
         self.row = 0
 
         self.setWindowTitle('日志验证工具 v1.3')
+        icon = QIcon()
+        icon.addPixmap(QPixmap("assets/icon.ico"), QIcon.Normal,
+                       QIcon.Off)
+        self.setWindowIcon(icon)
         self.resize(1500, 700)
         self.setFixedSize(self.width(), self.height())
 
@@ -516,6 +519,10 @@ class LogCheckUI(TabWidget):
         readme_path = os.path.join(path, 'README.txt')
         self.textEditReadme = QTextEdit()
         self.textEditReadme.setObjectName('textEditReadme')
+        font = QFont()
+        font.setPointSize(12)
+        font.setFamily("Microsoft YaHei UI")
+        self.textEditReadme.setFont(font)
         self.textEditReadme.setReadOnly(True)
         try:
             with open(readme_path, encoding='utf-8') as f:
@@ -826,12 +833,12 @@ class LogCheckUI(TabWidget):
                     continue
                 self.tableLeft.setRowCount(self.row + 1)
                 self.tableLeft.setItem(self.row, 0, QTableWidgetItem(
-                    str(i['src_event_code']) if i['src_event_code'] else 'N/A'))
+                    str(i['src_event_code']) if i['src_event_code'] else '-'))
                 self.tableLeft.setItem(self.row, 1, QTableWidgetItem(
-                    str(i['event_code']) if i['event_code'] else 'N/A'))
+                    str(i['event_code']) if i['event_code'] else '-'))
                 self.tableLeft.setItem(self.row, 2, QTableWidgetItem(
-                    str(i['event_alias']) if i['event_alias'] else 'N/A'))
-                self.tableLeft.item(self.row, 2).setToolTip(str(i['event_alias']) if i['event_alias'] else 'N/A')
+                    str(i['event_alias']) if i['event_alias'] else '-'))
+                self.tableLeft.item(self.row, 2).setToolTip(str(i['event_alias']) if i['event_alias'] else '-')
 
                 if i['result'] == -1:
                     self.tableLeft.setItem(self.row, 3, QTableWidgetItem(
@@ -1121,17 +1128,17 @@ class LogCheckUI(TabWidget):
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(key)))
                     self.tableMid.item(n, 0).setToolTip(str(key))
                     self.tableMid.setItem(n, 1, QTableWidgetItem(
-                        str(key_alias) if key_alias else 'N/A'))
+                        str(key_alias) if key_alias else '-'))
                     self.tableMid.item(n, 1).setToolTip(
-                        str(key_alias) if key_alias else 'N/A')
+                        str(key_alias) if key_alias else '-')
                     self.tableMid.setItem(n, 2, QTableWidgetItem(
-                        str(value) if value else 'N/A'))
+                        str(value) if value else '-'))
                     self.tableMid.item(n, 2).setToolTip(
-                        str(value) if value else 'N/A')
+                        str(value) if value else '-')
                     self.tableMid.setItem(n, 3, QTableWidgetItem(
-                        str(value_alias) if value_alias else '\\'))
+                        str(value_alias) if value_alias else '-'))
                     self.tableMid.item(n, 3).setToolTip(
-                        str(value_alias) if value_alias else '\\')
+                        str(value_alias) if value_alias else '-')
                     if key in dictRes['invalid_key']:
                         for i in range(self.tableMid.columnCount()):
                             self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 99, 71)))
@@ -1144,8 +1151,8 @@ class LogCheckUI(TabWidget):
                 for i in dictRes['missing_key']:
                     self.tableMid.setItem(n, 0, QTableWidgetItem(str(i)))
                     self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes['missing_key'][i].get('key_alias'))))
-                    self.tableMid.setItem(n, 2, QTableWidgetItem('N/A'))
-                    self.tableMid.setItem(n, 3, QTableWidgetItem('N/A'))
+                    self.tableMid.setItem(n, 2, QTableWidgetItem('-'))
+                    self.tableMid.setItem(n, 3, QTableWidgetItem('-'))
                     for k in range(self.tableMid.columnCount()):
                         self.tableMid.item(n, k).setBackground(
                             QBrush(QColor(255, 215, 0)))
@@ -1169,10 +1176,18 @@ class LogCheckUI(TabWidget):
                 extra_data = json.loads(tmp)
                 n = 0
                 for k in extra_data:
+                    key_alias = extra_data[k].get('key_alias')
+                    value = extra_data[k].get('value')
+                    value_alias = extra_data[k].get('value_alias')
                     self.tableRight.setRowCount(n + 1)
                     self.tableRight.setItem(n, 0, QTableWidgetItem(str(k)))
-                    self.tableRight.setItem(n, 1, QTableWidgetItem())
-                    self.tableRight.setItem(n, 2, QTableWidgetItem(str(extra_data[k])))
+                    self.tableRight.item(n, 0).setToolTip(str(k))
+                    self.tableRight.setItem(n, 1, QTableWidgetItem(str(key_alias) if key_alias else'-'))
+                    self.tableRight.item(n, 1).setToolTip(str(key_alias) if key_alias else'-')
+                    self.tableRight.setItem(n, 2, QTableWidgetItem(str(value) if value else'-'))
+                    self.tableRight.item(n, 2).setToolTip(str(value) if value else'-')
+                    self.tableRight.setItem(n, 3, QTableWidgetItem(str(value_alias) if value_alias else'-'))
+                    self.tableRight.item(n, 3).setToolTip(str(value_alias) if value_alias else'-')
                     n += 1
         except Exception as e:
             log.error(str(e))

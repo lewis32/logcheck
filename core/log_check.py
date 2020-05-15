@@ -6,6 +6,7 @@ import re
 import json
 import time
 import bisect
+from collections import Iterable
 from .package.mylogging import MyLogging as Logging
 
 log = Logging.getLogger(__name__)
@@ -194,26 +195,39 @@ class LogCheck:
             if len(conf_key):
                 for key in conf_key:
                     res['missing_key'][key] = {}
-                    res['missing_key'][key]['key_alias'] = conf[title]['keys'][key].get('key_alias')
+                    res['missing_key'][key]['key_alias'] = conf[title]['keys'][
+                        key].get('key_alias')
 
             mutual_dict = {}
             invalid_mutual_dict = {}
             for i in mutual_key:
                 mutual_dict[i] = conf[title]['keys'][(lambda x: x.lower())(i)]
                 res['data'][i] = {}
-                res['data'][i]['value'] = data[i]
-                res['data'][i]['key_alias'] = conf[title]['keys'][(lambda x: x.lower())(i)].get('key_alias')
+                res['data'][i]['key_alias'] = mutual_dict[i].get('key_alias')
+                if re.match(r'{.*}', data[i]):
+                    json_value = json.loads(data[i])
+                    conf_more = mutual_dict[i].get('more')
+                    for m in json_value:
+                        value_ = str(json_value[m])
+                        json_value[m] = {}
+                        json_value[m]['value'] = value_
+                        if isinstance(conf_more, Iterable) and (lambda x: x.lower())(m) in conf_more:
+                            json_value[m]['key_alias'] = conf_more[(lambda x: x.lower())(m)]['key_alias']
+                            if value_ in conf_more[m]['value_alias']:
+                                json_value[m]['value_alias'] = conf_more[m]['value_alias'][value_]
+                    res['data'][i]['value'] = json.dumps(json_value)
+                else:
+                    res['data'][i]['value'] = data[i]
+                v_alias = conf[title]['keys'][(lambda x: x.lower())(i)].get(
+                    'value_alias')
+                for n in (v_alias or ''):
+                    if n == data[i]:
+                        res['data'][i]['value_alias'] = v_alias[n]
                 if not re.match(mutual_dict[i]['regex'], str(data[i])):
                     invalid_mutual_dict[i] = {}
                     invalid_mutual_dict[i]['value'] = data[i]
-                    invalid_mutual_dict[i]['key_alias'] = conf[title]['keys'][i].get('key_alias')
-                    # invalid_mutual_dict[i] = data[i]
-                    continue
-                v_alias = conf[title]['keys'][(lambda x: x.lower())(i)].get('value_alias')
-                if v_alias:
-                    for n in v_alias:
-                        if n == data[i]:
-                            res['data'][i]['value_alias'] = v_alias[n]
+                    invalid_mutual_dict[i]['key_alias'] = conf[title]['keys'][
+                        i].get('key_alias')
 
             if len(invalid_mutual_dict):
                 res['invalid_key'] = dict(**res['invalid_key'], **invalid_mutual_dict)

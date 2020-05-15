@@ -4,47 +4,47 @@
 	    "deviceid":{
 	    	"regex":"^861003009000003000000730f0a637b440015f564296cc1f0d917246$",
 	        "key_alias":"设备id",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "devicemsg":{
 	    	"regex":"^HU32E5600FHWV587$",
 	        "key_alias":"扩展设备名",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "brand":{
 	        "regex":"^his$",
 	        "key_alias":"品牌",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "os":{
 	        "regex":"^Linux$",
 	        "key_alias":"系统版本",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "capabilitycode":{
 	        "regex":"^2019092401$",
 	        "key_alias":"能力码",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "chipplatform":{
 	        "regex":"^MTK9602$",
 	        "key_alias":"平台",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "countrycode":{
 	        "regex":"^USA$",
 	        "key_alias":"3位国家码",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "zone":{
 	        "regex":"^-5$",
 	        "key_alias":"时区",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "tvversion":{
 	        "regex":"^V0000\\.01\\.00A\\.K0506$",
 	        "key_alias":"整机版本",
-	        "mapping":null
+	        "value_alias":null
 	    },
 	    "tvmode":{
 	        "regex":"^[0-2]$",
@@ -53,23 +53,12 @@
 				"0":"商场模式",
 				"1":"用户模式",
 				"2":"酒店模式"
-			},
-			"json":{
-				"key1":{
-					"regex":"",
-					"key_alias":"alias1",
-					"value_alias":{
-						"0":"商场模式",
-						"1":"用户模式",
-						"2":"酒店模式"
-					}
-				}
 			}
 	    },
 	    "eventtime":{
 	        "regex":"^\\d{9,}$",
 	        "key_alias":"事件上报时间",
-	        "mapping":null
+	        "value_alias":null
 	    }
 	},
 	"ignore_keys":[

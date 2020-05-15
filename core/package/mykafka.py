@@ -19,7 +19,7 @@ class MyKafka:
                     (self.ssh_config['host'], int(self.ssh_config['port'])),
                     ssh_username=self.ssh_config['user'],
                     ssh_password=self.ssh_config['pwd'],
-                    remote_bind_address=(self.kafka_config['server'][0].split(':')[0], int(self.kafka_config['server'][0].split(':')[1]))
+                    remote_bind_address=(self.kafka_config['server'].split(':')[0], int(self.kafka_config['server'].split(':')[1]))
                 )
                 self.server.start()
                 log.info('开始执行SSH通道')
