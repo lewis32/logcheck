@@ -43,12 +43,12 @@ class MySerial:
 
     def send_command(self, cmd):
         if self.is_open():
-            self.serial.write((cmd + '\r\r').encode('utf-8'))
+            self.serial.write((cmd + "\r\r").encode("utf-8"))
             time.sleep(1)
 
     def always_read_serial(self):
         while self.read_flag:
-            value = self.serial.readline().decode('utf-8', errors="ignore")
+            value = self.serial.readline().decode("utf-8", errors="ignore")
             if not value:
                 continue
             yield value

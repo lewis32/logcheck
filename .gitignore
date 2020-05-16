@@ -14,9 +14,8 @@ pyqt/
 build/
 dist/
 venv/
-*.spec
 
 # output files
+*.log
 result/
-log/
-release/
+svn/

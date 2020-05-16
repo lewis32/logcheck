@@ -14,7 +14,7 @@ log = Logging.getLogger(__name__)
 
 class LogCheck:
     filepath = os.path.abspath((os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-    stime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
+    stime = time.strftime("%Y%m%d-%H%M%S", time.localtime())
 
     def __init__(self):
         self.policy_all = self._load_policy()
@@ -30,16 +30,16 @@ class LogCheck:
         stack_right_bracket = []
         array_json = []
         for i in range(len(raw_str)):
-            if raw_str[i] == '{':
+            if raw_str[i] == "{":
                 stack_left_bracket.append(i)
-            if raw_str[i] == '}':
+            if raw_str[i] == "}":
                 stack_right_bracket.append(i)
             if stack_left_bracket and len(stack_left_bracket) == len(
                     stack_right_bracket):
                 array_json.append(raw_str[stack_left_bracket[0]: stack_right_bracket.pop() + 1])
                 stack_left_bracket = []
                 stack_right_bracket = []
-        log.info('array_json: ' + array_json.__str__())
+        log.info("array_json: " + array_json.__str__())
         return array_json
 
     def _load_policy(self):
@@ -47,54 +47,54 @@ class LogCheck:
         处理串口模式配置文件
         :return: dict
         """
-        policy_path = os.path.os.path.join(self.filepath, 'conf')
+        policy_path = os.path.os.path.join(self.filepath, "conf")
         policy_common = None
         policy_module = {}
 
         for i in os.listdir(policy_path):
-            if re.match(r'^policy_module.*\.json', i):
+            if re.match(r"^policy_module.*\.json", i):
                 policy_module_path = os.path.os.path.join(policy_path, i)
-                with open(policy_module_path, mode='r', encoding='utf-8') as f:
+                with open(policy_module_path, mode="r", encoding="utf-8") as f:
                     str_policy = f.read()
-                    if str_policy.startswith(u'\ufeff'):
-                        str_policy = str_policy.encode('utf-8')[3:].decode('utf-8')
-                    dict_policy = json.loads(str_policy, encoding='utf-8')
+                    if str_policy.startswith(u"\ufeff"):
+                        str_policy = str_policy.encode("utf-8")[3:].decode("utf-8")
+                    dict_policy = json.loads(str_policy, encoding="utf-8")
                     policy_module = dict(policy_module, **dict_policy)
-            if re.match(r'^policy_common\.json', i):
+            if re.match(r"^policy_common\.json", i):
                 policy_common_path = os.path.os.path.join(policy_path, i)
-                with open(policy_common_path, mode='r', encoding='utf-8') as f:
+                with open(policy_common_path, mode="r", encoding="utf-8") as f:
                     str_policy = f.read()
-                    if str_policy.startswith(u'\ufeff'):
-                        str_policy = str_policy.encode('utf-8')[3:].decode('utf-8')
-                    policy_common = json.loads(str_policy, encoding='utf-8')
+                    if str_policy.startswith(u"\ufeff"):
+                        str_policy = str_policy.encode("utf-8")[3:].decode("utf-8")
+                    policy_common = json.loads(str_policy, encoding="utf-8")
 
         if policy_common and policy_module:
             for event in policy_module:
-                m = re.match(r'^(null|\d+)_(\d+)_([\d.]+)', event)
+                m = re.match(r"^(null|\d+)_(\d+)_([\d.]+)", event)
                 if m.group(0):
-                    if m.group(1) != 'null':
-                        policy_module[event]['keys']['srceventcode'] = {
-                            'regex': m.group(1),
-                            'key_alias': '上级事件'
+                    if m.group(1) != "null":
+                        policy_module[event]["keys"]["srceventcode"] = {
+                            "regex": m.group(1),
+                            "key_alias": "上级事件"
                         }
-                    policy_module[event]['keys']['eventcode'] = {
-                        'regex': m.group(2),
-                        'key_alias': '本级事件'
+                    policy_module[event]["keys"]["eventcode"] = {
+                        "regex": m.group(2),
+                        "key_alias": "本级事件"
                     }
-                    policy_module[event]['keys']['version'] = {
-                        'regex': m.group(3),
-                        'key_alias': '日志版本'
+                    policy_module[event]["keys"]["version"] = {
+                        "regex": m.group(3),
+                        "key_alias": "日志版本"
                     }
-                policy_common_ = policy_common['keys'].copy()
-                # for ex in policy_module[event]['ignore_keys']:
+                policy_common_ = policy_common["keys"].copy()
+                # for ex in policy_module[event]["ignore_keys"]:
                 #     if ex in policy_common_:
                 #         policy_common_.pop(ex)
                 #     if ex in policy_module:
-                #         policy_module[event]['keys'].pop(ex)
+                #         policy_module[event]["keys"].pop(ex)
                 #     else:
-                #         log.error('找不到限制字段%s！' % (ex,))
-                policy_module[event]['keys'] = dict(policy_module[event]['keys'], **policy_common_)
-                policy_module[event]['ignore_keys'] = list(set(policy_common['ignore_keys'] + policy_module[event]['ignore_keys']))
+                #         log.error("找不到限制字段%s！" % (ex,))
+                policy_module[event]["keys"] = dict(policy_module[event]["keys"], **policy_common_)
+                policy_module[event]["ignore_keys"] = list(set(policy_common["ignore_keys"] + policy_module[event]["ignore_keys"]))
             log.info("policy: " + json.dumps(policy_module))
             return policy_module
 
@@ -113,8 +113,8 @@ class LogCheck:
         data_dict = {}
         for i in data_:
             data_dict[i.lower()] = i
-        conf_lower = [i.lower() for i in conf['keys']]
-        for ex in conf['ignore_keys']:
+        conf_lower = [i.lower() for i in conf["keys"]]
+        for ex in conf["ignore_keys"]:
             if ex in data_dict:
                 data_.remove(data_dict[ex])
             if ex in conf_lower:
@@ -143,109 +143,109 @@ class LogCheck:
         """
         try:
             res = {
-                'data': {},
-                'src_event_code': None,
-                'event_code': None,
-                'event_alias': None,
-                'missing_key': {},
-                'undefined_key': {},
-                'invalid_key': {},
-                'result': 0
+                "data": {},
+                "src_event_code": None,
+                "event_code": None,
+                "event_alias": None,
+                "missing_key": {},
+                "undefined_key": {},
+                "invalid_key": {},
+                "result": 0
             }
 
             # count = len(data)
             # n = 1
-            title = ['null', 'null', 'null']
+            title = ["null", "null", "null"]
 
             for key in data:
                 lower_key = (lambda x: x.lower())(key)
-                if lower_key == 'srceventcode':
+                if lower_key == "srceventcode":
                     title[0] = data[key]
-                    res['src_event_code'] = data[key]
-                if lower_key == 'eventcode':
+                    res["src_event_code"] = data[key]
+                if lower_key == "eventcode":
                     title[1] = data[key]
-                    res['event_code'] = data[key]
-                if lower_key == 'version':
+                    res["event_code"] = data[key]
+                if lower_key == "version":
                     title[2] = data[key]
-                    # res['version'] = data[key]
-            title = '_'.join(title)
+                    # res["version"] = data[key]
+            title = "_".join(title)
 
             if title not in conf:
                 # 找不到对应事件，直接返回-1
                 for key in data:
-                    res['data'][key] = {}
-                    res['data'][key]['value'] = data[key]
-                res['result'] = -1
+                    res["data"][key] = {}
+                    res["data"][key]["value"] = data[key]
+                res["result"] = -1
                 return res
 
-            res['event_alias'] = conf[title].get('event_alias')
+            res["event_alias"] = conf[title].get("event_alias")
 
-            for i in conf[title]['keys']:
-                conf[title]['keys'][(lambda x:x.lower())(i)] = conf[title]['keys'].pop(i)
+            for i in conf[title]["keys"]:
+                conf[title]["keys"][(lambda x:x.lower())(i)] = conf[title]["keys"].pop(i)
 
             mutual_key, data_key, conf_key = self._compare_keys(data, conf[title])
-            log.info('mutual key:' + str(mutual_key))
-            log.info('conf_key:' + str(conf_key))
+            log.info("mutual key:" + str(mutual_key))
+            log.info("conf_key:" + str(conf_key))
             if len(data_key):
                 for key in data_key:
-                    res['undefined_key'][key] = {}
-                    res['undefined_key'][key]['value'] = data[key]
-                    res['data'][key] = {}
-                    res['data'][key]['value'] = data[key]
+                    res["undefined_key"][key] = {}
+                    res["undefined_key"][key]["value"] = data[key]
+                    res["data"][key] = {}
+                    res["data"][key]["value"] = data[key]
             if len(conf_key):
                 for key in conf_key:
-                    res['missing_key'][key] = {}
-                    res['missing_key'][key]['key_alias'] = conf[title]['keys'][
-                        key].get('key_alias')
+                    res["missing_key"][key] = {}
+                    res["missing_key"][key]["key_alias"] = conf[title]["keys"][
+                        key].get("key_alias")
 
             mutual_dict = {}
             invalid_mutual_dict = {}
             for i in mutual_key:
-                mutual_dict[i] = conf[title]['keys'][(lambda x: x.lower())(i)]
-                res['data'][i] = {}
-                res['data'][i]['key_alias'] = mutual_dict[i].get('key_alias')
-                if re.match(r'{.*}', data[i]):
+                mutual_dict[i] = conf[title]["keys"][(lambda x: x.lower())(i)]
+                res["data"][i] = {}
+                res["data"][i]["key_alias"] = mutual_dict[i].get("key_alias")
+                if re.match(r"{.*}", data[i]):
                     json_value = json.loads(data[i])
-                    conf_more = mutual_dict[i].get('more')
+                    conf_more = mutual_dict[i].get("more")
                     for m in json_value:
                         value_ = str(json_value[m])
                         json_value[m] = {}
-                        json_value[m]['value'] = value_
+                        json_value[m]["value"] = value_
                         if isinstance(conf_more, Iterable) and (lambda x: x.lower())(m) in conf_more:
-                            json_value[m]['key_alias'] = conf_more[(lambda x: x.lower())(m)]['key_alias']
-                            if value_ in conf_more[m]['value_alias']:
-                                json_value[m]['value_alias'] = conf_more[m]['value_alias'][value_]
-                    res['data'][i]['value'] = json.dumps(json_value)
+                            json_value[m]["key_alias"] = conf_more[(lambda x: x.lower())(m)]["key_alias"]
+                            if value_ in conf_more[m]["value_alias"]:
+                                json_value[m]["value_alias"] = conf_more[m]["value_alias"][value_]
+                    res["data"][i]["value"] = json.dumps(json_value)
                 else:
-                    res['data'][i]['value'] = data[i]
-                v_alias = conf[title]['keys'][(lambda x: x.lower())(i)].get(
-                    'value_alias')
-                for n in (v_alias or ''):
+                    res["data"][i]["value"] = data[i]
+                v_alias = conf[title]["keys"][(lambda x: x.lower())(i)].get(
+                    "value_alias")
+                for n in (v_alias or ""):
                     if n == data[i]:
-                        res['data'][i]['value_alias'] = v_alias[n]
-                if not re.match(mutual_dict[i]['regex'], str(data[i])):
+                        res["data"][i]["value_alias"] = v_alias[n]
+                if not re.match(mutual_dict[i]["regex"], str(data[i])):
                     invalid_mutual_dict[i] = {}
-                    invalid_mutual_dict[i]['value'] = data[i]
-                    invalid_mutual_dict[i]['key_alias'] = conf[title]['keys'][
-                        i].get('key_alias')
+                    invalid_mutual_dict[i]["value"] = data[i]
+                    invalid_mutual_dict[i]["key_alias"] = conf[title]["keys"][
+                        i].get("key_alias")
 
             if len(invalid_mutual_dict):
-                res['invalid_key'] = dict(**res['invalid_key'], **invalid_mutual_dict)
+                res["invalid_key"] = dict(**res["invalid_key"], **invalid_mutual_dict)
 
             # 存在策略中未定义的键值，返回2
-            if len(res['undefined_key']):
-                res['result'] = 2
+            if len(res["undefined_key"]):
+                res["result"] = 2
 
             # 存在不合法键值或丢失键值，返回1
-            if len(res['missing_key']) or len(res['invalid_key']):
-                res['result'] = 1
+            if len(res["missing_key"]) or len(res["invalid_key"]):
+                res["result"] = 1
 
             return res
         except Exception as e:
             log.error(str(e))
             return
 
-    def check_log(self, data='', filter_=''):
+    def check_log(self, data="", filter_=""):
         """
         对比日志
         :param data: str
@@ -256,13 +256,13 @@ class LogCheck:
         if not data:
             return
 
-        output_name = 'result-%s.txt' % self.stime
+        output_name = "result-%s.txt" % self.stime
 
-        if not os.path.exists(os.path.join(self.filepath, 'result')):
-            os.mkdir(os.path.join(self.filepath, 'result'))
-        output_path = os.path.join(self.filepath, 'result', output_name)
+        if not os.path.exists(os.path.join(self.filepath, "result")):
+            os.mkdir(os.path.join(self.filepath, "result"))
+        output_path = os.path.join(self.filepath, "result", output_name)
 
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             listed_data = self._split_log(data)
             listed_results = []
 

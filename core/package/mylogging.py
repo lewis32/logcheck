@@ -3,21 +3,21 @@ import logging
 
 class MyLogging:
     logging.basicConfig(level=logging.INFO,
-                        filename='all.log',
-                        filemode='w',
-                        format='[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s')
+                        filename="all.log",
+                        filemode="w",
+                        format="[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s")
 
     @staticmethod
     def getLogger(name):
         global log
         log = logging.getLogger(name)
         # log.setLevel(logging.INFO)
-        # format_ = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s')
+        # format_ = logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s: %(lineno)s] -- [%(funcName)s] %(message)s")
         # sh = logging.StreamHandler()
         # sh.setFormatter(format_)
-        # fh = logging.FileHandler(filename='log.txt',
-        #                          mode='w',
-        #                          encoding='utf-8')
+        # fh = logging.FileHandler(filename="log.txt",
+        #                          mode="w",
+        #                          encoding="utf-8")
         # fh.setFormatter(format_)
         # log.addHandler(sh)
         # log.addHandler(fh)

@@ -7,39 +7,39 @@ log = logging.getLogger(__name__)
 
 class Config:
     def __init__(self, dict_):
-        self._stop_cmd = dict_['serial_config']['stop_cmd']
-        self._start_cmd = dict_['serial_config']['start_cmd']
-        self._kafka_server = dict_['kafka_config']['server']
-        self._kafka_topic = dict_['kafka_config']['topic']
-        self._kafka_group_id = dict_['kafka_config']['group_id']
-        self._kafka_filter = dict_['kafka_config']['filter']
-        self._ssh_enable = dict_['kafka_config']['ssh_enable']
-        self._ssh_host = dict_['kafka_config']['ssh_config']['host']
-        self._ssh_port = dict_['kafka_config']['ssh_config']['port']
-        self._ssh_user = dict_['kafka_config']['ssh_config']['user']
-        self._ssh_pwd = dict_['kafka_config']['ssh_config']['pwd']
-        self._mode = dict_['mode']
+        self._stop_cmd = dict_["serial_config"]["stop_cmd"]
+        self._start_cmd = dict_["serial_config"]["start_cmd"]
+        self._kafka_server = dict_["kafka_config"]["server"]
+        self._kafka_topic = dict_["kafka_config"]["topic"]
+        self._kafka_group_id = dict_["kafka_config"]["group_id"]
+        self._kafka_filter = dict_["kafka_config"]["filter"]
+        self._ssh_enable = dict_["kafka_config"]["ssh_enable"]
+        self._ssh_host = dict_["kafka_config"]["ssh_config"]["host"]
+        self._ssh_port = dict_["kafka_config"]["ssh_config"]["port"]
+        self._ssh_user = dict_["kafka_config"]["ssh_config"]["user"]
+        self._ssh_pwd = dict_["kafka_config"]["ssh_config"]["pwd"]
+        self._mode = dict_["mode"]
 
     def to_dict(self):
         return {
-            'serial_config': {
-                'start_cmd': self._start_cmd,
-                'stop_cmd': self._stop_cmd
+            "serial_config": {
+                "start_cmd": self._start_cmd,
+                "stop_cmd": self._stop_cmd
             },
-            'kafka_config': {
-                'server': self._kafka_server,
-                'topic': self._kafka_topic,
-                'group_id': self._kafka_group_id,
-                'filter': self._kafka_filter,
-                'ssh_enable': self._ssh_enable,
-                'ssh_config': {
-                    'host': self._ssh_host,
-                    'port': self._ssh_port,
-                    'user': self._ssh_user,
-                    'pwd': self._ssh_pwd
+            "kafka_config": {
+                "server": self._kafka_server,
+                "topic": self._kafka_topic,
+                "group_id": self._kafka_group_id,
+                "filter": self._kafka_filter,
+                "ssh_enable": self._ssh_enable,
+                "ssh_config": {
+                    "host": self._ssh_host,
+                    "port": self._ssh_port,
+                    "user": self._ssh_user,
+                    "pwd": self._ssh_pwd
                 }
             },
-            'mode': self._mode
+            "mode": self._mode
         }
 
     @property
@@ -143,20 +143,20 @@ class LoadConfig:
     _config_path = os.path.join(
         os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(
             os.path.realpath(__file__))))),
-        'conf',
-        'setting.json'
+        "conf",
+        "setting.json"
     )
 
     @classmethod
     def get_config(cls):
-        with open(cls._config_path, 'r+', encoding='utf-8') as f:
+        with open(cls._config_path, "r+", encoding="utf-8") as f:
             obj = json.load(f, cls=ConfigDecode)
             log.info("get config file...")
             return obj
 
     @classmethod
     def set_config(cls, obj):
-        with open(cls._config_path, 'w+', encoding='utf-8') as f:
+        with open(cls._config_path, "w+", encoding="utf-8") as f:
             json.dump(obj, f, cls=ConfigEncode, ensure_ascii=False, indent=4,
                       sort_keys=True)
             log.info("set config file...")
@@ -175,7 +175,7 @@ class ConfigEncode(json.JSONEncoder):
         return json.JSONEncoder.default(o)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         lc = LoadConfig()
         config = lc.get_config()
