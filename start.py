@@ -26,7 +26,7 @@ dict_ = {
     "kafka_cur_topic": "",
     "kafka_cur_filter": "",
     "cur_row": 0,
-    "serial_cur_com": "",
+    "serial_cur_port": "",
     "serial_cur_cmd": "",
     "serial_cur_filter": ""
 }
@@ -49,7 +49,7 @@ class SerialThread(QThread):
 
     def run(self):
         try:
-            self.serial = Serial(dict_["serial_cur_com"])
+            self.serial = Serial(dict_["serial_cur_port"])
             self.serial.send_command(
                 config.get(dict_["serial_cur_cmd"], "start_cmd"))
 
@@ -60,7 +60,7 @@ class SerialThread(QThread):
             while self.working:
                 block = self.serial.serial.read(size=10000).decode(
                         "utf-8", errors="ignore")
-                if block and block.strip():
+                if block.strip():
                     log.info("Original log data: " + block)
                     res = self.lc.check_log(block, dict_["serial_cur_filter"].strip())
                     if res:
@@ -118,6 +118,7 @@ class KafkaThread(QThread):
                 self.sleep(1)
             self.terminal.emit("Kafka通信正常结束！")
         except Exception as e:
+
             log.error(str(e))
             self.terminal.emit(str(e))
 
@@ -137,8 +138,7 @@ class LogCheckUI(QTabWidget):
         self.resize(1200, 700)
         self.setFixedSize(self.width(), self.height())
         icon = QIcon()
-        icon.addPixmap(QPixmap("assets/icon.ico"), QIcon.Normal,
-                       QIcon.Off)
+        icon.addPixmap(QPixmap(".\\assets\\icon.ico"), QIcon.Normal, QIcon.Off)
         self.setWindowIcon(icon)
         self.font = QFont()
         self.font.setPointSize(10)
@@ -171,8 +171,6 @@ class LogCheckUI(QTabWidget):
         self.mainLayout = QVBoxLayout(self)
         self.mainLayout.setContentsMargins(20, 20, 20, 20)
 
-        # 创建串口模式header
-        self.hboxLayoutSerialHeader = QHBoxLayout()
         self.hboxLayoutModeSelectHeader = QHBoxLayout()
         self.hboxLayoutModeSelectHeader.setAlignment(Qt.AlignLeft)
         self.radioBtnSerialMode = QRadioButton("串口模式")
@@ -182,20 +180,22 @@ class LogCheckUI(QTabWidget):
         self.hboxLayoutModeSelectHeader.addWidget(self.radioBtnKafkaMode)
         self.hboxLayoutModeSelectHeader.addWidget(self.radioBtnManualMode)
 
+        # 创建串口模式header
+        self.hboxLayoutSerialHeader = QHBoxLayout()
+        self.hboxLayoutSerialHeader.setObjectName("hboxLayoutHeader")
         self.gridLayoutSerialHeader = QGridLayout()
         self.gridLayoutSerialHeader.setContentsMargins(10, 10, 10, 10)
-        self.gridLayoutSerialHeader.setObjectName("hboxLayoutHeader")
 
-        self.labelSerialCom = QLabel("端口")
-        self.labelSerialCom.setObjectName("labelSerialCom")
-        self.comboBoxSerialCom = QComboBox()
-        self.comboBoxSerialCom.setObjectName("comboBoxSerial")
-        self.comboBoxSerialCom.setCurrentIndex(-1)
+        self.labelSerialPort = QLabel("端口")
+        self.labelSerialPort.setObjectName("labelSerialPort")
+        self.comboBoxSerialPort = QComboBox()
+        self.comboBoxSerialPort.setObjectName("comboBoxSerialPort")
+        self.comboBoxSerialPort.setCurrentIndex(-1)
         self.labelSerialFilter = QLabel("过滤词")
         self.labelSerialFilter.setObjectName("labelKafkaFilter")
         self.lineEditSerialFilter = QLineEdit()
         self.lineEditSerialFilter.setObjectName("lineEditSerialFilter")
-        self.labelSerialCmd = QLabel("执行Shell命令")
+        self.labelSerialCmd = QLabel("执行命令")
         self.labelSerialCmd.setObjectName("labelSerialCmd")
         self.comboBoxSerialCmd = QComboBox()
         self.comboBoxSerialCmd.setObjectName("comboBoxSerialCmd")
@@ -207,8 +207,8 @@ class LogCheckUI(QTabWidget):
         self.btnSerialClear = QPushButton("清空")
         self.btnSerialClear.setObjectName("btnHeader")
 
-        self.gridLayoutSerialHeader.addWidget(self.labelSerialCom, 0, 0)
-        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialCom, 0, 1)
+        self.gridLayoutSerialHeader.addWidget(self.labelSerialPort, 0, 0)
+        self.gridLayoutSerialHeader.addWidget(self.comboBoxSerialPort, 0, 1)
         self.gridLayoutSerialHeader.addWidget(self.labelSerialFilter, 0, 3)
         self.gridLayoutSerialHeader.addWidget(self.lineEditSerialFilter, 0, 4, 1, 3)
         self.gridLayoutSerialHeader.addWidget(self.labelSerialCmd, 1, 0)
@@ -260,6 +260,8 @@ class LogCheckUI(QTabWidget):
         self.lineEditKafkaFilter.setObjectName("lineEditKafkaFilter")
         self.checkBoxKafkaSshEnable = QCheckBox("启用SSH")
         self.checkBoxKafkaSshEnable.setObjectName("checkBoxKafkaSshEnable")
+        self.btnKafkaEdit = QPushButton("编辑")
+        self.btnKafkaEdit.setObjectName("btnHeader")
         self.btnKafkaStart = QPushButton("开始")
         self.btnKafkaStart.setObjectName("btnHeader")
         self.btnKafkaStop = QPushButton("停止")
@@ -283,7 +285,7 @@ class LogCheckUI(QTabWidget):
         self.gridLayoutKafkaHeader.addWidget(self.lineEditKafkaFilter, 0, 4, 1, 3)
         self.gridLayoutKafkaHeader.addWidget(self.labelKafkaTopic, 1, 0)
         self.gridLayoutKafkaHeader.addWidget(self.comboBoxKafkaTopic, 1, 1, 1, 2)
-
+        self.gridLayoutKafkaHeader.addWidget(self.btnKafkaEdit, 1, 7)
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStart, 1, 4)
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaStop, 1, 5)
         self.gridLayoutKafkaHeader.addWidget(self.btnKafkaClear, 1, 6)
@@ -326,40 +328,28 @@ class LogCheckUI(QTabWidget):
         # 创建显示结果数据body
         self.hboxLayoutBody = QHBoxLayout()
         self.hboxLayoutBody.setObjectName("hboxLayoutBody")
-        self.vboxLayoutTableLeft = QVBoxLayout()
-        self.vboxLayoutTableMid = QVBoxLayout()
-        self.vboxLayoutTableRight = QVBoxLayout()
+        self.vboxLayoutTableL = QVBoxLayout()
+        self.vboxLayoutTableM = QVBoxLayout()
+        self.vboxLayoutTableR = QVBoxLayout()
 
-        self.tableLeft = QTableWidget(0, 6)
-        self.tableLeft.setFont(self.font)
-        self.tableLeft.setHorizontalHeaderLabels(
-            [
-                "上级事件",
-                "本级事件",
-                "事件别名",
-                "结果",
-                "详情1",
-                "详情2"
-            ]
-        )
-        # self.tableLeft.horizontalHeader().setSectionResizeMode(
-        #     QHeaderView.Stretch)
-        self.tableLeft.horizontalHeader().setSectionResizeMode(
+        self.tableL = QTableWidget(0, 6)
+        self.tableL.setFont(self.font)
+        self.tableL.setHorizontalHeaderLabels(
+            ["上级事件", "本级事件", "事件别名", "结果"])
+        self.tableL.horizontalHeader().setSectionResizeMode(
             QHeaderView.Fixed)
-        # self.tableLeft.horizontalHeader().setSectionResizeMode(
-        #     0, QHeaderView.ResizeToContents)
-        self.tableLeft.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableLeft.setAlternatingRowColors(True)
-        self.tableLeft.setColumnHidden(4, True)
-        self.tableLeft.setColumnHidden(5, True)
-        self.tableLeft.setColumnWidth(0, 80)
-        self.tableLeft.setColumnWidth(1, 80)
-        self.tableLeft.setColumnWidth(2, 180)
-        self.tableLeft.setColumnWidth(3, 40)
+        self.tableL.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableL.setAlternatingRowColors(True)
+        self.tableL.setColumnHidden(4, True)
+        self.tableL.setColumnHidden(5, True)
+        self.tableL.setColumnWidth(0, 80)
+        self.tableL.setColumnWidth(1, 80)
+        self.tableL.setColumnWidth(2, 180)
+        self.tableL.setColumnWidth(3, 40)
 
-        self.gridLayoutHintLeft = QGridLayout()
-        self.gridLayoutHintLeft.setContentsMargins(10, 0, 10, 0)
-        self.gridLayoutHintLeft.setAlignment(Qt.AlignLeft)
+        self.gridLayoutHintL = QGridLayout()
+        self.gridLayoutHintL.setContentsMargins(10, 0, 10, 0)
+        self.gridLayoutHintL.setAlignment(Qt.AlignLeft)
         self.labelCheckMark = QLabel("")
         self.labelCheckMark.setFixedSize(20, 20)
         self.labelCheckMark.setPixmap(
@@ -372,122 +362,99 @@ class LogCheckUI(QTabWidget):
             QPixmap("./assets/cross_mark.png").scaled(20, 20))
         self.labelCrossMarkHint = QLabel("数据异常")
         self.labelCrossMarkHint.setObjectName("labelMarkHint")
+        self.labelExclamationMark = QLabel("")
+        self.labelExclamationMark.setFixedSize(20, 20)
+        self.labelExclamationMark.setPixmap(
+            QPixmap("./assets/exclamation_mark.png").scaled(20, 20))
+        self.labelExclamationMarkHint = QLabel("数据告警")
+        self.labelExclamationMarkHint.setObjectName("labelMarkHint")
         self.labelQuestionMark = QLabel("")
         self.labelQuestionMark.setFixedSize(20, 20)
         self.labelQuestionMark.setPixmap(
             QPixmap("./assets/question_mark.png").scaled(20, 20))
         self.labelQuestionMarkHint = QLabel("事件未定义")
         self.labelQuestionMarkHint.setObjectName("labelMarkHint")
-        self.labelExclamationMark = QLabel("")
-        self.labelExclamationMark.setFixedSize(20, 20)
-        self.labelExclamationMark.setPixmap(
-            QPixmap("./assets/exclamation_mark.png").scaled(20, 20))
-        self.labelExclamationMarkHint = QLabel("键值未定义")
-        self.labelExclamationMarkHint.setObjectName("labelMarkHint")
-        self.gridLayoutHintLeft.addWidget(self.labelCheckMark, 0, 0)
-        self.gridLayoutHintLeft.addWidget(self.labelCheckMarkHint, 0, 1)
-        self.gridLayoutHintLeft.addWidget(self.labelCrossMark, 0, 2)
-        self.gridLayoutHintLeft.addWidget(self.labelCrossMarkHint, 0, 3)
-        self.gridLayoutHintLeft.addWidget(self.labelQuestionMark, 0, 4)
-        self.gridLayoutHintLeft.addWidget(self.labelQuestionMarkHint, 0, 5)
-        self.gridLayoutHintLeft.addWidget(self.labelExclamationMark, 0, 6)
-        self.gridLayoutHintLeft.addWidget(self.labelExclamationMarkHint, 0, 7)
+        self.gridLayoutHintL.addWidget(self.labelCheckMark, 0, 0)
+        self.gridLayoutHintL.addWidget(self.labelCheckMarkHint, 0, 1)
+        self.gridLayoutHintL.addWidget(self.labelCrossMark, 0, 2)
+        self.gridLayoutHintL.addWidget(self.labelCrossMarkHint, 0, 3)
+        self.gridLayoutHintL.addWidget(self.labelExclamationMark, 0, 4)
+        self.gridLayoutHintL.addWidget(self.labelExclamationMarkHint, 0, 5)
+        self.gridLayoutHintL.addWidget(self.labelQuestionMark, 0, 6)
+        self.gridLayoutHintL.addWidget(self.labelQuestionMarkHint, 0, 7)
 
-        self.tableMid = QTableWidget(0, 4)
-        # self.tableMid.setMouseTracking(True)
-        # self.tableMid.entered.connect(self.tableMid.showToolTip)
-        self.tableMid.setFont(self.font)
-        self.tableMid.setHorizontalHeaderLabels(
-            [
-                "键",
-                "别名",
-                "值",
-                "别名"
-            ]
-        )
-        self.tableMid.verticalHeader().setVisible(False)
-        # self.tableMid.horizontalHeader().setSectionResizeMode(
-        #     QHeaderView.Stretch)
-        self.tableMid.horizontalHeader().setSectionResizeMode(
+        self.tableM = QTableWidget(0, 4)
+        self.tableM.setFont(self.font)
+        self.tableM.setHorizontalHeaderLabels(["键", "键别名", "值", "值别名"])
+        self.tableM.verticalHeader().setVisible(False)
+        self.tableM.horizontalHeader().setSectionResizeMode(
             QHeaderView.Fixed)
-        # self.tableMid.horizontalHeader().setSectionResizeMode(
-        #     0, QHeaderView.ResizeToContents)
-        self.tableMid.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableMid.setAlternatingRowColors(True)
-        self.tableMid.setColumnHidden(4, True)
-        self.tableMid.setColumnWidth(0, 125)
-        self.tableMid.setColumnWidth(1, 110)
-        self.tableMid.setColumnWidth(2, 170)
-        self.tableMid.setColumnWidth(3, 110)
+        self.tableM.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableM.setAlternatingRowColors(True)
+        self.tableM.setColumnHidden(4, True)
+        self.tableM.setColumnWidth(0, 125)
+        self.tableM.setColumnWidth(1, 110)
+        self.tableM.setColumnWidth(2, 170)
+        self.tableM.setColumnWidth(3, 110)
 
-        self.gridLayoutHintMid = QGridLayout()
-        self.gridLayoutHintMid.setContentsMargins(10, 0, 10, 0)
-        self.gridLayoutHintMid.setAlignment(Qt.AlignLeft)
+        self.gridLayoutHintM = QGridLayout()
+        self.gridLayoutHintM.setContentsMargins(10, 0, 10, 0)
+        self.gridLayoutHintM.setAlignment(Qt.AlignLeft)
         self.labelRes1 = QLabel("")
         self.labelRes1.setFixedSize(20, 20)
         self.labelRes1.setStyleSheet("QLabel{background-color:rgb(255, 99, 71)}")
-        self.labelRes1Hint = QLabel("键值与正则规则不符")
+        self.labelRes1Hint = QLabel("值与正则不符")
         self.labelRes1Hint.setObjectName("labelResHint")
         self.labelRes2 = QLabel("")
         self.labelRes2.setFixedSize(20, 20)
         self.labelRes2.setStyleSheet("QLabel{background-color:rgb(255, 215, 0)}")
-        self.labelRes2Hint = QLabel("键值有定义但未上报")
+        self.labelRes2Hint = QLabel("键有定义但未上报")
         self.labelRes2Hint.setObjectName("labelResHint")
         self.labelRes3 = QLabel("")
         self.labelRes3.setFixedSize(20, 20)
         self.labelRes3.setStyleSheet("QLabel{background-color:rgb(0, 206, 209)}")
-        self.labelRes3Hint = QLabel("键值有上报但未定义")
+        self.labelRes3Hint = QLabel("键有上报但未定义")
         self.labelRes3Hint.setObjectName("labelResHint")
 
-        self.gridLayoutHintMid.addWidget(self.labelRes1, 0, 0)
-        self.gridLayoutHintMid.addWidget(self.labelRes1Hint, 0, 1)
-        self.gridLayoutHintMid.addWidget(self.labelRes2, 0, 2)
-        self.gridLayoutHintMid.addWidget(self.labelRes2Hint, 0, 3)
-        self.gridLayoutHintMid.addWidget(self.labelRes3, 0, 4)
-        self.gridLayoutHintMid.addWidget(self.labelRes3Hint, 0, 5)
+        self.gridLayoutHintM.addWidget(self.labelRes1, 0, 0)
+        self.gridLayoutHintM.addWidget(self.labelRes1Hint, 0, 1)
+        self.gridLayoutHintM.addWidget(self.labelRes2, 0, 2)
+        self.gridLayoutHintM.addWidget(self.labelRes2Hint, 0, 3)
+        self.gridLayoutHintM.addWidget(self.labelRes3, 0, 4)
+        self.gridLayoutHintM.addWidget(self.labelRes3Hint, 0, 5)
 
-        self.tableRight = QTableWidget(0, 4)
-        self.tableRight.setFont(self.font)
-        self.tableRight.setHorizontalHeaderLabels(
-            [
-                "键",
-                "别名",
-                "值",
-                "别名"
-            ]
-        )
-        self.tableRight.verticalHeader().setVisible(False)
-        self.tableRight.horizontalHeader().setSectionResizeMode(
+        self.tableR = QTableWidget(0, 4)
+        self.tableR.setFont(self.font)
+        self.tableR.setHorizontalHeaderLabels(["键", "别名", "值", "别名"])
+        self.tableR.verticalHeader().setVisible(False)
+        self.tableR.horizontalHeader().setSectionResizeMode(
             QHeaderView.Fixed)
-        # self.tableRight.horizontalHeader().setSectionResizeMode(
-        #     0, QHeaderView.ResizeToContents)
-        self.tableRight.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableRight.setAlternatingRowColors(True)
-        self.tableRight.setColumnWidth(0, 100)
-        self.tableRight.setColumnWidth(1, 90)
-        self.tableRight.setColumnWidth(2, 100)
-        self.tableRight.setColumnWidth(3, 90)
+        self.tableR.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tableR.setAlternatingRowColors(True)
+        self.tableR.setColumnWidth(0, 100)
+        self.tableR.setColumnWidth(1, 90)
+        self.tableR.setColumnWidth(2, 100)
+        self.tableR.setColumnWidth(3, 90)
 
-        self.vboxLayoutTableLeft.addWidget(self.tableLeft)
-        self.vboxLayoutTableLeft.addLayout(self.gridLayoutHintLeft)
-        self.vboxLayoutTableMid.addWidget(self.tableMid)
-        self.vboxLayoutTableMid.addLayout(self.gridLayoutHintMid)
-        self.vboxLayoutTableMid.addLayout(self.gridLayoutHintMid)
-        self.vboxLayoutTableRight.addWidget(self.tableRight)
+        self.vboxLayoutTableL.addWidget(self.tableL)
+        self.vboxLayoutTableL.addLayout(self.gridLayoutHintL)
+        self.vboxLayoutTableM.addWidget(self.tableM)
+        self.vboxLayoutTableM.addLayout(self.gridLayoutHintM)
+        self.vboxLayoutTableM.addLayout(self.gridLayoutHintM)
+        self.vboxLayoutTableR.addWidget(self.tableR)
 
-        self.groupBoxTableLeft = QGroupBox("验证结果")
-        self.groupBoxTableLeft.setLayout(self.vboxLayoutTableLeft)
-        self.groupBoxTableMid = QGroupBox("一级数据")
-        self.groupBoxTableMid.setLayout(self.vboxLayoutTableMid)
-        self.groupBoxTableRight = QGroupBox("二级数据")
-        self.groupBoxTableRight.setLayout(self.vboxLayoutTableRight)
-        # self.groupBoxTableRight.setVisible(False)
-        self.hboxLayoutBody.addWidget(self.groupBoxTableLeft)
-        self.hboxLayoutBody.addWidget(self.groupBoxTableMid)
-        self.hboxLayoutBody.addWidget(self.groupBoxTableRight)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableLeft, 3)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableMid, 4)
-        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableRight, 3)
+        self.groupBoxTableL = QGroupBox("验证结果")
+        self.groupBoxTableL.setLayout(self.vboxLayoutTableL)
+        self.groupBoxTableM = QGroupBox("一级数据")
+        self.groupBoxTableM.setLayout(self.vboxLayoutTableM)
+        self.groupBoxTableR = QGroupBox("二级数据")
+        self.groupBoxTableR.setLayout(self.vboxLayoutTableR)
+        self.hboxLayoutBody.addWidget(self.groupBoxTableL)
+        self.hboxLayoutBody.addWidget(self.groupBoxTableM)
+        self.hboxLayoutBody.addWidget(self.groupBoxTableR)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableL, 3)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableM, 4)
+        self.hboxLayoutBody.setStretchFactor(self.groupBoxTableR, 3)
 
         self.mainLayout.addLayout(self.hboxLayoutModeSelectHeader)
         self.mainLayout.addWidget(self.groupBoxSerialHeader)
@@ -503,8 +470,6 @@ class LogCheckUI(QTabWidget):
         """
         self.hintLayout = QVBoxLayout()
         self.hintLayout.setContentsMargins(20, 20, 20, 20)
-
-        readme_path = os.path.join(path, "README.txt")
         self.textEditReadme = QTextEdit()
         self.textEditReadme.setObjectName("textEditReadme")
         font = QFont()
@@ -513,13 +478,15 @@ class LogCheckUI(QTabWidget):
         self.textEditReadme.setFont(font)
         self.textEditReadme.setReadOnly(True)
         try:
-            with open(readme_path, encoding="utf-8") as f:
+            with open(os.path.join(path, "README.txt"), encoding="utf-8") as f:
                 self.textEditReadme.setPlainText(f.read())
         except Exception as e:
             log.error(str(e))
-
-        self.hintLayout.addWidget(self.textEditReadme)
-        self.tabHintUI.setLayout(self.hintLayout)
+        else:
+            self.textEditReadme.setPlainText("读取README文件失败！")
+        finally:
+            self.hintLayout.addWidget(self.textEditReadme)
+            self.tabHintUI.setLayout(self.hintLayout)
 
     def loadConfig(self):
         try:
@@ -564,12 +531,12 @@ class LogCheckUI(QTabWidget):
                 config.get(dict_["kafka_cur_alias"], "filter"))
 
             dict_["serial_cur_cmd"] = config.get("DEFAULT", "serial")
-            dict_["serial_cur_com"] = \
-                config.get(dict_["serial_cur_cmd"], "com")
+            dict_["serial_cur_port"] = \
+                config.get(dict_["serial_cur_cmd"], "port")
             dict_["serial_cur_filter"] = \
                 config.get(dict_["serial_cur_cmd"], "filter")
 
-            self.comboBoxSerialCom.addItem(dict_["serial_cur_com"])
+            self.comboBoxSerialPort.addItem(dict_["serial_cur_port"])
             self.comboBoxSerialCmd.addItem(
                 re.match(r"serial_(.+)", dict_["serial_cur_cmd"]).group(1))
             self.lineEditSerialFilter.setText(
@@ -583,24 +550,26 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         self.btnSerialClear.clicked.connect(
-            lambda: self.btnSerialClearClicked(self.btnSerialClear))
+            lambda: self.btnClearClicked(self.btnSerialClear))
         self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
         self.btnSerialStop.clicked.connect(
             lambda: self.btnSerialStopClicked(self.btnSerialStop))
+        self.btnKafkaClear.clicked.connect(
+            lambda: self.btnClearClicked(self.btnKafkaClear))
+        self.btnKafkaEdit.clicked.connect(
+            lambda: self.btnKafkaEditClicked(self.btnKafkaEdit))
         self.btnKafkaStart.clicked.connect(
             lambda: self.btnKafkaStartClicked(self.btnKafkaStart))
         self.btnKafkaStop.clicked.connect(
             lambda: self.btnKafkaStopClicked(self.btnKafkaStop))
-        self.btnKafkaClear.clicked.connect(
-            lambda: self.btnSerialClearClicked(self.btnKafkaClear))
         self.btnManualCheck.clicked.connect(
             lambda: self.btnManualCheckClicked(self.btnManualCheck))
         self.btnManualClear.clicked.connect(
-            lambda: self.btnManualClearClicked(self.btnManualClear))
-        self.comboBoxSerialCom.currentIndexChanged.connect(
-            self.comboBoxSerialComSelected)
-        self.comboBoxSerialCom.showPopup_.connect(
-            self.comboBoxSerialComClicked)
+            lambda: self.btnClearClicked(self.btnManualClear))
+        self.comboBoxSerialPort.currentIndexChanged.connect(
+            self.comboBoxSerialPortSelected)
+        self.comboBoxSerialPort.showPopup_.connect(
+            self.comboBoxSerialPortClicked)
         self.comboBoxSerialCmd.currentIndexChanged.connect(
             self.comboBoxSerialCmdSelected)
         self.comboBoxSerialCmd.showPopup_.connect(
@@ -636,23 +605,25 @@ class LogCheckUI(QTabWidget):
             lambda: self.radioBtnModeToggled(self.radioBtnKafkaMode))
         self.radioBtnManualMode.toggled.connect(
             lambda: self.radioBtnModeToggled(self.radioBtnManualMode))
-        self.tableLeft.cellClicked.connect(self.tableLeftCellClicked)
-        self.tableMid.cellClicked.connect(self.tableMidCellClicked)
+        self.tableL.cellClicked.connect(self.tableLeftCellClicked)
+        self.tableM.cellClicked.connect(self.tableMidCellClicked)
         self.serialThread.add.connect(self.checkResultReceived)
         self.serialThread.terminal.connect(self.serialStopSignalReceived)
 
-    def btnSerialClearClicked(self, btn):
+    def btnClearClicked(self, btn):
         """
         点击清空按钮触发
         :param btn: object
         :return: None
         """
-        self.tableLeft.clearContents()
-        self.tableLeft.setRowCount(0)
-        self.tableMid.clearContents()
-        self.tableMid.setRowCount(0)
-        self.tableRight.clearContents()
-        self.tableRight.setRowCount(0)
+        if btn is self.btnManualClear:
+            self.textEditManual.clear()
+        self.tableL.clearContents()
+        self.tableL.setRowCount(0)
+        self.tableM.clearContents()
+        self.tableM.setRowCount(0)
+        self.tableR.clearContents()
+        self.tableR.setRowCount(0)
         dict_["cur_row"] = 0
 
     def btnSerialStartClicked(self, btn):
@@ -661,44 +632,40 @@ class LogCheckUI(QTabWidget):
         :param btn: object
         :return: None
         """
-        try:
-            log.info("Starting!!!")
-            if self.kafkaThread.isRunning():
-                reply = QMessageBox.information(
-                    self, "提示", "该操作将强制结束Kafka通信，请确认！", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                if reply == QMessageBox.Yes:
-                    self.btnKafkaStop.click()
-                else:
-                    return
-            if not dict_["serial_cur_com"]:
-                log.error("未选择串口端口或Shell命令")
-                QMessageBox.information(
-                    self, "提示", "请先选择串口端口和Shell命令！", QMessageBox.Ok)
+        if self.kafkaThread.isRunning():
+            reply = QMessageBox.information(
+                self, "提示", "该操作将强制结束Kafka通信，请确认！",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.btnKafkaStop.click()
+            else:
                 return
+        if not dict_["serial_cur_port"]:
+            log.error("未选择串口端口或Shell命令")
+            QMessageBox.information(
+                self, "提示", "请先选择串口端口和Shell命令！", QMessageBox.Ok)
+            return
 
-            self.serialThread.working = True
-            self.serialThread.start()
+        self.serialThread.working = True
+        self.serialThread.start()
 
-            dict_["cur_row"] = 0
-            self.tableLeft.clearContents()
-            self.tableLeft.setRowCount(0)
-            self.tableMid.clearContents()
-            self.tableMid.setRowCount(0)
-            self.tableRight.clearContents()
-            self.tableRight.setRowCount(0)
-            self.comboBoxSerialCom.setEnabled(False)
-            self.lineEditSerialFilter.setEnabled(False)
-            self.comboBoxSerialCmd.setEnabled(False)
-            self.btnSerialStart.setEnabled(False)
+        dict_["cur_row"] = 0
+        self.tableL.clearContents()
+        self.tableL.setRowCount(0)
+        self.tableM.clearContents()
+        self.tableM.setRowCount(0)
+        self.tableR.clearContents()
+        self.tableR.setRowCount(0)
+        self.comboBoxSerialPort.setEnabled(False)
+        self.lineEditSerialFilter.setEnabled(False)
+        self.comboBoxSerialCmd.setEnabled(False)
+        self.btnSerialStart.setEnabled(False)
 
-            # 添加延时
-            timer = QTimer(self)
-            timer.setSingleShot(True)
-            timer.timeout.connect(lambda: self.btnSerialStop.setEnabled(True))
-            timer.start(5000)
-
-        except Exception as e:
-            log.error(str(e))
+        # 添加延时
+        timer = QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(lambda: self.btnSerialStop.setEnabled(True))
+        timer.start(5000)
 
     def btnSerialStopClicked(self, btn):
         """
@@ -713,50 +680,54 @@ class LogCheckUI(QTabWidget):
         except Exception as e:
             log.error(str(e))
 
+    def btnKafkaEditClicked(self, btn):
+        """
+        点击Kafka编辑按钮
+        :param btn: object
+        :return: None
+        """
+        dialog = QDialog("111111111111")
+        dialog.show()
+
     def btnKafkaStartClicked(self, btn):
         """
         点击Kafka开始按钮
         :param btn: object
         :return: None
         """
-        try:
-            if self.serialThread.isRunning():
-                reply = QMessageBox.information(
-                    self, "提示", "该操作将强制结束串口通信，请确认！", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                if reply == QMessageBox.Yes:
-                    self.btnSerialStop.click()
-                else:
-                    return
-            if not self.comboBoxKafkaTopic.currentText():
-                QMessageBox.information(
-                    self, "提示", "请先选择Server和Topic！", QMessageBox.Ok)
+        if self.serialThread.isRunning():
+            reply = QMessageBox.information(
+                self, "提示", "该操作将强制结束串口通信，请确认！",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.btnSerialStop.click()
+            else:
                 return
+        if not self.comboBoxKafkaTopic.currentText():
+            QMessageBox.information(
+                self, "提示", "请先选择Server和Topic！", QMessageBox.Ok)
+            return
 
-            self.kafkaThread.working = True
-            self.kafkaThread.start()
-
-            dict_["cur_row"] = 0
-            self.tableLeft.clearContents()
-            self.tableLeft.setRowCount(0)
-            self.tableMid.clearContents()
-            self.tableMid.setRowCount(0)
-            self.tableRight.clearContents()
-            self.tableRight.setRowCount(0)
-            self.groupBoxSshHeader.setEnabled(False)
-            self.comboBoxKafkaCluster.setEnabled(False)
-            self.lineEditKafkaFilter.setEnabled(False)
-            self.comboBoxKafkaTopic.setEnabled(False)
-            self.checkBoxKafkaSshEnable.setEnabled(False)
-            self.btnKafkaStart.setEnabled(False)
-
-            # 添加延时
-            timer = QTimer(self)
-            timer.setSingleShot(True)
-            timer.timeout.connect(lambda: self.btnKafkaStop.setEnabled(True))
-            timer.start(5000)
-
-        except Exception as e:
-            log.error(str(e))
+        self.kafkaThread.working = True
+        self.kafkaThread.start()
+        dict_["cur_row"] = 0
+        self.tableL.clearContents()
+        self.tableM.clearContents()
+        self.tableR.clearContents()
+        self.tableL.setRowCount(0)
+        self.tableM.setRowCount(0)
+        self.tableR.setRowCount(0)
+        self.btnKafkaStart.setEnabled(False)
+        self.checkBoxKafkaSshEnable.setEnabled(False)
+        self.comboBoxKafkaCluster.setEnabled(False)
+        self.comboBoxKafkaTopic.setEnabled(False)
+        self.groupBoxSshHeader.setEnabled(False)
+        self.lineEditKafkaFilter.setEnabled(False)
+        # 添加延时
+        timer = QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(lambda: self.btnKafkaStop.setEnabled(True))
+        timer.start(5000)
 
     def btnKafkaStopClicked(self, btn):
         """
@@ -791,18 +762,6 @@ class LogCheckUI(QTabWidget):
         except Exception as e:
             log.error(str(e))
 
-    def btnManualClearClicked(self, btn):
-        """
-        点击手动模式的清空按钮
-        :param btn: object
-        :return: None
-        """
-        self.textEditManual.clear()
-        self.tableLeft.clearContents()
-        self.tableMid.clearContents()
-        self.tableRight.clearContents()
-        dict_["cur_row"] = 0
-
     def checkBoxKafkaSshEnableChanged(self, i):
         """
         SSH启用状态修改
@@ -822,76 +781,69 @@ class LogCheckUI(QTabWidget):
         :param res: dict
         :return: None
         """
-        # cnt = 0
         row = dict_["cur_row"]
 
         if not res:
             return
 
-        try:
-            for i in res:
-                if not i:
-                    continue
-                self.tableLeft.setRowCount(row + 1)
-                self.tableLeft.setItem(row, 0, QTableWidgetItem(
-                    str(i["src_event_code"]) if i["src_event_code"] else "-"))
-                self.tableLeft.setItem(row, 1, QTableWidgetItem(
-                    str(i["event_code"]) if i["event_code"] else "-"))
-                self.tableLeft.setItem(row, 2, QTableWidgetItem(
-                    str(i["event_alias"]) if i["event_alias"] else "-"))
-                self.tableLeft.item(row, 2).setToolTip(str(i["event_alias"]) if i["event_alias"] else "-")
+        for i in res:
+            self.tableL.setRowCount(row + 1)
+            self.tableL.setItem(row, 0, QTableWidgetItem(
+                str(i["src_event_code"]) if i["src_event_code"] else "N/A"))
+            self.tableL.setItem(row, 1, QTableWidgetItem(
+                str(i["event_code"]) if i["event_code"] else "N/A"))
+            self.tableL.setItem(row, 2, QTableWidgetItem(
+                str(i["event_alias"]) if i["event_alias"] else "N/A"))
+            self.tableL.item(row, 2).setToolTip(
+                str(i["event_alias"]) if i["event_alias"] else "N/A")
 
-                if i["result"] == -1:
-                    self.tableLeft.setItem(row, 3, QTableWidgetItem(
-                        QIcon("./assets/question_mark.png"), ""))
-                if i["result"] == 0:
-                    self.tableLeft.setItem(row, 3, QTableWidgetItem(
-                        QIcon("./assets/check_mark.png"), ""))
-                if i["result"] == 1:
-                    self.tableLeft.setItem(row, 3, QTableWidgetItem(
-                        QIcon("./assets/cross_mark.png"), ""))
-                if i["result"] == 2:
-                    self.tableLeft.setItem(row, 3, QTableWidgetItem(
-                        QIcon("./assets/exclamation_mark.png"), ""))
-                self.tableLeft.setItem(row, 4, QTableWidgetItem(
-                    json.dumps(i["data"])))
-                self.tableLeft.setItem(row, 5, QTableWidgetItem(
-                    json.dumps(i)))
+            if i["result"] == -1:
+                self.tableL.setItem(row, 3, QTableWidgetItem(
+                    QIcon("./assets/question_mark.png"), ""))
+            if i["result"] == 0:
+                self.tableL.setItem(row, 3, QTableWidgetItem(
+                    QIcon("./assets/check_mark.png"), ""))
+            if i["result"] == 1:
+                self.tableL.setItem(row, 3, QTableWidgetItem(
+                    QIcon("./assets/cross_mark.png"), ""))
+            if i["result"] == 2:
+                self.tableL.setItem(row, 3, QTableWidgetItem(
+                    QIcon("./assets/exclamation_mark.png"), ""))
+            self.tableL.setItem(row, 4, QTableWidgetItem(
+                json.dumps(i["data"])))
+            self.tableL.setItem(row, 5, QTableWidgetItem(
+                json.dumps(i)))
+            row += 1
+        dict_["cur_row"] = row
 
-                # cnt += 1
-                row += 1
-            dict_["cur_row"] = row
-        except Exception as e:
-            log.error(str(e))
-
-    def comboBoxSerialComSelected(self, i):
+    def comboBoxSerialPortSelected(self, i):
         """
         下拉框选择端口触发
         :param i: QComboBox
         :return: None
         """
         try:
-            if not self.comboBoxSerialCom.currentText():
+            if not self.comboBoxSerialPort.currentText():
                 return
-            dict_["serial_cur_com"] = re.findall(
-                r"COM[0-9]+", self.comboBoxSerialCom.currentText())[0]
+            dict_["serial_cur_port"] = re.findall(
+                r"COM[0-9]+", self.comboBoxSerialPort.currentText())[0]
             if dict_["serial_cur_cmd"]:
                 config.set(dict_["serial_cur_cmd"],
-                           "com", dict_["serial_cur_com"])
+                           "port", dict_["serial_cur_port"])
         except Exception as e:
             log.error(str(e))
 
-    def comboBoxSerialComClicked(self):
+    def comboBoxSerialPortClicked(self):
         """
         点击下拉框
         :return: None
         """
-        self.comboBoxSerialCom.clear()
+        self.comboBoxSerialPort.clear()
         try:
             portList = Serial.get_port_list()
             if portList:
                 for i in portList:
-                    self.comboBoxSerialCom.addItem(i[0])
+                    self.comboBoxSerialPort.addItem(i[0])
         except Exception as e:
             log.error(str(e))
             QMessageBox.information(self, "提示", str(e), QMessageBox.Ok)
@@ -1080,7 +1032,7 @@ class LogCheckUI(QTabWidget):
         :return:
         """
         try:
-            self.comboBoxSerialCom.setEnabled(True)
+            self.comboBoxSerialPort.setEnabled(True)
             self.lineEditSerialFilter.setEnabled(True)
             self.comboBoxSerialCmd.setEnabled(True)
             self.btnSerialStart.setEnabled(True)
@@ -1114,56 +1066,56 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         try:
-            self.tableMid.clearContents()
-            self.tableMid.setRowCount(0)
-            self.tableRight.clearContents()
-            self.tableRight.setRowCount(0)
+            self.tableM.clearContents()
+            self.tableM.setRowCount(0)
+            self.tableR.clearContents()
+            self.tableR.setRowCount(0)
 
-            if self.tableLeft.item(row, 4) and self.tableLeft.item(row, 5):
-                self.tableMid.setSortingEnabled(False)
-                dictData = json.loads(self.tableLeft.item(row, 4).text())
-                dictRes = json.loads(self.tableLeft.item(row, 5).text())
+            if self.tableL.item(row, 4) and self.tableL.item(row, 5):
+                self.tableM.setSortingEnabled(False)
+                dictData = json.loads(self.tableL.item(row, 4).text())
+                dictRes = json.loads(self.tableL.item(row, 5).text())
                 n = 0
-                self.tableMid.setRowCount(len(dictRes["data"]) + len(dictRes["missing_key"]))
+                self.tableM.setRowCount(len(dictRes["data"]) + len(dictRes["missing_key"]))
                 for key in dictRes["data"]:
                     key_alias = dictRes["data"][key].get("key_alias")
                     value = dictRes["data"][key].get("value")
                     value_alias = dictRes["data"][key].get("value_alias")
 
-                    self.tableMid.setItem(n, 0, QTableWidgetItem(str(key)))
-                    self.tableMid.item(n, 0).setToolTip(str(key))
-                    self.tableMid.setItem(n, 1, QTableWidgetItem(
-                        str(key_alias) if key_alias else "-"))
-                    self.tableMid.item(n, 1).setToolTip(
-                        str(key_alias) if key_alias else "-")
-                    self.tableMid.setItem(n, 2, QTableWidgetItem(
-                        str(value) if value else "-"))
-                    self.tableMid.item(n, 2).setToolTip(
-                        str(value) if value else "-")
-                    self.tableMid.setItem(n, 3, QTableWidgetItem(
-                        str(value_alias) if value_alias else "-"))
-                    self.tableMid.item(n, 3).setToolTip(
-                        str(value_alias) if value_alias else "-")
+                    self.tableM.setItem(n, 0, QTableWidgetItem(str(key)))
+                    self.tableM.item(n, 0).setToolTip(str(key))
+                    self.tableM.setItem(n, 1, QTableWidgetItem(
+                        str(key_alias) if key_alias else "N/A"))
+                    self.tableM.item(n, 1).setToolTip(
+                        str(key_alias) if key_alias else "N/A")
+                    self.tableM.setItem(n, 2, QTableWidgetItem(
+                        str(value) if value else "N/A"))
+                    self.tableM.item(n, 2).setToolTip(
+                        str(value) if value else "N/A")
+                    self.tableM.setItem(n, 3, QTableWidgetItem(
+                        str(value_alias) if value_alias else "N/A"))
+                    self.tableM.item(n, 3).setToolTip(
+                        str(value_alias) if value_alias else "N/A")
                     if key in dictRes["invalid_key"]:
-                        for i in range(self.tableMid.columnCount()):
-                            self.tableMid.item(n, i).setBackground(QBrush(QColor(255, 99, 71)))
+                        for i in range(self.tableM.columnCount()):
+                            self.tableM.item(n, i).setBackground(QBrush(QColor(255, 99, 71)))
 
                     if key in dictRes["undefined_key"]:
-                        for i in range(self.tableMid.columnCount()):
-                            self.tableMid.item(n, i).setBackground(QBrush(QColor(0, 206, 209)))
+                        for i in range(self.tableM.columnCount()):
+                            self.tableM.item(n, i).setBackground(QBrush(QColor(0, 206, 209)))
                     n += 1
 
                 for i in dictRes["missing_key"]:
-                    self.tableMid.setItem(n, 0, QTableWidgetItem(str(i)))
-                    self.tableMid.setItem(n, 1, QTableWidgetItem(str(dictRes["missing_key"][i].get("key_alias"))))
-                    self.tableMid.setItem(n, 2, QTableWidgetItem("-"))
-                    self.tableMid.setItem(n, 3, QTableWidgetItem("-"))
-                    for k in range(self.tableMid.columnCount()):
-                        self.tableMid.item(n, k).setBackground(
+                    self.tableM.setItem(n, 0, QTableWidgetItem(str(i)))
+                    self.tableM.setItem(n, 1, QTableWidgetItem(str(dictRes["missing_key"][i].get("key_alias"))))
+                    self.tableM.setItem(n, 2, QTableWidgetItem("N/A"))
+                    self.tableM.setItem(n, 3, QTableWidgetItem("N/A"))
+                    for k in range(self.tableM.columnCount()):
+                        self.tableM.item(n, k).setBackground(
                             QBrush(QColor(255, 215, 0)))
                     n += 1
-                self.tableMid.setSortingEnabled(True)
-                self.tableMid.sortByColumn(0, Qt.AscendingOrder)
+                self.tableM.setSortingEnabled(True)
+                self.tableM.sortByColumn(0, Qt.AscendingOrder)
         except Exception as e:
             log.error(str(e))
 
@@ -1174,26 +1126,26 @@ class LogCheckUI(QTabWidget):
         :return: None
         """
         try:
-            self.tableRight.clearContents()
-            self.tableRight.setRowCount(0)
-            text = self.tableMid.item(row, 2).text()
+            self.tableR.clearContents()
+            self.tableR.setRowCount(0)
+            text = self.tableM.item(row, 2).text()
             if not re.match(r"^{.*}$", text):
                 return
             data = json.loads(text)
-            self.tableRight.setRowCount(len(data))
+            self.tableR.setRowCount(len(data))
             n = 0
             for k in data:
                 key_alias = data[k].get("key_alias")
                 value = data[k].get("value")
                 value_alias = data[k].get("value_alias")
-                self.tableRight.setItem(n, 0, QTableWidgetItem(str(k)))
-                self.tableRight.item(n, 0).setToolTip(str(k))
-                self.tableRight.setItem(n, 1, QTableWidgetItem(str(key_alias) if key_alias else"-"))
-                self.tableRight.item(n, 1).setToolTip(str(key_alias) if key_alias else"-")
-                self.tableRight.setItem(n, 2, QTableWidgetItem(str(value) if value else"-"))
-                self.tableRight.item(n, 2).setToolTip(str(value) if value else"-")
-                self.tableRight.setItem(n, 3, QTableWidgetItem(str(value_alias) if value_alias else"-"))
-                self.tableRight.item(n, 3).setToolTip(str(value_alias) if value_alias else"-")
+                self.tableR.setItem(n, 0, QTableWidgetItem(str(k)))
+                self.tableR.item(n, 0).setToolTip(str(k))
+                self.tableR.setItem(n, 1, QTableWidgetItem(str(key_alias) if key_alias else "N/A"))
+                self.tableR.item(n, 1).setToolTip(str(key_alias) if key_alias else "N/A")
+                self.tableR.setItem(n, 2, QTableWidgetItem(str(value) if value else "N/A"))
+                self.tableR.item(n, 2).setToolTip(str(value) if value else "N/A")
+                self.tableR.setItem(n, 3, QTableWidgetItem(str(value_alias) if value_alias else "N/A"))
+                self.tableR.item(n, 3).setToolTip(str(value_alias) if value_alias else "N/A")
                 n += 1
         except Exception as e:
             log.error(str(e))

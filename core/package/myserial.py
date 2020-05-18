@@ -1,9 +1,8 @@
 #!/usr/bin/env Python
 # coding=utf-8
-import datetime
+
 import threading
 import time
-# import serial
 from serial import Serial
 from serial.tools import list_ports
 from .mylogging import MyLogging as Logging
