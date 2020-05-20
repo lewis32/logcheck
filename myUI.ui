@@ -55,6 +55,9 @@ background-color:rgb(0, 206, 209);
      <string>验证结果</string>
     </property>
     <widget class="QTableWidget" name="tableResList">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="geometry">
       <rect>
        <x>15</x>
@@ -63,11 +66,35 @@ background-color:rgb(0, 206, 209);
        <height>401</height>
       </rect>
      </property>
+     <property name="minimumSize">
+      <size>
+       <width>341</width>
+       <height>401</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>341</width>
+       <height>401</height>
+      </size>
+     </property>
+     <property name="toolTipDuration">
+      <number>-3</number>
+     </property>
+     <property name="lineWidth">
+      <number>-3</number>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
      <property name="columnCount">
       <number>6</number>
      </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>80</number>
+     </attribute>
      <attribute name="horizontalHeaderMinimumSectionSize">
-      <number>27</number>
+      <number>30</number>
      </attribute>
      <column>
       <property name="text">
@@ -87,6 +114,9 @@ background-color:rgb(0, 206, 209);
      <column>
       <property name="text">
        <string>结果</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignCenter</set>
       </property>
      </column>
      <column/>
@@ -226,6 +256,12 @@ background-color:rgb(0, 206, 209);
        <height>401</height>
       </rect>
      </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>135</number>
+     </attribute>
      <column>
       <property name="text">
        <string>键</string>
@@ -481,6 +517,9 @@ background-color:rgb(0, 206, 209);
      </item>
      <item>
       <widget class="QGroupBox" name="gBoxKafka">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="title">
         <string>Kafka配置</string>
        </property>
@@ -555,6 +594,28 @@ background-color:rgb(0, 206, 209);
         </layout>
        </widget>
       </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="formLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>40</y>
+      <width>231</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="22222222222">
+       <property name="text">
+        <string>1111111111</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QCheckBox" name="33333333333"/>
      </item>
     </layout>
    </widget>

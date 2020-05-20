@@ -269,12 +269,12 @@ class MyUI(QTabWidget, Ui_TabWidget):
         """
         if btn is self.btnManualClear:
             self.editManual.clear()
-        self.tableL.clearContents()
-        self.tableL.setRowCount(0)
-        self.tableM.clearContents()
-        self.tableM.setRowCount(0)
-        self.tableR.clearContents()
-        self.tableR.setRowCount(0)
+        self.tableResList.clearContents()
+        self.tableResList.setRowCount(0)
+        self.tableRes.clearContents()
+        self.tableRes.setRowCount(0)
+        # self.tableR.clearContents()
+        # self.tableR.setRowCount(0)
         dict_["cur_row"] = 0
 
     def btnSerialStartClicked(self, btn):
