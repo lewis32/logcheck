@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="assets">
+    <file>assets/check_mark.png</file>
+    <file>assets/cross_mark.png</file>
+    <file>assets/exclamation_mark.png</file>
+    <file>assets/icon.ico</file>
+    <file>assets/question_mark.png</file>
+  </qresource>
+</RCC>

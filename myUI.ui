@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TabWidget</class>
+ <widget class="QTabWidget" name="TabWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TabWidget</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normalon>:/assets/assets/icon.ico</normalon>
+   </iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">* {
+font: 10pt &quot;Microsoft YaHei UI&quot;;
+}
+QToolButton {
+background:transparent;
+}
+QLabel#lblResFailIcon {
+background-color:rgb(255, 99, 71);
+}
+QLabel#lblResWarnIcon {
+background-color:rgb(255, 215, 0);
+}
+QLabel#lblResUndefinedIcon {
+background-color:rgb(0, 206, 209);
+}</string>
+  </property>
+  <property name="currentIndex">
+   <number>0</number>
+  </property>
+  <widget class="QWidget" name="tabMain">
+   <attribute name="title">
+    <string>日志验证</string>
+   </attribute>
+   <widget class="QGroupBox" name="gBoxResList">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>190</y>
+      <width>371</width>
+      <height>461</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>验证结果</string>
+    </property>
+    <widget class="QTableWidget" name="tableResList">
+     <property name="geometry">
+      <rect>
+       <x>15</x>
+       <y>25</y>
+       <width>341</width>
+       <height>401</height>
+      </rect>
+     </property>
+     <property name="columnCount">
+      <number>6</number>
+     </property>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>27</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>上级事件</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>本级事件</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>别名</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>结果</string>
+      </property>
+     </column>
+     <column/>
+     <column/>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>420</y>
+       <width>281</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="layoutResList">
+      <item>
+       <widget class="QToolButton" name="btnResListPass">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/assets/assets/check_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListPass">
+        <property name="text">
+         <string>正常</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnResListFail">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/assets/assets/cross_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListFail">
+        <property name="text">
+         <string>异常</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnResListWarn">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/assets/assets/exclamation_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListWarn">
+        <property name="text">
+         <string>告警</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnResListUndefined">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/assets/assets/question_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListUndefined">
+        <property name="text">
+         <string>未定义</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="gBoxRes">
+    <property name="geometry">
+     <rect>
+      <x>400</x>
+      <y>190</y>
+      <width>571</width>
+      <height>461</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>一级数据</string>
+    </property>
+    <widget class="QTableWidget" name="tableRes">
+     <property name="geometry">
+      <rect>
+       <x>14</x>
+       <y>25</y>
+       <width>541</width>
+       <height>401</height>
+      </rect>
+     </property>
+     <column>
+      <property name="text">
+       <string>键</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>别名</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>值</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>别名</string>
+      </property>
+     </column>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>420</y>
+       <width>401</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="layoutRes">
+      <item>
+       <widget class="QLabel" name="lblResFailIcon">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResFail">
+        <property name="text">
+         <string>值与正则不符</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResWarnIcon">
+        <property name="maximumSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResWarn">
+        <property name="text">
+         <string>键有定义但未上报</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResUndefinedIcon">
+        <property name="maximumSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResUndefined">
+        <property name="text">
+         <string>键有上报但未定义</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>10</y>
+      <width>311</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="layoutMode">
+     <item>
+      <widget class="QRadioButton" name="rBtnSerial">
+       <property name="text">
+        <string>串口模式</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="rBtnKafka">
+       <property name="text">
+        <string>Kafka模式</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="rBtnManual">
+       <property name="text">
+        <string>手动模式</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>651</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="layoutConfig">
+     <item>
+      <widget class="QGroupBox" name="gBoxSerial">
+       <property name="title">
+        <string>串口配置</string>
+       </property>
+       <widget class="QWidget" name="gridLayoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>24</y>
+          <width>621</width>
+          <height>81</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="layoutSerial">
+         <item row="2" column="4">
+          <widget class="QPushButton" name="btnSerialStop">
+           <property name="text">
+            <string>停止</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="lblSerialFilter">
+           <property name="text">
+            <string>过滤词</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QPushButton" name="btnSerialStart">
+           <property name="text">
+            <string>开始</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="lblSerialCmd">
+           <property name="text">
+            <string>执行命令</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QPushButton" name="btnSerialEdit">
+           <property name="text">
+            <string>编辑</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="cBoxSerialCmd"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="lblSerialPort">
+           <property name="text">
+            <string>端口</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="cBoxSerialPort"/>
+         </item>
+         <item row="2" column="5">
+          <widget class="QPushButton" name="btnSerialClear">
+           <property name="text">
+            <string>清空</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3" colspan="3">
+          <widget class="QLineEdit" name="editSerialFilter"/>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="gBoxManual">
+       <property name="title">
+        <string>输入日志数据</string>
+       </property>
+       <widget class="QWidget" name="gridLayoutWidget_3">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>34</y>
+          <width>621</width>
+          <height>73</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="layoutManual">
+         <item row="2" column="1">
+          <widget class="QPushButton" name="btnManualStart">
+           <property name="text">
+            <string>验证</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="btnManualClear">
+           <property name="text">
+            <string>清空</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" rowspan="3">
+          <widget class="QTextEdit" name="editManual"/>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="gBoxKafka">
+       <property name="title">
+        <string>Kafka配置</string>
+       </property>
+       <widget class="QWidget" name="gridLayoutWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>24</y>
+          <width>621</width>
+          <height>81</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="layoutKafka">
+         <item row="0" column="0">
+          <widget class="QLabel" name="lblKafkaServer">
+           <property name="text">
+            <string>server</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="lblKafkaTopic">
+           <property name="text">
+            <string>topic</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4" colspan="3">
+          <widget class="QLineEdit" name="editKafkaFilter"/>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="cBoxKafkaServer"/>
+         </item>
+         <item row="2" column="4">
+          <widget class="QPushButton" name="btnKafkaStart">
+           <property name="text">
+            <string>开始</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="6">
+          <widget class="QPushButton" name="btnKafkaClear">
+           <property name="text">
+            <string>清空</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="5">
+          <widget class="QPushButton" name="btnKafkaStop">
+           <property name="text">
+            <string>停止</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="lblKafkaFilter">
+           <property name="text">
+            <string>过滤词</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1" colspan="2">
+          <widget class="QComboBox" name="cBoxKafkaTopic"/>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="btnKafkaEdit">
+           <property name="text">
+            <string>编辑</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="tabHint">
+   <attribute name="title">
+    <string>使用说明</string>
+   </attribute>
+  </widget>
+ </widget>
+ <resources>
+  <include location="assets.qrc"/>
+ </resources>
+ <connections/>
+</ui>
