@@ -7,7 +7,7 @@ from socket import gethostname
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from myUI import Ui_TabWidget
+from myUI import Ui_MainWindow
 from core.log_check import LogCheck
 from core.package.myserial import MySerial as Serial
 from core.package.mykafka import MyKafka as Kafka
@@ -120,7 +120,7 @@ class KafkaThread(QThread):
             self.terminal.emit(str(e))
 
 
-class MyUI(QTabWidget, Ui_TabWidget):
+class MyUI(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MyUI, self).__init__()
         self.setupUi(self)
@@ -131,6 +131,12 @@ class MyUI(QTabWidget, Ui_TabWidget):
 
     def closeEvent(self, event):
         try:
+            if self.tabWidget.currentWidget() == self.tabSerial:
+                config.set("DEFAULT", "mode", "serial")
+            if self.tabWidget.currentWidget() == self.tabKafka:
+                config.set("DEFAULT", "mode", "kafka")
+            if self.tabWidget.currentWidget() == self.tabManual:
+                config.set("DEFAULT", "mode", "manual")
             with open(os.path.join(path, "conf", "cfg.ini"), "w") as f:
                 config.write(f)
             event.accept()
@@ -144,11 +150,14 @@ class MyUI(QTabWidget, Ui_TabWidget):
             config.read(os.path.join(path, "conf", "cfg.ini"))
 
             if config.get("DEFAULT", "mode") == "serial":
-                self.rBtnSerial.setChecked(True)
+                # self.rBtnSerial.setChecked(True)
+                self.tabWidget.setCurrentWidget(self.tabSerial)
             if config.get("DEFAULT", "mode") == "kafka":
-                self.rBtnKafka.setChecked(True)
+                # self.rBtnKafka.setChecked(True)
+                self.tabWidget.setCurrentWidget(self.tabKafka)
             if config.get("DEFAULT", "mode") == "manual":
-                self.rBtnManual.setChecked(True)
+                # self.rBtnManual.setChecked(True)
+                self.tabWidget.setCurrentWidget(self.tabManual)
 
             dict_["kafka_cur_alias"] = \
                 config.get("DEFAULT", "kafka")
@@ -229,9 +238,6 @@ class MyUI(QTabWidget, Ui_TabWidget):
         #     self.cBoxKafkaClusterClicked)
         self.cBoxKafkaServer.currentIndexChanged.connect(
             self.cBoxKafkaServerSelected)
-        # self.checkBoxKafkaSshEnable.stateChanged.connect(
-        #     lambda: self.checkBoxKafkaSshEnableChanged(
-        #         self.checkBoxKafkaSshEnable))
         # self.cBoxKafkaTopic.showPopup_.connect(
         #     self.cBoxKafkaTopicClicked)
         self.cBoxKafkaTopic.currentIndexChanged.connect(
@@ -250,14 +256,8 @@ class MyUI(QTabWidget, Ui_TabWidget):
             lambda: self.editChanged(self.editKafkaFilter))
         self.editSerialFilter.textChanged.connect(
             lambda: self.editChanged(self.editSerialFilter))
-        self.rBtnSerial.toggled.connect(
-            lambda: self.rBtnToggled(self.rBtnSerial))
-        self.rBtnKafka.toggled.connect(
-            lambda: self.rBtnToggled(self.rBtnKafka))
-        self.rBtnManual.toggled.connect(
-            lambda: self.rBtnToggled(self.rBtnManual))
-        self.tableResList.cellClicked.connect(self.tableResListCellClicked)
         self.tableRes.cellClicked.connect(self.tableResCellClicked)
+        self.tableResList.cellClicked.connect(self.tableResListCellClicked)
         self.serialThread.add.connect(self.checkResultReceived)
         self.serialThread.terminal.connect(self.serialStopSignalReceived)
 
@@ -273,8 +273,6 @@ class MyUI(QTabWidget, Ui_TabWidget):
         self.tableResList.setRowCount(0)
         self.tableRes.clearContents()
         self.tableRes.setRowCount(0)
-        # self.tableR.clearContents()
-        # self.tableR.setRowCount(0)
         dict_["cur_row"] = 0
 
     def btnSerialStartClicked(self, btn):
@@ -305,8 +303,6 @@ class MyUI(QTabWidget, Ui_TabWidget):
         self.tableResList.setRowCount(0)
         self.tableRes.clearContents()
         self.tableRes.setRowCount(0)
-        # self.tableR.clearContents()
-        # self.tableR.setRowCount(0)
         self.cBoxSerialPort.setEnabled(False)
         self.editSerialFilter.setEnabled(False)
         self.cBoxSerialCmd.setEnabled(False)
@@ -368,15 +364,11 @@ class MyUI(QTabWidget, Ui_TabWidget):
         dict_["cur_row"] = 0
         self.tableResList.clearContents()
         self.tableRes.clearContents()
-        # self.tableR.clearContents()
         self.tableResList.setRowCount(0)
         self.tableRes.setRowCount(0)
-        # self.tableR.setRowCount(0)
         self.btnKafkaStart.setEnabled(False)
-        # self.checkBoxKafkaSshEnable.setEnabled(False)
         self.cBoxKafkaServer.setEnabled(False)
         self.cBoxKafkaTopic.setEnabled(False)
-        # self.groupBoxSshHeader.setEnabled(False)
         self.editKafkaFilter.setEnabled(False)
         # 添加延时
         timer = QTimer(self)
@@ -647,36 +639,6 @@ class MyUI(QTabWidget, Ui_TabWidget):
             if i is self.editSerialFilter:
                 dict_["serial_cur_filter"] = i.text()
                 config.set(dict_["serial_cur_cmd"], "filter", i.text())
-        except Exception as e:
-            log.error(str(e))
-
-    def rBtnToggled(self, i):
-        """
-        选择手动模式
-        :param i: object
-        :return: None
-        """
-        try:
-            if i.text() == "串口模式":
-                self.gBoxSerial.setVisible(True)
-                # self.groupBoxSshHeader.setVisible(False)
-                self.gBoxKafka.setVisible(False)
-                self.gBoxManual.setVisible(False)
-                config.set("DEFAULT", "mode", "serial")
-
-            if i.text() == "Kafka模式":
-                self.gBoxSerial.setVisible(False)
-                # self.groupBoxSshHeader.setVisible(False)
-                self.gBoxKafka.setVisible(True)
-                self.gBoxManual.setVisible(False)
-                config.set("DEFAULT", "mode", "kafka")
-
-            if i.text() == "手动模式":
-                self.gBoxSerial.setVisible(False)
-                # self.groupBoxSshHeader.setVisible(False)
-                self.gBoxKafka.setVisible(False)
-                self.gBoxManual.setVisible(True)
-                config.set("DEFAULT", "mode", "manual")
         except Exception as e:
             log.error(str(e))
 

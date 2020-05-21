@@ -1,21 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>TabWidget</class>
- <widget class="QTabWidget" name="TabWidget">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>1000</width>
-    <height>700</height>
+    <height>635</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>1000</width>
+    <height>635</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1000</width>
+    <height>635</height>
+   </size>
+  </property>
   <property name="windowTitle">
-   <string>TabWidget</string>
+   <string>日志验证工具 v1.3</string>
   </property>
   <property name="windowIcon">
    <iconset>
-    <normalon>:/assets/assets/icon.ico</normalon>
+    <normalon>:/img/assets/icon.ico</normalon>
    </iconset>
   </property>
   <property name="styleSheet">
@@ -47,341 +59,18 @@ QLabel#lblResFail {
 margin-right:10px;
 }</string>
   </property>
-  <property name="currentIndex">
-   <number>0</number>
-  </property>
-  <widget class="QWidget" name="tabMain">
-   <attribute name="title">
-    <string>日志验证</string>
-   </attribute>
-   <widget class="QGroupBox" name="gBoxResList">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>160</y>
-      <width>371</width>
-      <height>491</height>
-     </rect>
-    </property>
-    <property name="title">
-     <string>验证结果</string>
-    </property>
-    <widget class="QTableWidget" name="tableResList">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>15</x>
-       <y>25</y>
-       <width>341</width>
-       <height>430</height>
-      </rect>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>341</width>
-       <height>430</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>341</width>
-       <height>430</height>
-      </size>
-     </property>
-     <property name="toolTipDuration">
-      <number>-3</number>
-     </property>
-     <property name="lineWidth">
-      <number>-3</number>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="columnCount">
-      <number>6</number>
-     </property>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>80</number>
-     </attribute>
-     <attribute name="horizontalHeaderMinimumSectionSize">
-      <number>30</number>
-     </attribute>
-     <column>
-      <property name="text">
-       <string>上级事件</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>本级事件</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>别名</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>结果</string>
-      </property>
-      <property name="textAlignment">
-       <set>AlignCenter</set>
-      </property>
-     </column>
-     <column/>
-     <column/>
-    </widget>
-    <widget class="QWidget" name="horizontalLayoutWidget">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>450</y>
-       <width>291</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <layout class="QHBoxLayout" name="layoutResList">
-      <item>
-       <widget class="QToolButton" name="btnResListPass">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normalon>:/assets/assets/check_mark.png</normalon>
-         </iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResListPass">
-        <property name="text">
-         <string>正常</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="btnResListFail">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normalon>:/assets/assets/cross_mark.png</normalon>
-         </iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResListFail">
-        <property name="text">
-         <string>异常</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="btnResListWarn">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normalon>:/assets/assets/exclamation_mark.png</normalon>
-         </iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResListWarn">
-        <property name="text">
-         <string>告警</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QToolButton" name="btnResListUndefined">
-        <property name="text">
-         <string>...</string>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normalon>:/assets/assets/question_mark.png</normalon>
-         </iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResListUndefined">
-        <property name="text">
-         <string>未定义</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </widget>
-   <widget class="QGroupBox" name="gBoxRes">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>160</y>
-      <width>571</width>
-      <height>491</height>
-     </rect>
-    </property>
-    <property name="title">
-     <string>一级数据</string>
-    </property>
-    <widget class="QTableWidget" name="tableRes">
-     <property name="geometry">
-      <rect>
-       <x>14</x>
-       <y>25</y>
-       <width>541</width>
-       <height>431</height>
-      </rect>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>135</number>
-     </attribute>
-     <column>
-      <property name="text">
-       <string>键</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>别名</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>值</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>别名</string>
-      </property>
-     </column>
-    </widget>
-    <widget class="QWidget" name="horizontalLayoutWidget_2">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>450</y>
-       <width>431</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <layout class="QHBoxLayout" name="layoutRes">
-      <item>
-       <widget class="QLabel" name="lblResFailIcon">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResFail">
-        <property name="text">
-         <string>值与正则不符</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResWarnIcon">
-        <property name="maximumSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResWarn">
-        <property name="text">
-         <string>键有定义但未上报</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResUndefinedIcon">
-        <property name="maximumSize">
-         <size>
-          <width>20</width>
-          <height>20</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="lblResUndefined">
-        <property name="text">
-         <string>键有上报但未定义</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </widget>
+  <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>10</y>
+      <y>20</y>
       <width>671</width>
-      <height>131</height>
+      <height>141</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tabSerial">
      <attribute name="title">
@@ -561,7 +250,7 @@ margin-right:10px;
         <x>20</x>
         <y>10</y>
         <width>621</width>
-        <height>81</height>
+        <height>91</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="layoutManual">
@@ -586,12 +275,335 @@ margin-right:10px;
      </widget>
     </widget>
    </widget>
+   <widget class="QGroupBox" name="gBoxRes">
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>170</y>
+      <width>571</width>
+      <height>441</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>一级数据</string>
+    </property>
+    <widget class="QTableWidget" name="tableRes">
+     <property name="geometry">
+      <rect>
+       <x>14</x>
+       <y>25</y>
+       <width>541</width>
+       <height>381</height>
+      </rect>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>135</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>键</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>别名</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>值</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>别名</string>
+      </property>
+     </column>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>400</y>
+       <width>431</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="layoutRes">
+      <item>
+       <widget class="QLabel" name="lblResFailIcon">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResFail">
+        <property name="text">
+         <string>值与正则不符</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResWarnIcon">
+        <property name="maximumSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResWarn">
+        <property name="text">
+         <string>键有定义但未上报</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResUndefinedIcon">
+        <property name="maximumSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResUndefined">
+        <property name="text">
+         <string>键有上报但未定义</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QGroupBox" name="gBoxResList">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>170</y>
+      <width>371</width>
+      <height>441</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>验证结果</string>
+    </property>
+    <widget class="QTableWidget" name="tableResList">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>15</x>
+       <y>25</y>
+       <width>341</width>
+       <height>380</height>
+      </rect>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>341</width>
+       <height>380</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>341</width>
+       <height>380</height>
+      </size>
+     </property>
+     <property name="toolTipDuration">
+      <number>-3</number>
+     </property>
+     <property name="lineWidth">
+      <number>-3</number>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="columnCount">
+      <number>6</number>
+     </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>80</number>
+     </attribute>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>30</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>上级事件</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>本级事件</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>别名</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>结果</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignCenter</set>
+      </property>
+     </column>
+     <column/>
+     <column/>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>400</y>
+       <width>291</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="layoutResList">
+      <item>
+       <widget class="QToolButton" name="btnResListPass">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/img/assets/check_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListPass">
+        <property name="text">
+         <string>正常</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnResListFail">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/img/assets/cross_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListFail">
+        <property name="text">
+         <string>异常</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnResListWarn">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/img/assets/exclamation_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListWarn">
+        <property name="text">
+         <string>告警</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnResListUndefined">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normalon>:/img/assets/question_mark.png</normalon>
+         </iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblResListUndefined">
+        <property name="text">
+         <string>未定义</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
   </widget>
-  <widget class="QWidget" name="tabHint">
-   <attribute name="title">
-    <string>使用说明</string>
-   </attribute>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1000</width>
+     <height>25</height>
+    </rect>
+   </property>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
   <include location="assets.qrc"/>

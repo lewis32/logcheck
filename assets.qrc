@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="assets">
+  <qresource prefix="img">
     <file>assets/check_mark.png</file>
     <file>assets/cross_mark.png</file>
     <file>assets/exclamation_mark.png</file>
