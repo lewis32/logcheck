@@ -216,6 +216,19 @@ class LogCheck:
                             if value_ in conf_more[m]["value_alias"]:
                                 json_value[m]["value_alias"] = conf_more[m]["value_alias"][value_]
                     res["data"][i]["value"] = json.dumps(json_value)
+                elif re.match(r"\[.*\]", data[i]):
+                    list_ = json.loads(data[i])
+                    conf_more = mutual_dict[i].get("more")
+                    for item_d in list_:
+                        for k in item_d:
+                            value_ = str(item_d[k])
+                            item_d[k] = {}
+                            item_d[k]["value"] = value_
+                            if isinstance(conf_more, Iterable) and (lambda x: x.lower())(k) in conf_more:
+                                item_d[k]["key_alias"] = conf_more[(lambda x: x.lower())(k)]["key_alias"]
+                                if value_ in conf_more[k]["value_alias"]:
+                                    item_d[k]["value_alias"] = conf_more[k]["value_alias"][value_]
+                    res["data"][i]["value"] = json.dumps(list_)
                 else:
                     res["data"][i]["value"] = data[i]
                 v_alias = conf[title]["keys"][(lambda x: x.lower())(i)].get(

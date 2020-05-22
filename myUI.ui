@@ -57,6 +57,15 @@ max-width:60px;
 }
 QLabel#lblResFail {
 margin-right:10px;
+}
+QLabel#btnSerialCmdEdit,
+#btnSerialCmdAdd,
+#btnSerialCmdDelete {
+max-width:70px;
+}
+QLabel#btnSerialStart,
+#btnSerialStop,
+#btnSerialClear {
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -64,68 +73,28 @@ margin-right:10px;
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>20</y>
-      <width>671</width>
-      <height>141</height>
+      <y>10</y>
+      <width>701</width>
+      <height>151</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tabSerial">
      <attribute name="title">
       <string>串口模式</string>
      </attribute>
-     <widget class="QWidget" name="gridLayoutWidget">
+     <widget class="QWidget" name="gridLayoutWidget_4">
       <property name="geometry">
        <rect>
         <x>20</x>
         <y>10</y>
-        <width>621</width>
-        <height>85</height>
+        <width>651</width>
+        <height>101</height>
        </rect>
       </property>
-      <layout class="QGridLayout" name="layoutSerial">
-       <item row="2" column="1">
-        <widget class="QComboBox" name="cBoxSerialCmd"/>
-       </item>
-       <item row="2" column="2">
-        <widget class="QPushButton" name="btnSerialEdit">
-         <property name="text">
-          <string>编辑</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="cBoxSerialPort"/>
-       </item>
-       <item row="0" column="4" colspan="3">
-        <widget class="QLineEdit" name="editSerialFilter"/>
-       </item>
-       <item row="2" column="5">
-        <widget class="QPushButton" name="btnSerialStop">
-         <property name="text">
-          <string>停止</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="lblSerialCmd">
-         <property name="text">
-          <string>执行命令</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="6">
-        <widget class="QPushButton" name="btnSerialClear">
-         <property name="text">
-          <string>清空</string>
-         </property>
-        </widget>
-       </item>
+      <layout class="QGridLayout" name="layoutSerial" columnminimumwidth="0,120,0,0,0,150,0,0,0">
        <item row="0" column="0">
         <widget class="QLabel" name="lblSerialPort">
          <property name="text">
@@ -136,20 +105,78 @@ margin-right:10px;
          </property>
         </widget>
        </item>
-       <item row="2" column="4">
-        <widget class="QPushButton" name="btnSerialStart">
-         <property name="text">
-          <string>开始</string>
+       <item row="2" column="1" colspan="4">
+        <widget class="QLineEdit" name="editSerialFilter">
+         <property name="placeholderText">
+          <string>输入单条数据过滤词，比如特定事件码</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="3">
+       <item row="1" column="2">
+        <widget class="QPushButton" name="btnSerialCmdEdit">
+         <property name="text">
+          <string>编辑</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QPushButton" name="btnSerialCmdAdd">
+         <property name="text">
+          <string>增加</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
         <widget class="QLabel" name="lblSerialFilter">
          <property name="text">
           <string>过滤词</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="cBoxSerialPort"/>
+       </item>
+       <item row="1" column="4">
+        <widget class="QPushButton" name="btnSerialCmdDelete">
+         <property name="text">
+          <string>删除</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="cBoxSerialCmd"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="lblSerialCmd">
+         <property name="text">
+          <string>执行命令</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="6">
+        <widget class="QPushButton" name="btnSerialStop">
+         <property name="text">
+          <string>停止</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="6">
+        <widget class="QPushButton" name="btnSerialStart">
+         <property name="text">
+          <string>开始</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="6">
+        <widget class="QPushButton" name="btnSerialClear">
+         <property name="text">
+          <string>清空</string>
          </property>
         </widget>
        </item>
@@ -165,11 +192,11 @@ margin-right:10px;
        <rect>
         <x>20</x>
         <y>10</y>
-        <width>621</width>
-        <height>81</height>
+        <width>653</width>
+        <height>101</height>
        </rect>
       </property>
-      <layout class="QGridLayout" name="layoutKafka">
+      <layout class="QGridLayout" name="layoutKafka" columnminimumwidth="0,120,0,0,0,150,0">
        <item row="0" column="0">
         <widget class="QLabel" name="lblKafkaServer">
          <property name="text">
@@ -180,7 +207,17 @@ margin-right:10px;
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="0" column="1">
+        <widget class="QComboBox" name="cBoxKafkaServer"/>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="btnKafkaEdit">
+         <property name="text">
+          <string>编辑</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
         <widget class="QLabel" name="lblKafkaTopic">
          <property name="text">
           <string>topic</string>
@@ -190,16 +227,44 @@ margin-right:10px;
          </property>
         </widget>
        </item>
-       <item row="0" column="4" colspan="3">
-        <widget class="QLineEdit" name="editKafkaFilter"/>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="cBoxKafkaTopic"/>
        </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="cBoxKafkaServer"/>
+       <item row="2" column="0">
+        <widget class="QLabel" name="lblKafkaFilter">
+         <property name="text">
+          <string>过滤词</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
        </item>
-       <item row="2" column="4">
+       <item row="0" column="3">
+        <widget class="QPushButton" name="btnKafkaServerAdd">
+         <property name="text">
+          <string>增加</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="4">
+        <widget class="QPushButton" name="btnKafkaServerDelete">
+         <property name="text">
+          <string>删除</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="6">
         <widget class="QPushButton" name="btnKafkaStart">
          <property name="text">
           <string>开始</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="6">
+        <widget class="QPushButton" name="btnKafkaStop">
+         <property name="text">
+          <string>停止</string>
          </property>
         </widget>
        </item>
@@ -210,30 +275,10 @@ margin-right:10px;
          </property>
         </widget>
        </item>
-       <item row="2" column="5">
-        <widget class="QPushButton" name="btnKafkaStop">
-         <property name="text">
-          <string>停止</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QLabel" name="lblKafkaFilter">
-         <property name="text">
-          <string>过滤词</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1" colspan="2">
-        <widget class="QComboBox" name="cBoxKafkaTopic"/>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="btnKafkaEdit">
-         <property name="text">
-          <string>编辑</string>
+       <item row="2" column="1" colspan="4">
+        <widget class="QLineEdit" name="editKafkaFilter">
+         <property name="placeholderText">
+          <string>输入单条数据过滤词，比如特定设备id</string>
          </property>
         </widget>
        </item>
@@ -250,26 +295,30 @@ margin-right:10px;
         <x>20</x>
         <y>10</y>
         <width>621</width>
-        <height>91</height>
+        <height>101</height>
        </rect>
       </property>
-      <layout class="QGridLayout" name="layoutManual">
-       <item row="0" column="1">
-        <widget class="QPushButton" name="btnManualClear">
-         <property name="text">
-          <string>清空</string>
+      <layout class="QGridLayout" name="layoutManual" columnminimumwidth="0,100,0">
+       <item row="0" column="0" rowspan="2">
+        <widget class="QTextEdit" name="editManual">
+         <property name="placeholderText">
+          <string>复制粘贴JSON日志数据，支持多条数据解析</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="0" column="2">
         <widget class="QPushButton" name="btnManualStart">
          <property name="text">
           <string>验证</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="0" rowspan="2">
-        <widget class="QTextEdit" name="editManual"/>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="btnManualClear">
+         <property name="text">
+          <string>清空</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -603,7 +652,6 @@ margin-right:10px;
     </rect>
    </property>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources>
   <include location="assets.qrc"/>

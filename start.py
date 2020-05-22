@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from myUI import Ui_MainWindow
+from dialogMore import Ui_Dialog
 from core.log_check import LogCheck
 from core.package.myserial import MySerial as Serial
 from core.package.mykafka import MyKafka as Kafka
@@ -743,44 +744,60 @@ class MyUI(QMainWindow, Ui_MainWindow):
         :return: None
         """
         try:
-            dialog = QDialog()
-            table = QTableWidget(0, 4, dialog)
-            table.setFont(self.font)
-            table.setHorizontalHeaderLabels(["键", "别名", "值", "别名"])
-            table.verticalHeader().setVisible(False)
-            table.horizontalHeader().setSectionResizeMode(
-                QHeaderView.Fixed)
-            table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-            table.setAlternatingRowColors(True)
-            table.setColumnWidth(0, 100)
-            table.setColumnWidth(1, 90)
-            table.setColumnWidth(2, 100)
-            table.setColumnWidth(3, 90)
-            table.clearContents()
-            table.setRowCount(0)
             text = self.tableRes.item(row, 2).text()
-            if not re.match(r"^{.*}$", text):
+            if not (re.match(r"^{.*}$", text) or re.match(r"^\[.*\]$", text)):
                 return
-            data = json.loads(text)
-            # self.tableR.setRowCount(len(data))
+
+            o_data = json.loads(text)
+            dialog = dialogMore()
+            page_total = 0
+            if type(o_data) is list:
+                page_total = len(o_data)
+                data = o_data[0]
+            if type(o_data) is dict:
+                page_total = 1
+                listed_data = list()
+                listed_data.append(o_data)
+                data = listed_data[0]
+            for i in range(page_total):
+                dialog.cBoxPage.addItem(str(i+1))
+            dialog.lblTotal.setText("共" + str(page_total) + "组数据")
+            dialog.tableResMore.setRowCount(len(data))
             n = 0
             for k in data:
                 key_alias = data[k].get("key_alias")
                 value = data[k].get("value")
                 value_alias = data[k].get("value_alias")
-                table.setItem(n, 0, QTableWidgetItem(str(k)))
-                table.item(n, 0).setToolTip(str(k))
-                table.setItem(n, 1, QTableWidgetItem(str(key_alias) if key_alias else "N/A"))
-                table.item(n, 1).setToolTip(str(key_alias) if key_alias else "N/A")
-                table.setItem(n, 2, QTableWidgetItem(str(value) if value else "N/A"))
-                table.item(n, 2).setToolTip(str(value) if value else "N/A")
-                table.setItem(n, 3, QTableWidgetItem(str(value_alias) if value_alias else "N/A"))
-                table.item(n, 3).setToolTip(str(value_alias) if value_alias else "N/A")
+                dialog.tableResMore.setItem(n, 0, QTableWidgetItem(str(k)))
+                dialog.tableResMore.item(n, 0).setToolTip(str(k))
+                dialog.tableResMore.setItem(n, 1, QTableWidgetItem(str(key_alias) if key_alias else "N/A"))
+                dialog.tableResMore.item(n, 1).setToolTip(str(key_alias) if key_alias else "N/A")
+                dialog.tableResMore.setItem(n, 2, QTableWidgetItem(str(value) if value else "N/A"))
+                dialog.tableResMore.item(n, 2).setToolTip(str(value) if value else "N/A")
+                dialog.tableResMore.setItem(n, 3, QTableWidgetItem(str(value_alias) if value_alias else "N/A"))
+                dialog.tableResMore.item(n, 3).setToolTip(str(value_alias) if value_alias else "N/A")
                 n += 1
+            dialog.show()
             dialog.exec_()
         except Exception as e:
             log.error(str(e))
             print(e)
+
+
+class dialogMore(QDialog, Ui_Dialog):
+    def __init__(self):
+        super(dialogMore, self).__init__()
+        self.setupUi(self)
+        self.bind()
+
+    def bind(self):
+        self.cBoxPage.currentIndexChanged.connect(self.cBoxPageSelected)
+
+    def cBoxPageSelected(self, i):
+        self.tableResMore.clear()
+        self.tableResMore.setRowCount()
+
+
 
 
 if __name__ == '__main__':
