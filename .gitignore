@@ -16,6 +16,9 @@ dist/
 venv/
 
 # output files
-*.log
 result/
 svn/
+*.log
+
+# config files
+conf/

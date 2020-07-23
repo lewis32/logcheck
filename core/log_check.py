@@ -256,6 +256,8 @@ class LogCheck:
             return res
         except Exception as e:
             log.error(str(e))
+            log.info(data)
+            log.info(conf)
             return
 
     def check_log(self, data="", filter_=""):
