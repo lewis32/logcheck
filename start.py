@@ -2,6 +2,7 @@ import sys
 import json
 import os
 import re
+import subprocess
 from configparser import *
 from socket import gethostname
 from PyQt5.QtWidgets import *
@@ -389,6 +390,27 @@ class MyUI(QMainWindow, Ui_MainWindow):
         except Exception as e:
             log.error(str(e))
 
+    # def btnManualCheckClicked(self, btn):
+    #     """
+    #     点击手动模式的验证按钮
+    #     :param btn: object
+    #     :return: None
+    #     """
+    #     try:
+    #         with open(os.path.join(path, "conf", "test.txt")) as f:
+    #             data_tmp = f.read()
+    #         data = self.editManual.toPlainText() \
+    #             if self.editManual.toPlainText().strip() else data_tmp
+    #         log.info("Mock log data: " + data)
+    #         test = LogCheck()
+    #         res = test.check_log(data)
+    #         if res:
+    #             dict_["cur_row"] = 0
+    #             self.checkResultReceived(res)
+    #         log.info("Mock Check result: " + str(res))
+    #     except Exception as e:
+    #         log.error(str(e))
+
     def btnManualCheckClicked(self, btn):
         """
         点击手动模式的验证按钮
@@ -400,9 +422,11 @@ class MyUI(QMainWindow, Ui_MainWindow):
                 data_tmp = f.read()
             data = self.editManual.toPlainText() \
                 if self.editManual.toPlainText().strip() else data_tmp
-            log.info("Mock log data: " + data)
+            proc = subprocess.Popen("java -jar .\\lib\\logdec-cmd-for-json.jar %s" % data, stdout=subprocess.PIPE, shell=True)
+            (out, err) = proc.communicate()
+            log.info("Mock log data: " + str(out))
             test = LogCheck()
-            res = test.check_log(data)
+            res = test.check_log(str(out))
             if res:
                 dict_["cur_row"] = 0
                 self.checkResultReceived(res)
