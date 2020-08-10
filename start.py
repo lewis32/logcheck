@@ -14,20 +14,22 @@ from core.log_check import LogCheck
 from core.package.myserial import MySerial as Serial
 from core.package.mykafka import MyKafka as Kafka
 from core.package.mylogging import MyLogging as Logging
-from core.package.mycombobox import MyComboBox as QComboBox
+# from core.package.mycombobox import MyComboBox as QComboBox
 
 path = os.path.abspath((os.path.dirname(os.path.realpath(__file__))))
 log = Logging.getLogger("start")
 
 dict_ = {
+    "cur_row": 0,
     "kafka_cur_alias": "",
+    "kafka_cur_dec": False,
+    "kafka_cur_filter": "",
     "kafka_cur_server": "",
     "kafka_cur_topic": "",
-    "kafka_cur_filter": "",
-    "cur_row": 0,
-    "serial_cur_port": "",
     "serial_cur_cmd": "",
-    "serial_cur_filter": ""
+    "serial_cur_dec": False,
+    "serial_cur_filter": "",
+    "serial_cur_port": ""
 }
 
 
@@ -169,10 +171,9 @@ class MyUI(QMainWindow, Ui_MainWindow):
                 config.get(dict_["kafka_cur_alias"], "topic")
             dict_["kafka_cur_filter"] = \
                 config.get(dict_["kafka_cur_alias"], "filter")
-
-            self.cBoxKafkaServer.addItem(
+            self.cbBoxKafkaServer.addItem(
                 re.match(r"kafka_(.+)", dict_["kafka_cur_alias"]).group(1))
-            self.cBoxKafkaTopic.addItem(dict_["kafka_cur_topic"])
+            self.cbBoxKafkaTopic.addItem(dict_["kafka_cur_topic"])
             # self.lineEditSshHost.setText(
             #     config.get(dict_["kafka_cur_alias"], "ssh_host"))
             # self.lineEditSshPort.setText(
@@ -184,7 +185,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
             # self.groupBoxSshHeader.setEnabled(
             #     True if config.getboolean(
             #         dict_["kafka_cur_alias"], "ssh_enable") else False)
-            # self.cBoxKafkaSshEnable.setCheckState(
+            # self.cbBoxKafkaSshEnable.setCheckState(
             #     Qt.CheckState(2) if config.getboolean(
             #         dict_["kafka_cur_alias"], "ssh_enable") else Qt.CheckState(0))
             self.editKafkaFilter.setText(
@@ -196,8 +197,8 @@ class MyUI(QMainWindow, Ui_MainWindow):
             dict_["serial_cur_filter"] = \
                 config.get(dict_["serial_cur_cmd"], "filter")
 
-            self.cBoxSerialPort.addItem(dict_["serial_cur_port"])
-            self.cBoxSerialCmd.addItem(
+            self.cbBoxSerialPort.addItem(dict_["serial_cur_port"])
+            self.cbBoxSerialCmd.addItem(
                 re.match(r"serial_(.+)", dict_["serial_cur_cmd"]).group(1))
             self.editSerialFilter.setText(
                 config.get(dict_["serial_cur_cmd"], "filter"))
@@ -213,37 +214,41 @@ class MyUI(QMainWindow, Ui_MainWindow):
         """
         self.btnSerialClear.clicked.connect(
             lambda: self.btnClearClicked(self.btnSerialClear))
+        self.btnSerialPortRefresh.clicked.connect(
+            lambda: self.btnSerialPortRefreshClicked(self.btnSerialPortRefresh))
+        self.btnSerialCmdRefresh.clicked.connect(
+            lambda: self.btnSerialCmdRefreshClicked(self.btnSerialCmdRefresh))
         self.btnSerialStart.clicked.connect(self.btnSerialStartClicked)
         self.btnSerialStop.clicked.connect(
             lambda: self.btnSerialStopClicked(self.btnSerialStop))
         self.btnKafkaClear.clicked.connect(
             lambda: self.btnClearClicked(self.btnKafkaClear))
-        self.btnKafkaEdit.clicked.connect(
-            lambda: self.btnKafkaEditClicked(self.btnKafkaEdit))
+        self.btnKafkaServerRefresh.clicked.connect(
+            lambda: self.btnKafkaServerRefreshClicked(self.btnKafkaServerRefresh))
+        self.btnKafkaTopicRefresh.clicked.connect(
+            lambda: self.btnKafkaTopicRefreshClicked(self.btnKafkaTopicRefresh))
         self.btnKafkaStart.clicked.connect(
             lambda: self.btnKafkaStartClicked(self.btnKafkaStart))
         self.btnKafkaStop.clicked.connect(
             lambda: self.btnKafkaStopClicked(self.btnKafkaStop))
         self.btnManualStart.clicked.connect(
             lambda: self.btnManualCheckClicked(self.btnManualStart))
-        self.btnManualClear.clicked.connect(
-            lambda: self.btnClearClicked(self.btnManualClear))
-        self.cBoxSerialPort.currentIndexChanged.connect(
-            self.cBoxSerialPortSelected)
-        # self.cBoxSerialPort.showPopup_.connect(
-        #     self.cBoxSerialPortClicked)
-        self.cBoxSerialCmd.currentIndexChanged.connect(
-            self.cBoxSerialCmdSelected)
-        # self.cBoxSerialCmd.showPopup_.connect(
-        #     self.cBoxSerialCmdClicked)
-        # self.cBoxKafkaCluster.showPopup_.connect(
-        #     self.cBoxKafkaClusterClicked)
-        self.cBoxKafkaServer.currentIndexChanged.connect(
-            self.cBoxKafkaServerSelected)
-        # self.cBoxKafkaTopic.showPopup_.connect(
-        #     self.cBoxKafkaTopicClicked)
-        self.cBoxKafkaTopic.currentIndexChanged.connect(
-            self.cBoxKafkaTopicSelected)
+        self.cbBoxSerialPort.currentIndexChanged.connect(
+            self.cbBoxSerialPortSelected)
+        # self.cbBoxSerialPort.showPopup_.connect(
+        #     self.cbBoxSerialPortClicked)
+        self.cbBoxSerialCmd.currentIndexChanged.connect(
+            self.cbBoxSerialCmdSelected)
+        # self.cbBoxSerialCmd.showPopup_.connect(
+        #     self.cbBoxSerialCmdClicked)
+        # self.cbBoxKafkaCluster.showPopup_.connect(
+        #     self.cbBoxKafkaClusterClicked)
+        self.cbBoxKafkaServer.currentIndexChanged.connect(
+            self.cbBoxKafkaServerSelected)
+        # self.cbBoxKafkaTopic.showPopup_.connect(
+        #     self.cbBoxKafkaTopicClicked)
+        self.cbBoxKafkaTopic.currentIndexChanged.connect(
+            self.cbBoxKafkaTopicSelected)
         self.kafkaThread.add.connect(self.checkResultReceived)
         self.kafkaThread.terminal.connect(self.kafkaStopSignalReceived)
         # self.editSshHost.textChanged.connect(
@@ -277,6 +282,22 @@ class MyUI(QMainWindow, Ui_MainWindow):
         self.tableRes.setRowCount(0)
         dict_["cur_row"] = 0
 
+    def btnSerialPortRefreshClicked(self, btn):
+        """
+        点击清空按钮触发
+        :param btn: object
+        :return: None
+        """
+        return self.cbBoxSerialPortClicked()
+
+    def btnSerialCmdRefreshClicked(self, btn):
+        """
+        点击清空按钮触发
+        :param btn: object
+        :return: None
+        """
+        return self.cbBoxSerialCmdClicked()
+
     def btnSerialStartClicked(self, btn):
         """
         点击开始按钮触发
@@ -305,9 +326,9 @@ class MyUI(QMainWindow, Ui_MainWindow):
         self.tableResList.setRowCount(0)
         self.tableRes.clearContents()
         self.tableRes.setRowCount(0)
-        self.cBoxSerialPort.setEnabled(False)
+        self.cbBoxSerialPort.setEnabled(False)
         self.editSerialFilter.setEnabled(False)
-        self.cBoxSerialCmd.setEnabled(False)
+        self.cbBoxSerialCmd.setEnabled(False)
         self.btnSerialStart.setEnabled(False)
 
         # 添加延时
@@ -323,24 +344,27 @@ class MyUI(QMainWindow, Ui_MainWindow):
         :return: None
         """
         try:
-            self.serialThread.serial.stopReadSerial()
+            self.serialThread.serial.stop_read_serial()
             self.serialThread.serial.close()
             self.serialThread.__del__()
         except Exception as e:
             log.error(str(e))
 
-    def btnKafkaEditClicked(self, btn):
+    def btnKafkaServerRefreshClicked(self, btn):
         """
-        点击Kafka编辑按钮
+        点击Kafka topic刷新按钮
         :param btn: object
-        :return: None
+        :return:
         """
-        dialog = QDialog()
-        btn = QPushButton("test", dialog)
-        dialog.setWindowTitle("test")
-        dialog.setFixedSize(500, 500)
-        dialog.setWindowModality(Qt.ApplicationModal)
-        dialog.exec_()
+        return self.cbBoxKafkaServerClicked()
+
+    def btnKafkaTopicRefreshClicked(self, btn):
+        """
+        点击Kafka topic刷新按钮
+        :param btn: object
+        :return:
+        """
+        return self.cbBoxKafkaTopicClicked()
 
     def btnKafkaStartClicked(self, btn):
         """
@@ -356,7 +380,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
                 self.btnSerialStop.click()
             else:
                 return
-        if not self.cBoxKafkaTopic.currentText():
+        if not self.cbBoxKafkaTopic.currentText():
             QMessageBox.information(
                 self, "提示", "请先选择Server和Topic！", QMessageBox.Ok)
             return
@@ -369,8 +393,8 @@ class MyUI(QMainWindow, Ui_MainWindow):
         self.tableResList.setRowCount(0)
         self.tableRes.setRowCount(0)
         self.btnKafkaStart.setEnabled(False)
-        self.cBoxKafkaServer.setEnabled(False)
-        self.cBoxKafkaTopic.setEnabled(False)
+        self.cbBoxKafkaServer.setEnabled(False)
+        self.cbBoxKafkaTopic.setEnabled(False)
         self.editKafkaFilter.setEnabled(False)
         # 添加延时
         timer = QTimer(self)
@@ -434,7 +458,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
         except Exception as e:
             log.error(str(e))
 
-    def cBoxKafkaSshEnableChanged(self, i):
+    def cbBoxKafkaSshEnableChanged(self, i):
         """
         SSH启用状态修改
         :param i: object
@@ -488,73 +512,73 @@ class MyUI(QMainWindow, Ui_MainWindow):
             row += 1
         dict_["cur_row"] = row
 
-    def cBoxSerialPortSelected(self, i):
+    def cbBoxSerialPortSelected(self, i):
         """
         下拉框选择端口触发
         :param i: QComboBox
         :return: None
         """
         try:
-            if not self.cBoxSerialPort.currentText():
+            if not self.cbBoxSerialPort.currentText():
                 return
             dict_["serial_cur_port"] = re.findall(
-                r"COM[0-9]+", self.cBoxSerialPort.currentText())[0]
+                r"COM[0-9]+", self.cbBoxSerialPort.currentText())[0]
             if dict_["serial_cur_cmd"]:
                 config.set(dict_["serial_cur_cmd"],
                            "port", dict_["serial_cur_port"])
         except Exception as e:
             log.error(str(e))
 
-    def cBoxSerialPortClicked(self):
+    def cbBoxSerialPortClicked(self):
         """
         点击下拉框
         :return: None
         """
-        self.cBoxSerialPort.clear()
+        self.cbBoxSerialPort.clear()
         try:
             portList = Serial.get_port_list()
             if portList:
                 for i in portList:
-                    self.cBoxSerialPort.addItem(i[0])
+                    self.cbBoxSerialPort.addItem(i[0])
         except Exception as e:
             log.error(str(e))
             QMessageBox.information(self, "提示", str(e), QMessageBox.Ok)
 
-    def cBoxSerialCmdSelected(self, i):
+    def cbBoxSerialCmdSelected(self, i):
         """
         下拉框选择串口命令触发
         :param i: QComboBox
         :return: None
         """
         try:
-            if self.cBoxSerialCmd.currentText():
-                dict_["serial_cur_cmd"] = "serial_" + self.cBoxSerialCmd.currentText()
+            if self.cbBoxSerialCmd.currentText():
+                dict_["serial_cur_cmd"] = "serial_" + self.cbBoxSerialCmd.currentText()
                 config.set("DEFAULT", "serial", dict_["serial_cur_cmd"])
         except Exception as e:
             log.error(str(e))
 
-    def cBoxSerialCmdClicked(self):
+    def cbBoxSerialCmdClicked(self):
         """
         点击串口命令下拉框
         :return: None
         """
         try:
-            self.cBoxSerialCmd.clear()
+            self.cbBoxSerialCmd.clear()
             for i in config.sections():
                 match = re.match(r"^serial_(.+)", i)
                 if match:
-                    self.cBoxSerialCmd.addItem(match.group(1))
+                    self.cbBoxSerialCmd.addItem(match.group(1))
         except Exception as e:
             log.error(str(e))
             QMessageBox.information(self, "提示", str(e), QMessageBox.Ok)
 
-    def cBoxKafkaTopicClicked(self):
+    def cbBoxKafkaTopicClicked(self):
         """
         点击kafka topic下拉框
         :return:
         """
         try:
-            self.cBoxKafkaTopic.clear()
+            self.cbBoxKafkaTopic.clear()
 
             if not config.get(dict_["kafka_cur_alias"], "group_id"):
                 config.set(dict_["kafka_cur_alias"], "group_id", gethostname())
@@ -577,13 +601,13 @@ class MyUI(QMainWindow, Ui_MainWindow):
                 self.kafka_topics.sort()
                 for i in self.kafka_topics:
                     if re.match(r"^json\..+", i):
-                        self.cBoxKafkaTopic.addItem(str(i))
+                        self.cbBoxKafkaTopic.addItem(str(i))
             self.kafka.stop_kafka()
         except Exception as e:
             log.error(str(e))
             QMessageBox.information(self, "提示", "获取Topic失败，请检查配置文件！", QMessageBox.Ok)
 
-    def cBoxKafkaTopicSelected(self, i):
+    def cbBoxKafkaTopicSelected(self, i):
         """
         选择kafka topic
         :param i: object
@@ -591,33 +615,33 @@ class MyUI(QMainWindow, Ui_MainWindow):
         """
         # self.comboBoxKafkaTopic.setCurrentText("test")
         # dict_["kafka_cur_topic"] = "test"
-        dict_["kafka_cur_topic"] = self.cBoxKafkaTopic.currentText()
+        dict_["kafka_cur_topic"] = self.cbBoxKafkaTopic.currentText()
         config.set(dict_["kafka_cur_alias"], "topic", dict_["kafka_cur_topic"])
 
-    def cBoxKafkaServerClicked(self):
+    def cbBoxKafkaServerClicked(self):
         """
         点击kafka bootstrap server下拉框
         :return: None
         """
-        self.cKafkaServer.clear()
+        self.cbBoxKafkaServer.clear()
         try:
             for i in config.sections():
                 match = re.match(r"^kafka_(.+)", i)
                 if match:
-                    self.cBoxKafkaServer.addItem(match.group(1))
+                    self.cbBoxKafkaServer.addItem(match.group(1))
         except Exception as e:
             log.error(str(e))
 
-    def cBoxKafkaServerSelected(self, i):
+    def cbBoxKafkaServerSelected(self, i):
         """
         选择kafka bootstrap server
         :param i: object
         :return: None
         """
         try:
-            if not self.cBoxKafkaServer.currentText():
+            if not self.cbBoxKafkaServer.currentText():
                 return
-            dict_["kafka_cur_alias"] = "kafka_" + self.cBoxKafkaServer.currentText()
+            dict_["kafka_cur_alias"] = "kafka_" + self.cbBoxKafkaServer.currentText()
             dict_["kafka_cur_server"] = config.get(
                 dict_["kafka_cur_alias"], "server")
             config.set("DEFAULT", "kafka", dict_["kafka_cur_alias"])
@@ -637,8 +661,8 @@ class MyUI(QMainWindow, Ui_MainWindow):
             #     Qt.CheckState(2) if config.getboolean(dict_["kafka_cur_alias"], "ssh_enable") else Qt.CheckState(0))
             self.editKafkaFilter.setText(
                 config.get(dict_["kafka_cur_alias"], "filter"))
-            self.cBoxKafkaTopic.clear()
-            self.cBoxKafkaTopic.addItem(config.get(
+            self.cbBoxKafkaTopic.clear()
+            self.cbBoxKafkaTopic.addItem(config.get(
                 dict_["kafka_cur_alias"], "topic"))
         except Exception as e:
             log.error(str(e))
@@ -674,9 +698,9 @@ class MyUI(QMainWindow, Ui_MainWindow):
         :return:
         """
         try:
-            self.cBoxSerialPort.setEnabled(True)
+            self.cbBoxSerialPort.setEnabled(True)
             self.editSerialFilter.setEnabled(True)
-            self.cBoxSerialCmd.setEnabled(True)
+            self.cbBoxSerialCmd.setEnabled(True)
             self.btnSerialStart.setEnabled(True)
             self.btnSerialStop.setEnabled(False)
             QMessageBox.information(self, "提示", text, QMessageBox.Ok)
@@ -691,10 +715,10 @@ class MyUI(QMainWindow, Ui_MainWindow):
         """
         try:
             # self.gBoxSshHeader.setEnabled(True)
-            self.cBoxKafkaServer.setEnabled(True)
+            self.cbBoxKafkaServer.setEnabled(True)
             self.editKafkaFilter.setEnabled(True)
-            self.cBoxKafkaTopic.setEnabled(True)
-            # self.cBoxKafkaSshEnable.setEnabled(True)
+            self.cbBoxKafkaTopic.setEnabled(True)
+            # self.cbBoxKafkaSshEnable.setEnabled(True)
             self.btnKafkaStart.setEnabled(True)
             self.btnKafkaStop.setEnabled(False)
             QMessageBox.information(self, "提示", text, QMessageBox.Ok)
@@ -784,7 +808,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
                 listed_data.append(o_data)
                 data = listed_data[0]
             for i in range(page_total):
-                dialog.cBoxPage.addItem(str(i+1))
+                dialog.cbBoxPage.addItem(str(i+1))
             dialog.lblTotal.setText("共" + str(page_total) + "组数据")
             dialog.tableResMore.setRowCount(len(data))
             n = 0
@@ -815,13 +839,11 @@ class dialogMore(QDialog, Ui_Dialog):
         self.bind()
 
     def bind(self):
-        self.cBoxPage.currentIndexChanged.connect(self.cBoxPageSelected)
+        self.cbBoxPage.currentIndexChanged.connect(self.cbBoxPageSelected)
 
-    def cBoxPageSelected(self, i):
+    def cbBoxPageSelected(self, i):
         self.tableResMore.clear()
         self.tableResMore.setRowCount()
-
-
 
 
 if __name__ == '__main__':

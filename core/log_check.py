@@ -291,7 +291,8 @@ class LogCheck:
                     log.error("Error decoding JSON: " + str(e))
                 else:
                     ret = self._compare_log(data_, self.policy_all)
-                    listed_results.append(ret)
+                    if ret:
+                        listed_results.append(ret)
             json.dump(listed_results, f, indent=4)
             log.info(json.dumps(listed_results))
 
