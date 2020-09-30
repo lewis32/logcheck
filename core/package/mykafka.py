@@ -63,9 +63,11 @@ class MyKafka:
     def poll_kafka(self):
         try:
             log.info("Starting polling kafka...")
-            data = self.consumer.poll(timeout_ms=1000)
+            # data = self.consumer.poll(timeout_ms=1000)
+            data = self.consumer.next_v1()
             if data:
-                data_ = list(data.values())[0][0].value.decode("utf-8")
+                # data_ = list(data.values())[0][0].value.decode("utf-8")
+                data_ = data.value.decode("utf-8")
                 log.info(data_)
                 return data_
         except Exception as e:
