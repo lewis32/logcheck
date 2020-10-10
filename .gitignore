@@ -19,3 +19,8 @@ venv/
 *.log
 result/
 svn/
+
+# config files
+*.ini
+policy*.json
+test.txt
