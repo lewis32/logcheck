@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'myUI.ui'
 #
-# Created by: PyQt5 UI code generator 5.11.3
+# Created by: PyQt5 UI code generator 5.6
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -282,10 +282,10 @@ class Ui_MainWindow(object):
         self.tableResList.horizontalHeader().setDefaultSectionSize(80)
         self.tableResList.horizontalHeader().setMinimumSectionSize(30)
         self.gBoxHint = QtWidgets.QGroupBox(self.centralwidget)
-        self.gBoxHint.setGeometry(QtCore.QRect(700, 10, 281, 171))
+        self.gBoxHint.setGeometry(QtCore.QRect(700, 27, 281, 154))
         self.gBoxHint.setObjectName("gBoxHint")
         self.gridLayoutWidget = QtWidgets.QWidget(self.gBoxHint)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(30, 30, 209, 136))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(30, 30, 209, 111))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.layoutHint = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.layoutHint.setContentsMargins(0, 0, 0, 0)
@@ -362,12 +362,12 @@ class Ui_MainWindow(object):
         MainWindow.setMenuBar(self.menubar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(3)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "日志验证工具 v1.3"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "日志验证工具 v1.4"))
         self.lblSerialCmd.setText(_translate("MainWindow", "执行命令"))
         self.btnSerialStop.setText(_translate("MainWindow", "停止"))
         self.btnSerialStart.setText(_translate("MainWindow", "开始"))
@@ -379,7 +379,7 @@ class Ui_MainWindow(object):
         self.btnSerialClear.setText(_translate("MainWindow", "清空"))
         self.btnSerialCmdRefresh.setText(_translate("MainWindow", "刷新"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabSerial), _translate("MainWindow", "串口模式"))
-        self.lblKafkaServer.setText(_translate("MainWindow", "server"))
+        self.lblKafkaServer.setText(_translate("MainWindow", "服务器"))
         self.btnKafkaStop.setText(_translate("MainWindow", "停止"))
         self.btnKafkaStart.setText(_translate("MainWindow", "开始"))
         self.btnKafkaClear.setText(_translate("MainWindow", "清空"))
@@ -405,7 +405,7 @@ class Ui_MainWindow(object):
         self.ckBoxSerialDec_2.setText(_translate("MainWindow", "开启解密"))
         self.btnSerialPortRefresh_2.setText(_translate("MainWindow", "刷新"))
         self.btnSerialClear_2.setText(_translate("MainWindow", "清空"))
-        self.lblSerialCmd_2.setText(_translate("MainWindow", "服务端口"))
+        self.lblSerialCmd_2.setText(_translate("MainWindow", "端口"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabService), _translate("MainWindow", "服务模式"))
         self.gBoxRes.setTitle(_translate("MainWindow", "一级数据"))
         item = self.tableRes.horizontalHeaderItem(0)

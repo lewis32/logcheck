@@ -3,11 +3,15 @@ import json
 import os
 import re
 import subprocess
-from configparser import *
+from configparser import ConfigParser
 from socket import gethostname
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
+from PyQt5.QtWidgets import (QApplication,
+                             QDialog,
+                             QMainWindow,
+                             QMessageBox,
+                             QTableWidgetItem)
+from PyQt5.QtCore import pyqtSignal, Qt, QTimer, QThread
+from PyQt5.QtGui import QBrush, QColor, QIcon
 from myUI import Ui_MainWindow
 from dialogMore import Ui_Dialog
 from core.log_check import LogCheck
@@ -52,7 +56,7 @@ class SerialThread(QThread):
         try:
             self.serial = Serial(dict_["serial_cur_port"])
             self.serial.send_command(
-                config.get(dict_["serial_cur_cmd"], "start_cmd"))
+                self.config.get(dict_["serial_cur_cmd"], "start_cmd"))
 
             # self.serial.serial.flushOutput()
             # self.serial.serial.flushInput()
@@ -93,14 +97,14 @@ class KafkaThread(QThread):
         try:
             kafka_server = {
                 "server": dict_["kafka_cur_server"],
-                "group_id": config.get(dict_["kafka_cur_alias"], "group_id")
+                "group_id": self.config.get(dict_["kafka_cur_alias"], "group_id")
             }
             ssh_config = {
-                "host": config.get(dict_["kafka_cur_alias"], "ssh_host"),
-                "port": config.get(dict_["kafka_cur_alias"], "ssh_port"),
-                "user": config.get(dict_["kafka_cur_alias"], "ssh_user"),
-                "pwd": config.get(dict_["kafka_cur_alias"], "ssh_pwd")
-            } if config.getboolean(
+                "host": self.config.get(dict_["kafka_cur_alias"], "ssh_host"),
+                "port": self.config.get(dict_["kafka_cur_alias"], "ssh_port"),
+                "user": self.config.get(dict_["kafka_cur_alias"], "ssh_user"),
+                "pwd": self.config.get(dict_["kafka_cur_alias"], "ssh_pwd")
+            } if self.config.getboolean(
                 dict_["kafka_cur_alias"], "ssh_enable") else None
 
             self.kafka = Kafka(kafka_config=kafka_server, ssh_config=ssh_config)
@@ -136,41 +140,40 @@ class MyUI(QMainWindow, Ui_MainWindow):
     def closeEvent(self, event):
         try:
             if self.tabWidget.currentWidget() == self.tabSerial:
-                config.set("DEFAULT", "mode", "serial")
+                self.config.set("DEFAULT", "mode", "serial")
             if self.tabWidget.currentWidget() == self.tabKafka:
-                config.set("DEFAULT", "mode", "kafka")
+                self.config.set("DEFAULT", "mode", "kafka")
             if self.tabWidget.currentWidget() == self.tabManual:
-                config.set("DEFAULT", "mode", "manual")
+                self.config.set("DEFAULT", "mode", "manual")
             with open(os.path.join(path, "conf", "cfg.ini"), "w") as f:
-                config.write(f)
+                self.config.write(f)
             event.accept()
         except Exception as e:
             log.error(str(e))
 
     def loadConfig(self):
         try:
-            global config
-            config = ConfigParser()
-            config.read(os.path.join(path, "conf", "cfg.ini"))
+            self.config = ConfigParser()
+            self.config.read(os.path.join(path, "conf", "cfg.ini"))
 
-            if config.get("DEFAULT", "mode") == "serial":
+            if self.config.get("DEFAULT", "mode") == "serial":
                 # self.rBtnSerial.setChecked(True)
                 self.tabWidget.setCurrentWidget(self.tabSerial)
-            if config.get("DEFAULT", "mode") == "kafka":
+            if self.config.get("DEFAULT", "mode") == "kafka":
                 # self.rBtnKafka.setChecked(True)
                 self.tabWidget.setCurrentWidget(self.tabKafka)
-            if config.get("DEFAULT", "mode") == "manual":
+            if self.config.get("DEFAULT", "mode") == "manual":
                 # self.rBtnManual.setChecked(True)
                 self.tabWidget.setCurrentWidget(self.tabManual)
 
             dict_["kafka_cur_alias"] = \
-                config.get("DEFAULT", "kafka")
+                self.config.get("DEFAULT", "kafka")
             dict_["kafka_cur_server"] = \
-                config.get(dict_["kafka_cur_alias"], "server")
+                self.config.get(dict_["kafka_cur_alias"], "server")
             dict_["kafka_cur_topic"] = \
-                config.get(dict_["kafka_cur_alias"], "topic")
+                self.config.get(dict_["kafka_cur_alias"], "topic")
             dict_["kafka_cur_filter"] = \
-                config.get(dict_["kafka_cur_alias"], "filter")
+                self.config.get(dict_["kafka_cur_alias"], "filter")
             self.cbBoxKafkaServer.addItem(
                 re.match(r"kafka_(.+)", dict_["kafka_cur_alias"]).group(1))
             self.cbBoxKafkaTopic.addItem(dict_["kafka_cur_topic"])
@@ -189,19 +192,19 @@ class MyUI(QMainWindow, Ui_MainWindow):
             #     Qt.CheckState(2) if config.getboolean(
             #         dict_["kafka_cur_alias"], "ssh_enable") else Qt.CheckState(0))
             self.editKafkaFilter.setText(
-                config.get(dict_["kafka_cur_alias"], "filter"))
+                self.config.get(dict_["kafka_cur_alias"], "filter"))
 
-            dict_["serial_cur_cmd"] = config.get("DEFAULT", "serial")
+            dict_["serial_cur_cmd"] = self.config.get("DEFAULT", "serial")
             dict_["serial_cur_port"] = \
-                config.get(dict_["serial_cur_cmd"], "port")
+                self.config.get(dict_["serial_cur_cmd"], "port")
             dict_["serial_cur_filter"] = \
-                config.get(dict_["serial_cur_cmd"], "filter")
+                self.config.get(dict_["serial_cur_cmd"], "filter")
 
             self.cbBoxSerialPort.addItem(dict_["serial_cur_port"])
             self.cbBoxSerialCmd.addItem(
                 re.match(r"serial_(.+)", dict_["serial_cur_cmd"]).group(1))
             self.editSerialFilter.setText(
-                config.get(dict_["serial_cur_cmd"], "filter"))
+                self.config.get(dict_["serial_cur_cmd"], "filter"))
             self.tableResList.setColumnHidden(4, True)
             self.tableResList.setColumnHidden(5, True)
         except Exception as e:
@@ -446,7 +449,8 @@ class MyUI(QMainWindow, Ui_MainWindow):
                 data_tmp = f.read()
             data = self.editManual.toPlainText() \
                 if self.editManual.toPlainText().strip() else data_tmp
-            proc = subprocess.Popen("java -jar .\\lib\\logdec-cmd-for-json.jar %s" % data, stdout=subprocess.PIPE, shell=True)
+            proc = subprocess.Popen("java -jar .\\lib\\logdec-cmd-for-json.jar %s" % data,
+                                    stdout=subprocess.PIPE, shell=True)
             (out, err) = proc.communicate()
             log.info("Mock log data: " + str(out))
             test = LogCheck()
@@ -466,10 +470,10 @@ class MyUI(QMainWindow, Ui_MainWindow):
         """
         if not self.checkBoxKafkaSshEnable.checkState():
             self.groupBoxSshHeader.setEnabled(False)
-            config.set(dict_["kafka_cur_alias"], "ssh_enable", "false")
+            self.config.set(dict_["kafka_cur_alias"], "ssh_enable", "false")
         else:
             self.groupBoxSshHeader.setEnabled(True)
-            config.set(dict_["kafka_cur_alias"], "ssh_enable", "true")
+            self.config.set(dict_["kafka_cur_alias"], "ssh_enable", "true")
 
     def checkResultReceived(self, res):
         """
@@ -524,8 +528,8 @@ class MyUI(QMainWindow, Ui_MainWindow):
             dict_["serial_cur_port"] = re.findall(
                 r"COM[0-9]+", self.cbBoxSerialPort.currentText())[0]
             if dict_["serial_cur_cmd"]:
-                config.set(dict_["serial_cur_cmd"],
-                           "port", dict_["serial_cur_port"])
+                self.config.set(dict_["serial_cur_cmd"],
+                                "port", dict_["serial_cur_port"])
         except Exception as e:
             log.error(str(e))
 
@@ -553,7 +557,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
         try:
             if self.cbBoxSerialCmd.currentText():
                 dict_["serial_cur_cmd"] = "serial_" + self.cbBoxSerialCmd.currentText()
-                config.set("DEFAULT", "serial", dict_["serial_cur_cmd"])
+                self.config.set("DEFAULT", "serial", dict_["serial_cur_cmd"])
         except Exception as e:
             log.error(str(e))
 
@@ -564,7 +568,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
         """
         try:
             self.cbBoxSerialCmd.clear()
-            for i in config.sections():
+            for i in self.config.sections():
                 match = re.match(r"^serial_(.+)", i)
                 if match:
                     self.cbBoxSerialCmd.addItem(match.group(1))
@@ -580,18 +584,18 @@ class MyUI(QMainWindow, Ui_MainWindow):
         try:
             self.cbBoxKafkaTopic.clear()
 
-            if not config.get(dict_["kafka_cur_alias"], "group_id"):
-                config.set(dict_["kafka_cur_alias"], "group_id", gethostname())
+            if not self.config.get(dict_["kafka_cur_alias"], "group_id"):
+                self.config.set(dict_["kafka_cur_alias"], "group_id", gethostname())
             kafka_config = {
                 "server": dict_["kafka_cur_server"],
-                "group_id": config.get(dict_["kafka_cur_alias"], "group_id")
+                "group_id": self.config.get(dict_["kafka_cur_alias"], "group_id")
             }
             ssh_config = {
-                "host": config.get(dict_["kafka_cur_alias"], "ssh_host"),
-                "port": config.get(dict_["kafka_cur_alias"], "ssh_port"),
-                "user": config.get(dict_["kafka_cur_alias"], "ssh_user"),
-                "pwd": config.get(dict_["kafka_cur_alias"], "ssh_pwd")
-            } if config.getboolean(dict_["kafka_cur_alias"], "ssh_enable") else None
+                "host": self.config.get(dict_["kafka_cur_alias"], "ssh_host"),
+                "port": self.config.get(dict_["kafka_cur_alias"], "ssh_port"),
+                "user": self.config.get(dict_["kafka_cur_alias"], "ssh_user"),
+                "pwd": self.config.get(dict_["kafka_cur_alias"], "ssh_pwd")
+            } if self.config.getboolean(dict_["kafka_cur_alias"], "ssh_enable") else None
 
             self.kafka = Kafka(kafka_config=kafka_config, ssh_config=ssh_config)
             self.kafka.init_kafka()
@@ -616,7 +620,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
         # self.comboBoxKafkaTopic.setCurrentText("test")
         # dict_["kafka_cur_topic"] = "test"
         dict_["kafka_cur_topic"] = self.cbBoxKafkaTopic.currentText()
-        config.set(dict_["kafka_cur_alias"], "topic", dict_["kafka_cur_topic"])
+        self.config.set(dict_["kafka_cur_alias"], "topic", dict_["kafka_cur_topic"])
 
     def cbBoxKafkaServerClicked(self):
         """
@@ -625,7 +629,7 @@ class MyUI(QMainWindow, Ui_MainWindow):
         """
         self.cbBoxKafkaServer.clear()
         try:
-            for i in config.sections():
+            for i in self.config.sections():
                 match = re.match(r"^kafka_(.+)", i)
                 if match:
                     self.cbBoxKafkaServer.addItem(match.group(1))
@@ -642,9 +646,9 @@ class MyUI(QMainWindow, Ui_MainWindow):
             if not self.cbBoxKafkaServer.currentText():
                 return
             dict_["kafka_cur_alias"] = "kafka_" + self.cbBoxKafkaServer.currentText()
-            dict_["kafka_cur_server"] = config.get(
+            dict_["kafka_cur_server"] = self.config.get(
                 dict_["kafka_cur_alias"], "server")
-            config.set("DEFAULT", "kafka", dict_["kafka_cur_alias"])
+            self.config.set("DEFAULT", "kafka", dict_["kafka_cur_alias"])
 
             # self.lineEditSshHost.setText(
             #     config.get(dict_["kafka_cur_alias"], "ssh_host"))
@@ -660,9 +664,9 @@ class MyUI(QMainWindow, Ui_MainWindow):
             # self.checkBoxKafkaSshEnable.setCheckState(
             #     Qt.CheckState(2) if config.getboolean(dict_["kafka_cur_alias"], "ssh_enable") else Qt.CheckState(0))
             self.editKafkaFilter.setText(
-                config.get(dict_["kafka_cur_alias"], "filter"))
+                self.config.get(dict_["kafka_cur_alias"], "filter"))
             self.cbBoxKafkaTopic.clear()
-            self.cbBoxKafkaTopic.addItem(config.get(
+            self.cbBoxKafkaTopic.addItem(self.config.get(
                 dict_["kafka_cur_alias"], "topic"))
         except Exception as e:
             log.error(str(e))
@@ -684,10 +688,10 @@ class MyUI(QMainWindow, Ui_MainWindow):
             #     config.set(dict_["kafka_cur_alias"], "ssh_pwd", i.text())
             if i is self.editKafkaFilter:
                 dict_["kafka_cur_filter"] = i.text()
-                config.set(dict_["kafka_cur_alias"], "filter", i.text())
+                self.config.set(dict_["kafka_cur_alias"], "filter", i.text())
             if i is self.editSerialFilter:
                 dict_["serial_cur_filter"] = i.text()
-                config.set(dict_["serial_cur_cmd"], "filter", i.text())
+                self.config.set(dict_["serial_cur_cmd"], "filter", i.text())
         except Exception as e:
             log.error(str(e))
 
@@ -796,8 +800,9 @@ class MyUI(QMainWindow, Ui_MainWindow):
             if not (re.match(r"^{.*}$", text) or re.match(r"^\[.*\]$", text)):
                 return
 
+            data = {}
             o_data = json.loads(text)
-            dialog = dialogMore()
+            dialog = DialogMore()
             page_total = 0
             if type(o_data) is list:
                 page_total = len(o_data)
@@ -832,9 +837,9 @@ class MyUI(QMainWindow, Ui_MainWindow):
             print(e)
 
 
-class dialogMore(QDialog, Ui_Dialog):
+class DialogMore(QDialog, Ui_Dialog):
     def __init__(self):
-        super(dialogMore, self).__init__()
+        super(DialogMore, self).__init__()
         self.setupUi(self)
         self.bind()
 

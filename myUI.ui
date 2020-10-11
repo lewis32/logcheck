@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>日志验证工具 v1.3</string>
+   <string>日志验证工具 v1.4</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -76,7 +76,7 @@ QLabel#btnSerialStart,
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="tabSerial">
      <attribute name="title">
@@ -197,7 +197,7 @@ QLabel#btnSerialStart,
        <item row="0" column="0">
         <widget class="QLabel" name="lblKafkaServer">
          <property name="text">
-          <string>server</string>
+          <string>服务器</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -450,7 +450,7 @@ QLabel#btnSerialStart,
        <item row="1" column="0">
         <widget class="QLabel" name="lblSerialCmd_2">
          <property name="text">
-          <string>服务端口</string>
+          <string>端口</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -608,9 +608,9 @@ QLabel#btnSerialStart,
     <property name="geometry">
      <rect>
       <x>700</x>
-      <y>10</y>
+      <y>27</y>
       <width>281</width>
-      <height>171</height>
+      <height>154</height>
      </rect>
     </property>
     <property name="title">
@@ -622,7 +622,7 @@ QLabel#btnSerialStart,
        <x>30</x>
        <y>30</y>
        <width>209</width>
-       <height>136</height>
+       <height>111</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="layoutHint">

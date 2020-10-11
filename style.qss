@@ -1,10 +1,10 @@
-.QTableWidget {
+.QTableWidget{
     border:1px solid #8f8f91;
     margin:0 0 5px 5px;
     alternate-background-color: #dcdcdc;
 
 }
-.QTableWidget::item#markTableItem {
+.QTableWidget::item#markTableItem{
     color:white;
     background-color: red;
 }
@@ -21,13 +21,13 @@
 #labelSshHost,
 #labelSshPort,
 #labelSshUser,
-#labelSshPwd {
+#labelSshPwd{
     position:relative;
     margin:0 0 0 10px;
     height:25px;
     max-width:150px;
 }
-.MyComboBox#comboBoxSerial {
+.MyComboBox#comboBoxSerial{
     border:1px solid #8f8f91;
     border-radius:4px;
     margin:0 5px;
@@ -37,7 +37,7 @@
     width:100px;
     max-width:200px;
 }
-.MyComboBox#comboBoxSerialCmd {
+.MyComboBox#comboBoxSerialCmd{
     border:1px solid #8f8f91;
     border-radius:4px;
     margin:0 5px;
@@ -47,7 +47,7 @@
     width:200px;
     max-width:200px;
 }
-.MyComboBox#comboBoxKafkaCluster {
+.MyComboBox#comboBoxKafkaCluster{
     border:1px solid #8f8f91;
     border-radius:4px;
     margin:0 5px;
@@ -57,7 +57,7 @@
     width:100px;
     max-width:200px;
 }
-.MyComboBox#comboBoxKafkaTopic {
+.MyComboBox#comboBoxKafkaTopic{
     border:1px solid #8f8f91;
     border-radius:4px;
     margin:0 5px;
@@ -67,11 +67,11 @@
     width:200px;
     max-width:200px;
 }
-.QCheckBox#checkBoxKafkaSshEnable {
+.QCheckBox#checkBoxKafkaSshEnable{
     margin:0 0 0 10px;
 }
 .QPushButton#btnHeader,
-#btnFooter {
+#btnFooter{
     border:1px solid #8f8f91;
     border-radius:4px;
     position:relative;
@@ -85,8 +85,7 @@
 #lineEditSshPort,
 #lineEditSshUser,
 #lineEditSshPwd,
-#lineEditKafkaFilter
-{
+#lineEditKafkaFilter{
     border:1px solid #8f8f91;
     border-radius:4px;
     margin:0 5px;
@@ -94,16 +93,16 @@
     height:25px;
     max-width:400px;
 }
-.QRadioButton {
+.QRadioButton{
     margin: 10px 10px;
 }
-.QTextEdit#textEditManual {
+.QTextEdit#textEditManual{
     border:1px solid #8f8f91;
     border-radius:1px;
     margin:0 5px;
     width:100px;
 }
-.QTextEdit#textEditReadme {
+.QTextEdit#textEditReadme{
     border:1px solid #8f8f91;
     border-radius:1px;
     padding:10px;
